@@ -1,26 +1,578 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: oklch(0.9821 0 0);
+  --foreground: oklch(0.2435 0 0);
+  --card: oklch(0.9911 0 0);
+  --card-foreground: oklch(0.2435 0 0);
+  --popover: oklch(0.9911 0 0);
+  --popover-foreground: oklch(0.2435 0 0);
+  --primary: oklch(0.4341 0.0392 41.9938);
+  --primary-foreground: oklch(1.0000 0 0);
+  --secondary: oklch(0.9200 0.0651 74.3695);
+  --secondary-foreground: oklch(0.3499 0.0685 40.8288);
+  --muted: oklch(0.9521 0 0);
+  --muted-foreground: oklch(0.5032 0 0);
+  --accent: oklch(0.9310 0 0);
+  --accent-foreground: oklch(0.2435 0 0);
+  --destructive: oklch(0.6271 0.1936 33.3390);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.8822 0 0);
+  --input: oklch(0.8822 0 0);
+  --ring: oklch(0.4341 0.0392 41.9938);
+  --chart-1: oklch(0.4341 0.0392 41.9938);
+  --chart-2: oklch(0.9200 0.0651 74.3695);
+  --chart-3: oklch(0.9310 0 0);
+  --chart-4: oklch(0.9367 0.0523 75.5009);
+  --chart-5: oklch(0.4338 0.0437 41.6746);
+  --sidebar: oklch(0.9881 0 0);
+  --sidebar-foreground: oklch(0.2645 0 0);
+  --sidebar-primary: oklch(0.3250 0 0);
+  --sidebar-primary-foreground: oklch(0.9881 0 0);
+  --sidebar-accent: oklch(0.9761 0 0);
+  --sidebar-accent-foreground: oklch(0.3250 0 0);
+  --sidebar-border: oklch(0.9401 0 0);
+  --sidebar-ring: oklch(0.7731 0 0);
+  --font-sans: Doto, ui-sans-serif, sans-serif, system-ui;
+  --font-serif: Besley, ui-serif, serif;
+  --font-mono: Google Sans Code, ui-monospace, monospace;
+  --radius: 0.5rem;
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+.dark {
+  --background: oklch(0.1776 0 0);
+  --foreground: oklch(0.9491 0 0);
+  --card: oklch(0.2134 0 0);
+  --card-foreground: oklch(0.9491 0 0);
+  --popover: oklch(0.2134 0 0);
+  --popover-foreground: oklch(0.9491 0 0);
+  --primary: oklch(0.9247 0.0524 66.1732);
+  --primary-foreground: oklch(0.2029 0.0240 200.1962);
+  --secondary: oklch(0.3163 0.0190 63.6992);
+  --secondary-foreground: oklch(0.9247 0.0524 66.1732);
+  --muted: oklch(0.2520 0 0);
+  --muted-foreground: oklch(0.7699 0 0);
+  --accent: oklch(28.502% 0.00003 271.152);
+  --accent-foreground: oklch(0.9491 0 0);
+  --destructive: oklch(0.6271 0.1936 33.3390);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.2351 0.0115 91.7467);
+  --input: oklch(0.4017 0 0);
+  --ring: oklch(0.9247 0.0524 66.1732);
+  --chart-1: oklch(0.9247 0.0524 66.1732);
+  --chart-2: oklch(0.3163 0.0190 63.6992);
+  --chart-3: oklch(0.2850 0 0);
+  --chart-4: oklch(0.3481 0.0219 67.0001);
+  --chart-5: oklch(0.9245 0.0533 67.0855);
+  --sidebar: oklch(0.2103 0.0059 285.8852);
+  --sidebar-foreground: oklch(0.9674 0.0013 286.3752);
+  --sidebar-primary: oklch(0.4882 0.2172 264.3763);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.2739 0.0055 286.0326);
+  --sidebar-accent-foreground: oklch(0.9674 0.0013 286.3752);
+  --sidebar-border: oklch(0.2739 0.0055 286.0326);
+  --sidebar-ring: oklch(0.8711 0.0055 286.2860);
+  --font-sans: Doto, ui-sans-serif, sans-serif, system-ui;
+  --font-serif: Besley, ui-serif, serif;
+  --font-mono: Google Sans Code, ui-monospace, monospace;
+  --radius: 0.5rem;
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    scroll-behavior: smooth;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Custom scrollbar for webkit browsers */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+}
+
+/* Smooth scrolling for anchor links */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Unicorn Studio Background Positioning - ONLY in hero section */
+#home [data-us-project="ToMaQaK6KTf3mSOpRM7k"] {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+/* Ensure hero content is above the animation */
+#home {
+  position: relative;
+  z-index: 10;
+}
+
+/* Complete Liquid Glass Navigation Effect - Enhanced with Realistic Edge Depth */
+.glass-navigation {
+  --border-radius: 1rem;
+  --transition: 0.4s cubic-bezier(0.5, 1.5, 0.5, 1);
+
+  position: relative;
+  border-radius: var(--border-radius);
+  transition: all var(--transition);
+
+  /* Edge Layer - Glass edge highlights with realistic depth shadows */
+  box-shadow:
+    /* Inner glass highlights */
+    inset 3px 3px 3px 0 rgba(255, 255, 255, 0.45),
+    inset -3px -3px 3px 0 rgba(255, 255, 255, 0.45),
+    /* Outer edge depth shadows for realistic glass borders */
+    0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.12),
+    0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark mode edge adjustments with enhanced depth */
+.dark .glass-navigation {
+  box-shadow:
+    /* Inner glass highlights (reduced for dark mode) */
+    inset 3px 3px 3px 0 rgba(255, 255, 255, 0.25),
+    inset -3px -3px 3px 0 rgba(255, 255, 255, 0.25),
+    /* Outer edge depth shadows (enhanced for dark mode) */
+    0 0 0 1px rgba(0, 0, 0, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.25),
+    0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Bend Layer - Creates the liquid distortion effect */
+.glass-navigation::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(3px);
+  border-radius: var(--border-radius);
+  filter: url(#glass-blur);
+  z-index: 0;
+}
+
+/* Face Layer - Enhanced glass surface with edge gradients and depth shadows */
+.glass-navigation::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--border-radius);
+
+  /* Subtle edge gradient to simulate glass light refraction */
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.01) 25%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.01) 75%,
+    rgba(0, 0, 0, 0.02) 100%
+  );
+
+  /* Enhanced depth shadows */
+  box-shadow:
+    0 4px 4px rgba(0, 0, 0, 0.15),
+    0 0 12px rgba(0, 0, 0, 0.08),
+    0 8px 16px rgba(0, 0, 0, 0.06);
+  z-index: 1;
+}
+
+/* Dark mode face layer adjustments */
+.dark .glass-navigation::after {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.015) 25%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.015) 75%,
+    rgba(0, 0, 0, 0.03) 100%
+  );
+}
+
+/* Navigation content positioning above all glass layers */
+.glass-navigation > * {
+  position: relative;
+  z-index: 3;
+}
+
+/* Enhanced Animations and Transitions */
+* {
+  transition-property: transform, opacity, box-shadow, background-color, border-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth hover effects for interactive elements */
+button, a, [role="button"] {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:hover, a:hover, [role="button"]:hover {
+  transform: translateY(-1px);
+}
+
+button:active, a:active, [role="button"]:active {
+  transform: translateY(0);
+}
+
+/* Enhanced card hover effects */
+.group:hover {
+  transform: translateY(-2px) scale(1.01);
+}
+
+/* Smooth focus states */
+*:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  transition: outline 0.2s ease;
+}
+
+/* Improved text selection */
+::selection {
+  background-color: hsl(var(--primary) / 0.2);
+  color: hsl(var(--foreground));
+}
+
+/* Enhanced scrollbar animations */
+::-webkit-scrollbar-thumb {
+  transition: background-color 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  transition: background-color 0.2s ease;
+}
+
+/* Fluent Design System Reveal Effect */
+.reveal-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.reveal-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    hsl(var(--primary) / 0.15) 0%,
+    hsl(var(--primary) / 0.08) 20%,
+    hsl(var(--primary) / 0.03) 40%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.reveal-card:hover::before {
+  opacity: 1;
+}
+
+/* Dark mode reveal effect */
+.dark .reveal-card::before {
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    hsl(var(--primary) / 0.25) 0%,
+    hsl(var(--primary) / 0.15) 20%,
+    hsl(var(--primary) / 0.08) 40%,
+    transparent 60%
+  );
+}
+
+/* Ensure card content stays above the reveal effect */
+.reveal-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Enhanced reveal effect for focused cards (accessibility) */
+.reveal-card:focus-within::before {
+  opacity: 0.7;
+  background: radial-gradient(
+    400px circle at 50% 50%,
+    hsl(var(--primary) / 0.2) 0%,
+    hsl(var(--primary) / 0.1) 30%,
+    transparent 60%
+  );
+}
+
+/* Subtle border highlight on hover */
+.reveal-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.3) 0%,
+    hsl(var(--primary) / 0.1) 50%,
+    transparent 100%
+  );
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.reveal-card:hover::after {
+  opacity: 1;
+}
+
+/* Performance optimization for reveal effect */
+.reveal-card {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Mobile-specific reveal effects */
+@media (hover: none) and (pointer: coarse) {
+  /* Mobile devices - enhanced touch-based reveal effects */
+  .reveal-card {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid hsl(var(--border) / 0.8);
+  }
+
+  /* Mobile reveal spotlight effect */
+  .reveal-card::before {
+    background: radial-gradient(
+      600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      hsl(var(--primary) / 0.18) 0%,
+      hsl(var(--primary) / 0.10) 30%,
+      hsl(var(--primary) / 0.05) 50%,
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Mobile touch activation */
+  .reveal-card:active::before {
+    opacity: 1;
+    transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Mobile border glow and scale effect */
+  .reveal-card:active {
+    transform: scale(0.97) translateZ(0);
+    border-color: hsl(var(--primary) / 0.6);
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.3),
+      0 0 20px hsl(var(--primary) / 0.2),
+      0 12px 30px -8px hsl(var(--primary) / 0.25),
+      0 8px 16px -4px hsl(var(--primary) / 0.15);
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Enhanced mobile touch feedback */
+@media (hover: none) {
+  .reveal-card {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+}
+
+/* Simplified mobile touch effects - matching desktop hover behavior */
+@media (max-width: 768px) {
+  .reveal-card {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Simple mobile touch feedback - matches desktop hover */
+  .reveal-card:active::before,
+  .reveal-card.touch-active::before {
+    opacity: 1 !important;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  /* Simple mobile border highlight - matches desktop hover */
+  .reveal-card:active::after,
+  .reveal-card.touch-active::after {
+    opacity: 1 !important;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  /* Optional subtle scale for tactile feedback */
+  .reveal-card:active,
+  .reveal-card.touch-active {
+    transform: scale(0.98) !important;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+}
+
+/* Mobile-specific optimizations for contact cards */
+@media (max-width: 768px) {
+
+  /* Mobile contact cards optimizations */
+  #contact .reveal-card {
+    min-height: 140px;
+    padding: 1.5rem;
+  }
+
+  /* Improved touch targets for mobile */
+  #contact .reveal-card a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Better text wrapping on mobile */
+  #contact .reveal-card p {
+    word-break: break-word;
+    hyphens: auto;
+  }
+
+  /* Social media cards mobile spacing */
+  #contact .grid.grid-cols-2 {
+    gap: 1.5rem;
+  }
+}
+
+/* Mobile Modal Liquid Glass Effect - More specific selectors */
+[data-radix-dialog-content].glass-mobile-modal,
+.glass-mobile-modal[data-radix-dialog-content] {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(40px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
+}
+
+.dark [data-radix-dialog-content].glass-mobile-modal,
+.dark .glass-mobile-modal[data-radix-dialog-content] {
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Glass close button for mobile modal */
+.glass-close-button {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.glass-close-button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  transform: scale(1.05);
+}
+
+.dark .glass-close-button {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+.dark .glass-close-button:hover {
+  background: rgba(0, 0, 0, 0.3) !important;
 }
