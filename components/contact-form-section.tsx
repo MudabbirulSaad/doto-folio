@@ -8,13 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-
-interface FormData {
-  name: string
-  email: string
-  subject: string
-  message: string
-}
+import { submitContactForm, validateContactForm, type ContactFormData } from "@/lib/services/contact"
 
 interface FormErrors {
   name?: string
@@ -24,45 +18,19 @@ interface FormErrors {
 }
 
 export function ContactFormSection() {
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
     subject: "",
     message: ""
   })
-  
+
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [submitMessage, setSubmitMessage] = useState<string>("")
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {}
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required"
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required"
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address"
-    }
-
-    if (!formData.subject.trim()) {
-      newErrors.subject = "Subject is required"
-    }
-
-    if (!formData.message.trim()) {
-      newErrors.message = "Message is required"
-    } else if (formData.message.trim().length < 10) {
-      newErrors.message = "Message must be at least 10 characters long"
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  const handleInputChange = (field: keyof ContactFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     // Clear error when user starts typing
     if (errors[field]) {
@@ -72,23 +40,40 @@ export function ContactFormSection() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!validateForm()) {
+
+    // Validate form data using Supabase service
+    const validation = await validateContactForm(formData)
+    if (!validation.isValid) {
+      setErrors(validation.errors)
       return
     }
 
     setIsSubmitting(true)
     setSubmitStatus('idle')
+    setErrors({})
 
     try {
-      // Simulate form submission (replace with actual API call)
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // For demo purposes, we'll just show success
-      setSubmitStatus('success')
-      setFormData({ name: "", email: "", subject: "", message: "" })
-    } catch {
+      // Submit to Supabase
+      const result = await submitContactForm(formData)
+
+      if (result.success) {
+        // Reset form on success
+        setFormData({
+          name: "",
+          email: "",
+          subject: "",
+          message: ""
+        })
+        setSubmitStatus('success')
+        setSubmitMessage(result.message || "Thank you! Your message has been sent successfully. I'll get back to you soon.")
+      } else {
+        setSubmitStatus('error')
+        setSubmitMessage(result.error || "Failed to send your message. Please try again.")
+      }
+    } catch (error) {
+      console.error('Form submission error:', error)
       setSubmitStatus('error')
+      setSubmitMessage("An unexpected error occurred. Please try again later.")
     } finally {
       setIsSubmitting(false)
     }
@@ -232,7 +217,7 @@ export function ContactFormSection() {
                     <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center gap-3">
                       <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
                       <p className="text-sm text-primary font-medium">
-                        Thank you! Your message has been sent successfully. I&apos;ll get back to you soon.
+                        {submitMessage || "Thank you! Your message has been sent successfully. I'll get back to you soon."}
                       </p>
                     </div>
                   )}
@@ -241,7 +226,7 @@ export function ContactFormSection() {
                     <div className="bg-destructive/10 border border-destructive/20 rounded-2xl p-4 flex items-center gap-3">
                       <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
                       <p className="text-sm text-destructive font-medium">
-                        Sorry, there was an error sending your message. Please try again or contact me directly.
+                        {submitMessage || "Sorry, there was an error sending your message. Please try again or contact me directly."}
                       </p>
                     </div>
                   )}
