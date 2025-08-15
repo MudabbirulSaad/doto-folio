@@ -87,7 +87,7 @@ export function ContactFormSection() {
       // For demo purposes, we'll just show success
       setSubmitStatus('success')
       setFormData({ name: "", email: "", subject: "", message: "" })
-    } catch (error) {
+    } catch {
       setSubmitStatus('error')
     } finally {
       setIsSubmitting(false)
@@ -104,7 +104,7 @@ export function ContactFormSection() {
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
               Have a project in mind or want to discuss opportunities? 
-              I'd love to hear from you. Send me a message and I'll get back to you as soon as possible.
+              I&apos;d love to hear from you. Send me a message and I&apos;ll get back to you as soon as possible.
             </p>
           </AnimatedSection>
 
@@ -232,7 +232,7 @@ export function ContactFormSection() {
                     <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-center gap-3">
                       <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
                       <p className="text-sm text-primary font-medium">
-                        Thank you! Your message has been sent successfully. I'll get back to you soon.
+                        Thank you! Your message has been sent successfully. I&apos;ll get back to you soon.
                       </p>
                     </div>
                   )}
@@ -254,15 +254,15 @@ export function ContactFormSection() {
               <div className="space-y-8">
                 <RevealCard className="bg-background/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-border/50 hover:shadow-2xl hover:border-primary/30 hover:bg-background/90 transition-all duration-500">
                   <h3 className="text-xl font-bold text-foreground mb-6">
-                    Let's Start a Conversation
+                    Let&apos;s Start a Conversation
                   </h3>
                   <div className="space-y-4 text-muted-foreground">
                     <p className="leading-relaxed">
-                      I'm always excited to discuss new projects, creative ideas, or opportunities to be part of your vision.
+                      I&apos;m always excited to discuss new projects, creative ideas, or opportunities to be part of your vision.
                     </p>
                     <p className="leading-relaxed">
-                      Whether you're looking for an AI enthusiast for your team, need help with a web development project,
-                      or want to collaborate on something innovative, I'd love to hear from you.
+                      Whether you&apos;re looking for an AI enthusiast for your team, need help with a web development project,
+                      or want to collaborate on something innovative, I&apos;d love to hear from you.
                     </p>
                   </div>
                 </RevealCard>
@@ -308,7 +308,7 @@ export function ContactFormSection() {
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Any specific goals or challenges you're facing</span>
+                      <span>Any specific goals or challenges you&apos;re facing</span>
                     </div>
                     <div className="flex items-start gap-3">
                       <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>

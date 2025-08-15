@@ -89,7 +89,7 @@ export function SkillsSection() {
               <RevealCard className="bg-background/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-border/50 hover:shadow-2xl hover:border-primary/30 hover:bg-background/90 transition-all duration-500 max-w-4xl mx-auto">
                 <h3 className="text-xl font-bold text-foreground mb-4">Continuous Learning</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  As an AI student, I'm constantly expanding my skill set through coursework, personal projects,
+                  As an AI student, I&apos;m constantly expanding my skill set through coursework, personal projects,
                   and staying current with the latest technology trends. My focus is on building a strong foundation
                   in both theoretical knowledge and practical application.
                 </p>

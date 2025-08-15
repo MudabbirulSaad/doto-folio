@@ -1,12 +1,12 @@
 "use client"
 
-import { useRef, useEffect, ReactNode } from "react"
+import { useRef, useEffect, ReactNode, ElementType } from "react"
 import { cn } from "@/lib/utils"
 
 interface RevealCardProps {
   children: ReactNode
   className?: string
-  as?: keyof JSX.IntrinsicElements
+  as?: ElementType
 }
 
 export function RevealCard({ 
@@ -92,7 +92,7 @@ export function RevealCard({
 
   return (
     <Component
-      ref={cardRef as any}
+      ref={cardRef}
       className={cn("reveal-card", className)}
     >
       {children}

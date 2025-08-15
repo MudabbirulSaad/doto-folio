@@ -55,10 +55,10 @@ export function ContactSection() {
         <div className="max-w-6xl mx-auto">
           <AnimatedSection animation="fadeUp" className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 font-serif">
-              Let's Connect
+              Let&apos;s Connect
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-              I'm always interested in discussing AI, technology trends, and potential collaboration opportunities.
+              I&apos;m always interested in discussing AI, technology trends, and potential collaboration opportunities.
               Feel free to reach out through any of the channels below.
             </p>
           </AnimatedSection>
@@ -139,7 +139,7 @@ export function ContactSection() {
                   Swinburne University of Technology
                 </p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Currently pursuing Bachelor's in Artificial Intelligence
+                  Currently pursuing Bachelor&apos;s in Artificial Intelligence
                 </p>
               </div>
             </div>
@@ -152,9 +152,9 @@ export function ContactSection() {
                 Open to Opportunities
               </h3>
               <p className="text-muted-foreground leading-relaxed mb-8 max-w-2xl mx-auto">
-                As a dedicated AI student, I'm actively seeking internships, research opportunities,
+                As a dedicated AI student, I&apos;m actively seeking internships, research opportunities,
                 and collaborative projects that align with my passion for artificial intelligence and software development.
-                I'm particularly interested in roles that combine technical challenges with innovative problem-solving.
+                I&apos;m particularly interested in roles that combine technical challenges with innovative problem-solving.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div className="bg-primary/10 rounded-2xl p-4 border border-primary/20">

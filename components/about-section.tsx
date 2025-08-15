@@ -14,7 +14,7 @@ export function AboutSection() {
             {/* Content */}
             <div className="space-y-6">
               <p className="text-lg text-muted-foreground leading-relaxed">
-                I'm <span className="text-foreground font-semibold">Mudabbirul Saad</span>, a passionate Bachelor's degree student at
+                I&apos;m <span className="text-foreground font-semibold">Mudabbirul Saad</span>, a passionate Bachelor&apos;s degree student at
                 <span className="text-foreground font-semibold"> Swinburne University of Technology</span>, majoring in
                 <span className="text-foreground font-semibold"> Artificial Intelligence</span>.
               </p>
@@ -26,7 +26,7 @@ export function AboutSection() {
               </p>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                When I'm not immersed in coursework, you'll find me coding personal projects, watching the latest
+                When I&apos;m not immersed in coursework, you&apos;ll find me coding personal projects, watching the latest
                 tech content, and staying current with emerging technology trends. I believe that continuous learning
                 and hands-on experimentation are the keys to mastering the rapidly evolving field of AI.
               </p>
@@ -38,7 +38,7 @@ export function AboutSection() {
                 <RevealCard className="bg-background/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-border/50 hover:shadow-2xl hover:border-primary/30 hover:bg-background/90 transition-all duration-500">
                   <h3 className="text-xl font-bold text-foreground mb-4">Education</h3>
                   <p className="text-muted-foreground">
-                    <span className="font-medium">Bachelor's Degree</span><br />
+                    <span className="font-medium">Bachelor&apos;s Degree</span><br />
                     Artificial Intelligence<br />
                     Swinburne University of Technology
                   </p>
