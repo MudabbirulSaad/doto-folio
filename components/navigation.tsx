@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
+import { AnimatedNavbar } from "./animations"
 
 const navigationItems = [
   { name: "Home", href: "#home" },
@@ -27,7 +28,10 @@ export function Navigation() {
   const [isOpen, setIsOpen] = React.useState(false)
 
   return (
-    <header className="fixed top-4 left-4 right-4 z-50 md:top-6 md:left-8 md:right-8">
+    <AnimatedNavbar
+      className="fixed top-4 left-4 right-4 z-50 md:top-6 md:left-8 md:right-8"
+      delay={0.2}
+    >
       {/* Floating Navigation Container with iOS 26 Liquid Glass Effect */}
       <div className="glass-navigation rounded-2xl shadow-lg">
         <div className="px-4 sm:px-6 lg:px-8">
@@ -143,6 +147,6 @@ export function Navigation() {
           </div>
         </div>
       </div>
-    </header>
+    </AnimatedNavbar>
   )
 }

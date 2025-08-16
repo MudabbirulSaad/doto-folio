@@ -6,10 +6,12 @@ import { SkillsSection } from "@/components/skills-section"
 import { ContactSection } from "@/components/contact-section"
 import { ContactFormSection } from "@/components/contact-form-section"
 import { FooterSection } from "@/components/footer-section"
+import { PageLoadingOverlay } from "@/components/animations"
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <PageLoadingOverlay />
       <Navigation />
       <main>
         <HeroSection />
