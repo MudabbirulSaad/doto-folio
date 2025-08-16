@@ -36,7 +36,12 @@ export function HeroSection() {
     fetchContent()
   }, [])
   return (
-    <section id="home" className="relative h-screen pt-24 md:pt-32">
+    <section
+      id="home"
+      className="relative h-screen pt-24 md:pt-32"
+      aria-label="Hero section introducing Mudabbirul Saad"
+      role="banner"
+    >
       {/* Fallback Background Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/20" />
 

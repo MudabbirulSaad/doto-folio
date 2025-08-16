@@ -7,10 +7,14 @@ import { ContactSection } from "@/components/contact-section"
 import { ContactFormSection } from "@/components/contact-form-section"
 import { FooterSection } from "@/components/footer-section"
 import { PageLoadingOverlay } from "@/components/animations"
+import { DynamicSEO } from "@/components/seo/dynamic-seo"
+import { PerformanceSEO } from "@/components/seo/performance-seo"
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <DynamicSEO />
+      <PerformanceSEO />
       <PageLoadingOverlay />
       <Navigation />
       <main>
