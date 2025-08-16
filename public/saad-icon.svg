@@ -1,0 +1,42 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Subtle glow for dots -->
+    <filter id="dotGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="0.8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Rounded background - exact oklch(0.1776 0 0) -->
+  <rect width="64" height="64" rx="16" fill="#2d2d2d"/>
+
+  <!-- Subtle border -->
+  <rect width="64" height="64" rx="16" fill="none" stroke="#404040" stroke-width="0.5"/>
+
+  <!-- Compact pixelated "S" pattern -->
+  <g filter="url(#dotGlow)">
+    <!-- Row 1 (top horizontal) -->
+    <rect x="21" y="12" width="6" height="6" rx="1" fill="#ffe0c2"/>
+    <rect x="28" y="12" width="6" height="6" rx="1" fill="#ffe0c2"/>
+    <rect x="35" y="12" width="6" height="6" rx="1" fill="#ffe0c2"/>
+
+    <!-- Row 2 (left edge) -->
+    <rect x="21" y="21" width="6" height="6" rx="1" fill="#ffe0c2"/>
+
+    <!-- Row 3 (middle horizontal) -->
+    <rect x="21" y="30" width="6" height="6" rx="1" fill="#ffe0c2"/>
+    <rect x="28" y="30" width="6" height="6" rx="1" fill="#ffe0c2"/>
+    <rect x="35" y="30" width="6" height="6" rx="1" fill="#ffe0c2"/>
+
+    <!-- Row 4 (right edge) -->
+    <rect x="35" y="39" width="6" height="6" rx="1" fill="#ffe0c2"/>
+
+    <!-- Row 5 (bottom horizontal) -->
+    <rect x="21" y="48" width="6" height="6" rx="1" fill="#ffe0c2"/>
+    <rect x="28" y="48" width="6" height="6" rx="1" fill="#ffe0c2"/>
+    <rect x="35" y="48" width="6" height="6" rx="1" fill="#ffe0c2"/>
+  </g>
+</svg>

@@ -19,6 +19,16 @@ const besley = Besley({
 export const metadata: Metadata = {
   title: "SAAD - Mudabbirul Saad | Portfolio",
   description: "Professional portfolio of Mudabbirul Saad - Building beautiful and intelligent digital experiences",
+  icons: {
+    icon: [
+      {
+        url: "/favicon.svg",
+        type: "image/svg+xml",
+      },
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/saad-icon.svg",
+  },
 };
 
 export default function RootLayout({

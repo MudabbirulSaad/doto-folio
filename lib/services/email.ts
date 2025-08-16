@@ -29,27 +29,28 @@ function createTransporter(config: EmailConfig) {
   })
 }
 
-// SAAD Portfolio Color Palette (converted from OKLCH to hex for email compatibility)
+// SAAD Portfolio Dark Theme Color Palette (exact colors from app/globals.css converted to hex for email compatibility)
 const COLORS = {
-  // Light theme colors
-  background: '#fafafa',        // oklch(0.9821 0 0)
-  foreground: '#3e3e3e',        // oklch(0.2435 0 0)
-  card: '#ffffff',              // oklch(0.9911 0 0)
-  cardForeground: '#3e3e3e',    // oklch(0.2435 0 0)
-  primary: '#6b5b95',           // oklch(0.4341 0.0392 41.9938)
-  primaryForeground: '#ffffff', // oklch(1.0000 0 0)
-  secondary: '#e8d5b7',         // oklch(0.9200 0.0651 74.3695)
-  secondaryForeground: '#5d4e37', // oklch(0.3499 0.0685 40.8288)
-  muted: '#f3f4f6',             // oklch(0.9521 0 0)
-  mutedForeground: '#808080',   // oklch(0.5032 0 0)
-  accent: '#f0f0f0',            // oklch(0.9310 0 0)
-  accentForeground: '#3e3e3e',  // oklch(0.2435 0 0)
-  border: '#e1e5e9',            // oklch(0.8822 0 0)
+  // Dark theme colors from globals.css
+  background: '#2d2d2d',        // oklch(0.1776 0 0) - Dark background
+  foreground: '#f2f2f2',        // oklch(0.9491 0 0) - Light text
+  card: '#363636',              // oklch(0.2134 0 0) - Card background
+  cardForeground: '#f2f2f2',    // oklch(0.9491 0 0) - Card text
+  primary: '#93c5fd',           // oklch(0.9247 0.0524 66.1732) - Primary accent (light blue)
+  primaryForeground: '#1e293b',  // oklch(0.2029 0.0240 200.1962) - Primary text
+  secondary: '#4b5563',         // oklch(0.3163 0.0190 63.6992) - Secondary color
+  secondaryForeground: '#93c5fd', // oklch(0.9247 0.0524 66.1732) - Secondary text
+  muted: '#404040',             // oklch(0.2520 0 0) - Muted background
+  mutedForeground: '#c4c4c4',   // oklch(0.7699 0 0) - Muted text
+  accent: '#2a2a2a',            // oklch(28.502% 0.00003 271.152) - Accent background
+  accentForeground: '#f2f2f2',  // oklch(0.9491 0 0) - Accent text
+  border: '#3c3c3c',            // oklch(0.2351 0.0115 91.7467) - Border color
 
-  // Additional semantic colors
-  success: '#10b981',
-  warning: '#f59e0b',
-  info: '#3b82f6',
+  // Additional semantic colors (adjusted for dark theme)
+  success: '#22c55e',           // Green for success states
+  warning: '#f59e0b',           // Orange for warnings
+  info: '#3b82f6',              // Blue for info
+  destructive: '#ef4444',       // Red for errors
 }
 
 // Email templates with SAAD portfolio branding using exact color palette
@@ -82,8 +83,9 @@ function getAdminEmailTemplate(formData: ContactFormData, timestamp: string): st
           border: 1px solid ${COLORS.border};
         }
         .header {
-          background: linear-gradient(135deg, ${COLORS.primary} 0%, ${COLORS.secondary} 100%);
-          color: ${COLORS.primaryForeground};
+          background: linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.muted} 100%);
+          border-top: 3px solid ${COLORS.primary};
+          color: ${COLORS.foreground};
           padding: 32px 24px;
           text-align: center;
         }
@@ -116,6 +118,7 @@ function getAdminEmailTemplate(formData: ContactFormData, timestamp: string): st
           background: ${COLORS.muted};
           border-radius: 12px;
           border-left: 4px solid ${COLORS.primary};
+          border: 1px solid ${COLORS.border};
         }
         .field-label {
           font-weight: 600;
@@ -135,6 +138,7 @@ function getAdminEmailTemplate(formData: ContactFormData, timestamp: string): st
         .message-field {
           background: ${COLORS.accent};
           border-left-color: ${COLORS.info};
+          border-color: ${COLORS.border};
         }
         .footer {
           background: ${COLORS.muted};
@@ -151,13 +155,14 @@ function getAdminEmailTemplate(formData: ContactFormData, timestamp: string): st
         .timestamp {
           background: ${COLORS.secondary};
           border-left-color: ${COLORS.warning};
+          border-color: ${COLORS.border};
           font-family: 'Besley', serif;
         }
         .timestamp .field-label {
-          color: ${COLORS.secondaryForeground};
+          color: ${COLORS.foreground};
         }
         .timestamp .field-value {
-          color: ${COLORS.secondaryForeground};
+          color: ${COLORS.foreground};
         }
       </style>
     </head>
@@ -227,8 +232,9 @@ function getUserConfirmationTemplate(formData: ContactFormData): string {
           border: 1px solid ${COLORS.border};
         }
         .header {
-          background: linear-gradient(135deg, ${COLORS.success} 0%, ${COLORS.primary} 100%);
-          color: ${COLORS.primaryForeground};
+          background: linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.muted} 100%);
+          border-top: 3px solid ${COLORS.success};
+          color: ${COLORS.foreground};
           padding: 32px 24px;
           text-align: center;
         }
@@ -263,7 +269,7 @@ function getUserConfirmationTemplate(formData: ContactFormData): string {
           font-family: 'Besley', serif;
         }
         .message-summary {
-          background: ${COLORS.accent};
+          background: ${COLORS.muted};
           border: 1px solid ${COLORS.border};
           border-radius: 12px;
           padding: 20px;
@@ -283,23 +289,23 @@ function getUserConfirmationTemplate(formData: ContactFormData): string {
           font-family: 'Besley', serif;
         }
         .response-info {
-          background: ${COLORS.secondary};
+          background: ${COLORS.accent};
           border: 1px solid ${COLORS.border};
           border-radius: 12px;
           padding: 20px;
           margin: 24px 0;
-          border-left: 4px solid ${COLORS.warning};
+          border-left: 4px solid ${COLORS.primary};
         }
         .response-info h3 {
           margin: 0 0 12px 0;
-          color: ${COLORS.secondaryForeground};
+          color: ${COLORS.foreground};
           font-size: 16px;
           font-weight: 600;
           font-family: 'Doto', sans-serif;
         }
         .response-info p {
           margin: 0;
-          color: ${COLORS.secondaryForeground};
+          color: ${COLORS.mutedForeground};
           font-family: 'Besley', serif;
         }
         .footer {

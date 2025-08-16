@@ -1,17 +1,37 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { 
-  Mail, 
-  Calendar, 
-  Search, 
-  Eye, 
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Mail,
+  Calendar,
+  Search,
+  Eye,
   ExternalLink,
   User,
-  MessageSquare
+  MessageSquare,
+  Download,
+  CheckCircle,
+  Circle,
+  ChevronDown,
+  Loader2
 } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+
+} from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface ContactSubmission {
   id: string
@@ -19,25 +39,144 @@ interface ContactSubmission {
   email: string
   subject: string
   message: string
+  is_read: boolean
+  read_at: string | null
+  read_by: string | null
   created_at: string
   updated_at: string
 }
 
 interface ContactSubmissionsTableProps {
-  submissions: ContactSubmission[]
+  initialSubmissions: ContactSubmission[]
 }
 
-export default function ContactSubmissionsTable({ submissions }: ContactSubmissionsTableProps) {
+export default function ContactSubmissionsTable({ initialSubmissions }: ContactSubmissionsTableProps) {
+  const [submissions, setSubmissions] = useState<ContactSubmission[]>(initialSubmissions)
   const [searchTerm, setSearchTerm] = useState('')
+  const [readStatusFilter, setReadStatusFilter] = useState('all')
+  const [timeFilter, setTimeFilter] = useState('all')
   const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null)
+  const [selectedSubmissions, setSelectedSubmissions] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
-  // Filter submissions based on search term
-  const filteredSubmissions = submissions.filter(submission =>
-    submission.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    submission.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    submission.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    submission.message.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // Fetch submissions with filters
+  const fetchSubmissions = async () => {
+    setIsLoading(true)
+    try {
+      const params = new URLSearchParams({
+        search: searchTerm,
+        readStatus: readStatusFilter,
+        timeFilter: timeFilter
+      })
+
+      const response = await fetch(`/api/admin/submissions?${params}`)
+      const data = await response.json()
+
+      if (response.ok) {
+        setSubmissions(data.submissions)
+      } else {
+        console.error('Failed to fetch submissions:', data.error)
+      }
+    } catch (error) {
+      console.error('Error fetching submissions:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchSubmissions()
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm, readStatusFilter, timeFilter])
+
+  // Mark submissions as read/unread
+  const updateReadStatus = async (submissionIds: string[], isRead: boolean) => {
+    try {
+      const response = await fetch('/api/admin/submissions', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          submissionIds,
+          isRead,
+          readBy: 'Admin' // You can get this from user context
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Update local state
+        setSubmissions(prev => prev.map(sub =>
+          submissionIds.includes(sub.id)
+            ? { ...sub, is_read: isRead, read_at: isRead ? new Date().toISOString() : null }
+            : sub
+        ))
+        setSelectedSubmissions([])
+      } else {
+        console.error('Failed to update read status:', data.error)
+      }
+    } catch (error) {
+      console.error('Error updating read status:', error)
+    }
+  }
+
+  // Export submissions
+  const exportSubmissions = async (format: 'csv' | 'json' | 'html') => {
+    setIsExporting(true)
+    try {
+      const params = new URLSearchParams({
+        format,
+        search: searchTerm,
+        readStatus: readStatusFilter,
+        timeFilter: timeFilter
+      })
+
+      const response = await fetch(`/api/admin/submissions/export?${params}`)
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `contact-submissions-${new Date().toISOString().split('T')[0]}.${format}`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        console.error('Export failed')
+      }
+    } catch (error) {
+      console.error('Error exporting submissions:', error)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  // Toggle submission selection
+  const toggleSubmissionSelection = (submissionId: string) => {
+    setSelectedSubmissions(prev =>
+      prev.includes(submissionId)
+        ? prev.filter(id => id !== submissionId)
+        : [...prev, submissionId]
+    )
+  }
+
+  // Select all submissions
+  const toggleSelectAll = () => {
+    if (selectedSubmissions.length === submissions.length) {
+      setSelectedSubmissions([])
+    } else {
+      setSelectedSubmissions(submissions.map(sub => sub.id))
+    }
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -49,121 +188,281 @@ export default function ContactSubmissionsTable({ submissions }: ContactSubmissi
     })
   }
 
-  const truncateText = (text: string, maxLength: number) => {
-    if (text.length <= maxLength) return text
-    return text.substring(0, maxLength) + '...'
-  }
+  // const truncateText = (text: string, maxLength: number) => {
+  //   if (text.length <= maxLength) return text
+  //   return text.substring(0, maxLength) + '...'
+  // }
 
   return (
-    <div className="p-6">
+    <div className="admin-card-mobile p-4 md:p-6">
       {/* Search and Filters */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search submissions..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Search submissions..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-full sm:w-80"
+            />
+          </div>
+
+          {/* Read Status Filter */}
+          <Select value={readStatusFilter} onValueChange={setReadStatusFilter}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Read Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="unread">Unread</SelectItem>
+              <SelectItem value="read">Read</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Time Filter */}
+          <Select value={timeFilter} onValueChange={setTimeFilter}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Time Period" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="last7days">Last 7 Days</SelectItem>
+              <SelectItem value="last30days">Last 30 Days</SelectItem>
+              <SelectItem value="last3months">Last 3 Months</SelectItem>
+              <SelectItem value="lastyear">Last Year</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <div className="text-sm text-muted-foreground">
-          {filteredSubmissions.length} of {submissions.length} submissions
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          {/* Bulk Actions */}
+          {selectedSubmissions.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => updateReadStatus(selectedSubmissions, true)}
+                className="admin-touch-target"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Mark Read ({selectedSubmissions.length})
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => updateReadStatus(selectedSubmissions, false)}
+                className="admin-touch-target"
+              >
+                <Circle className="w-4 h-4 mr-2" />
+                Mark Unread
+              </Button>
+            </div>
+          )}
+
+          {/* Export Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={isExporting} className="admin-touch-target">
+                {isExporting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
+                Export
+                <ChevronDown className="w-4 h-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => exportSubmissions('csv')}>
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportSubmissions('json')}>
+                Export as JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportSubmissions('html')}>
+                Export as HTML
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div className="text-sm text-muted-foreground whitespace-nowrap">
+            {submissions.length} submission{submissions.length !== 1 ? 's' : ''}
+          </div>
         </div>
       </div>
 
+      {/* Select All Checkbox */}
+      {submissions.length > 0 && (
+        <div className="flex items-center gap-3 mb-4 p-3 bg-secondary/30 rounded-lg">
+          <Checkbox
+            checked={selectedSubmissions.length === submissions.length}
+            onCheckedChange={toggleSelectAll}
+          />
+          <span className="text-sm text-muted-foreground">
+            Select all submissions
+          </span>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-muted-foreground">Loading submissions...</span>
+        </div>
+      )}
+
       {/* Submissions List */}
-      {filteredSubmissions.length > 0 ? (
-        <div className="space-y-4">
-          {filteredSubmissions.map((submission) => (
+      {!isLoading && submissions.length > 0 ? (
+        <div className="space-y-3 md:space-y-4">
+          {submissions.map((submission) => (
             <div
               key={submission.id}
-              className="border border-border rounded-lg p-4 hover:bg-secondary/50 transition-colors"
+              className={`admin-card-mobile border rounded-xl p-3 md:p-4 hover:shadow-lg transition-all duration-300 cursor-pointer ${
+                submission.is_read ? 'border-border bg-card' : 'border-primary/30 bg-primary/5'
+              } ${selectedSubmissions.includes(submission.id) ? 'ring-2 ring-primary' : ''}`}
+              onClick={() => setSelectedSubmission(submission)}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  {/* Header */}
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="flex items-center space-x-2">
-                      <User className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium text-foreground">{submission.name}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Mail className="w-4 h-4 text-muted-foreground" />
-                      <a 
-                        href={`mailto:${submission.email}`}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        {submission.email}
-                      </a>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        {formatDate(submission.created_at)}
-                      </span>
-                    </div>
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  {/* Selection Checkbox */}
+                  <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedSubmissions.includes(submission.id)}
+                      onCheckedChange={() => toggleSubmissionSelection(submission.id)}
+                    />
                   </div>
 
-                  {/* Subject */}
-                  <div className="mb-2">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm font-medium text-foreground">Subject:</span>
-                    </div>
-                    <p className="text-sm text-foreground font-medium pl-6">
-                      {submission.subject}
-                    </p>
+                  {/* Read Status Indicator */}
+                  <div className="mt-1 flex-shrink-0">
+                    {submission.is_read ? (
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-orange-500" />
+                    )}
                   </div>
 
-                  {/* Message Preview */}
-                  <div className="pl-6">
-                    <p className="text-sm text-muted-foreground">
-                      {truncateText(submission.message, 200)}
-                    </p>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-2">
+                      <div className="flex items-center space-x-2 min-w-0">
+                        <User className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium text-foreground truncate">{submission.name}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 min-w-0">
+                        <Mail className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground flex-shrink-0" />
+                        <a
+                          href={`mailto:${submission.email}`}
+                          className="text-sm text-primary hover:underline truncate"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {submission.email}
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="mb-2">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <MessageSquare className="w-3 h-3 md:w-4 md:h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium text-foreground line-clamp-1">{submission.subject}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2 break-words mobile-card-content">
+                        {submission.message}
+                      </p>
+                    </div>
+
+                    {/* Read Status Info */}
+                    {submission.is_read && submission.read_at && (
+                      <div className="text-xs text-muted-foreground">
+                        Read {formatDate(submission.read_at)}
+                        {submission.read_by && ` by ${submission.read_by}`}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center space-x-2 ml-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedSubmission(submission)}
-                    className="flex items-center space-x-1"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>View</span>
-                  </Button>
-                  <a href={`mailto:${submission.email}?subject=Re: ${submission.subject}`}>
+                <div className="flex flex-col sm:items-end space-y-2 flex-shrink-0">
+                  <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                    <Calendar className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="whitespace-nowrap">{formatDate(submission.created_at)}</span>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex items-center space-x-1"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        updateReadStatus([submission.id], !submission.is_read)
+                      }}
+                      className="admin-touch-target text-xs"
                     >
-                      <ExternalLink className="w-4 h-4" />
-                      <span>Reply</span>
+                      {submission.is_read ? (
+                        <>
+                          <Circle className="w-3 h-3 mr-1" />
+                          <span className="hidden sm:inline">Mark Unread</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          <span className="hidden sm:inline">Mark Read</span>
+                        </>
+                      )}
                     </Button>
-                  </a>
+
+                    <Button variant="outline" size="sm" className="admin-touch-target text-xs">
+                      <Eye className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                      <span className="hidden sm:inline">View</span>
+                    </Button>
+
+                    <a
+                      href={`mailto:${submission.email}?subject=Re: ${submission.subject}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Button variant="outline" size="sm" className="admin-touch-target text-xs">
+                        <ExternalLink className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                        <span className="hidden sm:inline">Reply</span>
+                      </Button>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
-      ) : (
+      ) : !isLoading ? (
         <div className="text-center py-12">
           <Mail className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">
-            {searchTerm ? 'No matching submissions' : 'No submissions yet'}
+            {searchTerm || readStatusFilter !== 'all' || timeFilter !== 'all'
+              ? 'No matching submissions'
+              : 'No submissions yet'
+            }
           </h3>
           <p className="text-muted-foreground">
-            {searchTerm 
-              ? 'Try adjusting your search terms to find what you\'re looking for.'
+            {searchTerm || readStatusFilter !== 'all' || timeFilter !== 'all'
+              ? 'No contact submissions match your current filters.'
               : 'Contact form submissions will appear here when visitors reach out.'
             }
           </p>
+          {(searchTerm || readStatusFilter !== 'all' || timeFilter !== 'all') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearchTerm('')
+                setReadStatusFilter('all')
+                setTimeFilter('all')
+              }}
+              className="mt-4"
+            >
+              Clear All Filters
+            </Button>
+          )}
         </div>
-      )}
+      ) : null}
 
       {/* Submission Detail Modal */}
       {selectedSubmission && (

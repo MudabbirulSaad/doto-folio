@@ -330,8 +330,9 @@ When a user submits the contact form, two emails are automatically sent:
 
 #### **Email Templates**
 - **Responsive HTML Design**: Works on all email clients
+- **Dark Theme Styling**: Matches webapp's dark theme color palette
 - **SAAD Portfolio Branding**: Consistent with website design
-- **Professional Styling**: Uses portfolio color scheme
+- **Professional Styling**: Uses exact OKLCH colors from globals.css
 - **Mobile-Friendly**: Optimized for mobile email clients
 - **Accessibility**: Proper contrast and readable fonts
 
@@ -403,6 +404,8 @@ The portfolio includes a comprehensive admin dashboard for managing contact subm
 #### **📋 Contact Management**
 - **Submission Listing**: Paginated view of all contact submissions
 - **Search & Filter**: Find specific submissions quickly
+- **Export Functionality**: Export submissions as CSV, JSON, or HTML
+- **Read Status Tracking**: Mark submissions as read/unread
 - **Detailed View**: Full submission details with timestamp
 - **Responsive Design**: Mobile-friendly admin interface
 

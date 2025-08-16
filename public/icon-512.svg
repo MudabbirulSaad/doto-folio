@@ -1,0 +1,72 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background gradient using exact colors from globals.css -->
+    <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#363636"/>
+      <stop offset="50%" style="stop-color:#404040"/>
+      <stop offset="100%" style="stop-color:#2d2d2d"/>
+    </linearGradient>
+    
+    <!-- Primary gradient for the S using webapp colors -->
+    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#93c5fd"/>
+      <stop offset="25%" style="stop-color:#60a5fa"/>
+      <stop offset="75%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#2563eb"/>
+    </linearGradient>
+    
+    <!-- Inner shadow for depth -->
+    <filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4"/>
+      <feOffset dx="0" dy="4" result="offset"/>
+      <feFlood flood-color="#1e293b" flood-opacity="0.4"/>
+      <feComposite in2="offset" operator="in"/>
+      <feMerge> 
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Glow effect for the S -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Rounded background -->
+  <rect width="512" height="512" rx="128" fill="url(#backgroundGradient)" filter="url(#innerShadow)"/>
+  
+  <!-- Subtle border using border color from globals.css -->
+  <rect width="512" height="512" rx="128" fill="none" stroke="#3c3c3c" stroke-width="2"/>
+  
+  <!-- Professional "S" letter - scaled for 512x512 -->
+  <path d="M 336 192
+           C 336 156, 308 128, 272 128
+           L 240 128
+           C 204 128, 176 156, 176 192
+           C 176 208, 180 216, 192 216
+           C 204 216, 208 208, 208 192
+           C 208 172, 220 160, 240 160
+           L 272 160
+           C 292 160, 304 172, 304 192
+           C 304 212, 292 224, 272 224
+           L 240 224
+           C 204 224, 176 252, 176 288
+           C 176 324, 204 352, 240 352
+           L 272 352
+           C 308 352, 336 324, 336 288
+           C 336 272, 332 264, 320 264
+           C 308 264, 304 272, 304 288
+           C 304 308, 292 320, 272 320
+           L 240 320
+           C 220 320, 208 308, 208 288
+           C 208 268, 220 256, 240 256
+           L 272 256
+           C 308 256, 336 228, 336 192 Z"
+        fill="url(#primaryGradient)" 
+        filter="url(#glow)"/>
+</svg>

@@ -23,7 +23,7 @@ async function setupAdmin() {
 
     // Admin user details
     const adminEmail = 'mudabbirulsaad@gmail.com'
-    const adminPassword = 'AdminPortfolio2025!'
+    const adminPassword = '@Saad8775'
 
     console.log(`📧 Creating admin user: ${adminEmail}`)
 

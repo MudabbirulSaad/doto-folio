@@ -164,6 +164,196 @@
   }
 }
 
+/* Admin Sidebar Animations and Effects */
+@layer components {
+  .admin-sidebar {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .admin-sidebar-item {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .admin-sidebar-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    transition: left 0.5s ease;
+  }
+
+  .admin-sidebar-item:hover::before {
+    left: 100%;
+  }
+
+  .admin-sidebar-collapsed {
+    width: 4rem;
+  }
+
+  .admin-sidebar-expanded {
+    width: 16rem;
+  }
+
+  /* Smooth transitions for content area */
+  .admin-content-area {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    /* Hide desktop sidebar only */
+    .admin-sidebar.hidden {
+      display: none !important;
+    }
+
+    /* Hide desktop sidebar specifically */
+    aside.admin-sidebar {
+      display: none !important;
+    }
+
+    /* Ensure mobile navigation is always visible */
+    nav.admin-mobile-nav {
+      display: block !important;
+    }
+
+    .admin-content-area {
+      margin-left: 0 !important;
+      padding-top: 4rem;
+    }
+
+    /* Mobile-specific card adjustments */
+    .admin-card-mobile {
+      padding: 1rem !important;
+    }
+
+    /* Touch-friendly button sizing */
+    .admin-touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Mobile grid adjustments */
+    .admin-mobile-grid {
+      grid-template-columns: 1fr !important;
+      gap: 1rem !important;
+    }
+
+    /* Mobile spacing adjustments */
+    .admin-mobile-spacing {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    /* Mobile text handling */
+    .mobile-text-truncate {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Mobile card content */
+    .mobile-card-content {
+      overflow: hidden;
+      word-wrap: break-word;
+      word-break: break-word;
+    }
+
+    /* Ensure proper line clamping on mobile */
+    .line-clamp-1 {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+  }
+
+  /* Tablet responsive adjustments */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .admin-tablet-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+
+  /* Enhanced glass effect for navigation items */
+  .nav-item-glass {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .nav-item-glass:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-item-glass.active {
+    background: rgba(var(--primary), 0.15);
+    border-color: rgba(var(--primary), 0.3);
+    box-shadow:
+      0 4px 16px rgba(var(--primary), 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  /* Tooltip for collapsed sidebar */
+  .sidebar-tooltip {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 1000;
+  }
+
+  .sidebar-tooltip::before {
+    content: '';
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 4px solid transparent;
+    border-right-color: rgba(0, 0, 0, 0.9);
+  }
+
+  .admin-sidebar-collapsed .admin-sidebar-item:hover .sidebar-tooltip {
+    opacity: 1;
+  }
+}
+
 @layer components {
   /* Custom scrollbar for webkit browsers */
   ::-webkit-scrollbar {
