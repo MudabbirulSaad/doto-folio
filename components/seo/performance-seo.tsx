@@ -55,12 +55,28 @@ export function PerformanceSEO() {
       })
     }
 
+    // Optimize inline styles
+    const optimizeInlineStyles = () => {
+      // Move critical inline styles to CSS classes
+      const elementsWithInlineStyles = document.querySelectorAll('[style]')
+      elementsWithInlineStyles.forEach(element => {
+        const style = element.getAttribute('style')
+        if (style && style.includes('position: absolute')) {
+          // Add CSS class instead of inline styles where possible
+          element.classList.add('absolute-positioned')
+        }
+      })
+    }
+
     // Run optimizations
     preloadCriticalResources()
     addPerformanceHints()
-    
-    // Optimize images after a short delay to ensure DOM is ready
-    setTimeout(optimizeImages, 100)
+
+    // Optimize images and styles after a short delay to ensure DOM is ready
+    setTimeout(() => {
+      optimizeImages()
+      optimizeInlineStyles()
+    }, 100)
 
     // Add viewport meta for mobile optimization
     const viewportMeta = document.querySelector('meta[name="viewport"]')

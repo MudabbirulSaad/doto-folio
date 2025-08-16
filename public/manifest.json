@@ -1,0 +1,28 @@
+{
+  "name": "SAAD - Mudabbirul Saad Portfolio",
+  "short_name": "SAAD Portfolio",
+  "description": "Professional portfolio of Mudabbirul Saad - AI Student at Swinburne University building beautiful and intelligent digital experiences",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/saad-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["portfolio", "technology", "education"],
+  "lang": "en",
+  "dir": "ltr",
+  "scope": "/",
+  "prefer_related_applications": false
+}

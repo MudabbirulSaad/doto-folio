@@ -1,0 +1,12 @@
+# ads.txt file for mudabbirulsaad.com
+# This file indicates that this website is not currently monetized through advertising
+# and helps prevent unauthorized ad inventory sales
+
+# No authorized digital sellers at this time
+# This is a personal portfolio website without advertising monetization
+
+# Contact information for inquiries
+# Contact: mudabbirulsaad@gmail.com
+# Website: https://mudabbirulsaad.com
+
+# Last updated: 2025-01-16

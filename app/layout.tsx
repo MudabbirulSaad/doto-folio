@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Doto, Besley } from "next/font/google";
 import Script from "next/script";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import "./globals.css";
 
 const doto = Doto({
@@ -19,10 +20,10 @@ const besley = Besley({
 export const metadata: Metadata = {
   metadataBase: new URL('https://mudabbirulsaad.com'),
   title: {
-    default: "SAAD - Mudabbirul Saad | AI Student & Developer Portfolio",
+    default: "SAAD - Mudabbirul Saad | AI Student & Developer Portfolio - Projects, Technology, Development",
     template: "%s | SAAD - Mudabbirul Saad"
   },
-  description: "Professional portfolio of Mudabbirul Saad - AI Student at Swinburne University building beautiful and intelligent digital experiences with React, Next.js, Python, and Machine Learning.",
+  description: "Professional portfolio of Mudabbirul Saad - AI Student at Swinburne University building beautiful and intelligent digital experiences with React, Next.js, Python, Machine Learning, and modern web development technologies. Explore projects, artificial intelligence work, and technology innovations.",
   keywords: [
     "Mudabbirul Saad",
     "SAAD",
@@ -38,7 +39,21 @@ export const metadata: Metadata = {
     "Melbourne",
     "Australia",
     "Frontend Developer",
-    "Full Stack Developer"
+    "Full Stack Developer",
+    "projects",
+    "development",
+    "technology",
+    "artificial",
+    "intelligence",
+    "JavaScript",
+    "TypeScript",
+    "Node.js",
+    "Software Engineer",
+    "Computer Science",
+    "Programming",
+    "Tech Portfolio",
+    "Developer Portfolio",
+    "Student Developer"
   ],
   authors: [{ name: "Mudabbirul Saad", url: "https://mudabbirulsaad.com" }],
   creator: "Mudabbirul Saad",
@@ -83,15 +98,51 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://mudabbirulsaad.com",
   },
+  category: "technology",
+  classification: "Portfolio Website",
+  other: {
+    "theme-color": "#0a0a0a",
+    "color-scheme": "dark",
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+    "format-detection": "telephone=no",
+    "msapplication-TileColor": "#0a0a0a",
+    "msapplication-config": "/browserconfig.xml",
+  },
   icons: {
     icon: [
       {
-        url: "/favicon.svg",
+        url: "/saad-icon.svg",
+        type: "image/svg+xml",
+        sizes: "any",
+      },
+      {
+        url: "/saad-icon.svg",
+        type: "image/svg+xml",
+        sizes: "16x16",
+      },
+      {
+        url: "/saad-icon.svg",
+        type: "image/svg+xml",
+        sizes: "32x32",
+      },
+    ],
+    shortcut: "/saad-icon.svg",
+    apple: [
+      {
+        url: "/saad-icon.svg",
+        sizes: "180x180",
         type: "image/svg+xml",
       },
     ],
-    shortcut: "/favicon.svg",
-    apple: "/saad-icon.svg",
+    other: [
+      {
+        rel: "mask-icon",
+        url: "/saad-icon.svg",
+        color: "#000000",
+      },
+    ],
   },
 };
 
@@ -102,9 +153,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body
         className={`${doto.variable} ${besley.variable} antialiased`}
       >
+        <GoogleAnalytics />
         {children}
 
         {/* Structured Data for SEO */}
