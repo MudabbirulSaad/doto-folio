@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -61,7 +61,7 @@ export default function ContactSubmissionsTable({ initialSubmissions }: ContactS
   const [isExporting, setIsExporting] = useState(false)
 
   // Fetch submissions with filters
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = useCallback(async () => {
     setIsLoading(true)
     try {
       const params = new URLSearchParams({
@@ -83,7 +83,7 @@ export default function ContactSubmissionsTable({ initialSubmissions }: ContactS
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [searchTerm, readStatusFilter, timeFilter])
 
   // Debounced search effect
   useEffect(() => {
@@ -92,7 +92,7 @@ export default function ContactSubmissionsTable({ initialSubmissions }: ContactS
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [searchTerm, readStatusFilter, timeFilter])
+  }, [searchTerm, readStatusFilter, timeFilter, fetchSubmissions])
 
   // Mark submissions as read/unread
   const updateReadStatus = async (submissionIds: string[], isRead: boolean) => {

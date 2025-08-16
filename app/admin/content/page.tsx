@@ -1,4 +1,7 @@
 import { requireAdminAuth } from '@/lib/auth/server'
+
+// Force dynamic rendering for admin pages that use authentication
+export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
