@@ -217,6 +217,21 @@ export function createInternalErrorResponse(
   )
 }
 
+export function createNotFoundErrorResponse(
+  message = 'Resource not found',
+  details?: string[],
+  options: ResponseOptions = {}
+): NextResponse {
+  return createErrorResponse(
+    'NOT_FOUND',
+    message,
+    404,
+    details,
+    undefined,
+    options
+  )
+}
+
 export function createDatabaseErrorResponse(
   message = 'Database operation failed',
   options: ResponseOptions = {}

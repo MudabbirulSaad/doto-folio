@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { loginAdmin, isAuthenticated } from '@/lib/auth/admin'
-import { useReCaptcha } from 'next-recaptcha-v3'
+import { useReCaptcha, ReCaptchaProvider } from 'next-recaptcha-v3'
 import { Eye, EyeOff, Lock, Mail, AlertCircle, Shield } from 'lucide-react'
 
-export default function AdminLoginPage() {
+function AdminLoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -201,5 +201,13 @@ export default function AdminLoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AdminLoginPage() {
+  return (
+    <ReCaptchaProvider>
+      <AdminLoginForm />
+    </ReCaptchaProvider>
   )
 }

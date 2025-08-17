@@ -16,7 +16,11 @@ import {
   X,
   FileText,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  PenTool,
+  FolderOpen,
+  Tags,
+  BookOpen
 } from 'lucide-react'
 
 export default function AdminNavigation() {
@@ -76,6 +80,30 @@ export default function AdminNavigation() {
       href: '/admin/dashboard',
       icon: LayoutDashboard,
       current: pathname === '/admin/dashboard'
+    },
+    {
+      name: 'Blog Posts',
+      href: '/admin/blog/posts',
+      icon: BookOpen,
+      current: pathname.startsWith('/admin/blog/posts')
+    },
+    {
+      name: 'New Post',
+      href: '/admin/blog/posts/new',
+      icon: PenTool,
+      current: pathname === '/admin/blog/posts/new'
+    },
+    {
+      name: 'Categories',
+      href: '/admin/blog/categories',
+      icon: FolderOpen,
+      current: pathname.startsWith('/admin/blog/categories')
+    },
+    {
+      name: 'Tags',
+      href: '/admin/blog/tags',
+      icon: Tags,
+      current: pathname.startsWith('/admin/blog/tags')
     },
     {
       name: 'Content Management',

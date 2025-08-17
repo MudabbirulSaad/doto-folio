@@ -14,6 +14,13 @@ export interface EmailResult {
   userEmailSent?: boolean
 }
 
+export interface SubscriptionEmailResult {
+  success: boolean
+  error?: string
+  welcomeEmailSent?: boolean
+  adminNotificationSent?: boolean
+}
+
 // Create reusable transporter
 function createTransporter(config: EmailConfig) {
   return nodemailer.createTransport({
@@ -29,31 +36,9 @@ function createTransporter(config: EmailConfig) {
   })
 }
 
-// SAAD Portfolio Dark Theme Color Palette (exact colors from app/globals.css converted to hex for email compatibility)
-const COLORS = {
-  // Dark theme colors from globals.css
-  background: '#2d2d2d',        // oklch(0.1776 0 0) - Dark background
-  foreground: '#f2f2f2',        // oklch(0.9491 0 0) - Light text
-  card: '#363636',              // oklch(0.2134 0 0) - Card background
-  cardForeground: '#f2f2f2',    // oklch(0.9491 0 0) - Card text
-  primary: '#93c5fd',           // oklch(0.9247 0.0524 66.1732) - Primary accent (light blue)
-  primaryForeground: '#1e293b',  // oklch(0.2029 0.0240 200.1962) - Primary text
-  secondary: '#4b5563',         // oklch(0.3163 0.0190 63.6992) - Secondary color
-  secondaryForeground: '#93c5fd', // oklch(0.9247 0.0524 66.1732) - Secondary text
-  muted: '#404040',             // oklch(0.2520 0 0) - Muted background
-  mutedForeground: '#c4c4c4',   // oklch(0.7699 0 0) - Muted text
-  accent: '#2a2a2a',            // oklch(28.502% 0.00003 271.152) - Accent background
-  accentForeground: '#f2f2f2',  // oklch(0.9491 0 0) - Accent text
-  border: '#3c3c3c',            // oklch(0.2351 0.0115 91.7467) - Border color
+// Email templates now use inline CSS with exact dark theme colors from app/globals.css (email client compatible)
 
-  // Additional semantic colors (adjusted for dark theme)
-  success: '#22c55e',           // Green for success states
-  warning: '#f59e0b',           // Orange for warnings
-  info: '#3b82f6',              // Blue for info
-  destructive: '#ef4444',       // Red for errors
-}
-
-// Email templates with SAAD portfolio branding using exact color palette
+// Email templates with SAAD portfolio branding using inline CSS (email client compatible)
 function getAdminEmailTemplate(formData: ContactFormData, timestamp: string): string {
   return `
     <!DOCTYPE html>
@@ -62,140 +47,58 @@ function getAdminEmailTemplate(formData: ContactFormData, timestamp: string): st
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>New Contact Form Submission</title>
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Doto:wght@100..900&family=Besley:ital,wght@0,400..900;1,400..900&display=swap');
-
-        body {
-          font-family: 'Doto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          line-height: 1.6;
-          color: ${COLORS.foreground};
-          background-color: ${COLORS.background};
-          margin: 0;
-          padding: 20px;
-        }
-        .container {
-          max-width: 600px;
-          margin: 0 auto;
-          background: ${COLORS.card};
-          border-radius: 16px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          overflow: hidden;
-          border: 1px solid ${COLORS.border};
-        }
-        .header {
-          background: linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.muted} 100%);
-          border-top: 3px solid ${COLORS.primary};
-          color: ${COLORS.foreground};
-          padding: 32px 24px;
-          text-align: center;
-        }
-        .header h1 {
-          margin: 0;
-          font-size: 28px;
-          font-weight: 700;
-          letter-spacing: -0.025em;
-          font-family: 'Doto', sans-serif;
-        }
-        .header p {
-          margin: 8px 0 0 0;
-          opacity: 0.9;
-          font-size: 16px;
-          font-family: 'Doto', sans-serif;
-        }
-        .content {
-          padding: 32px 24px;
-          background: ${COLORS.card};
-        }
-        .content p {
-          font-family: 'Besley', serif;
-        }
-        .content h1, .content h2, .content h3, .content h4, .content h5, .content h6 {
-          font-family: 'Doto', sans-serif;
-        }
-        .field {
-          margin-bottom: 24px;
-          padding: 20px;
-          background: ${COLORS.muted};
-          border-radius: 12px;
-          border-left: 4px solid ${COLORS.primary};
-          border: 1px solid ${COLORS.border};
-        }
-        .field-label {
-          font-weight: 600;
-          color: ${COLORS.mutedForeground};
-          font-size: 14px;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-bottom: 8px;
-          font-family: 'Doto', sans-serif;
-        }
-        .field-value {
-          color: ${COLORS.foreground};
-          font-size: 16px;
-          word-wrap: break-word;
-          font-family: 'Besley', serif;
-        }
-        .message-field {
-          background: ${COLORS.accent};
-          border-left-color: ${COLORS.info};
-          border-color: ${COLORS.border};
-        }
-        .footer {
-          background: ${COLORS.muted};
-          padding: 24px;
-          text-align: center;
-          border-top: 1px solid ${COLORS.border};
-        }
-        .footer p {
-          margin: 0;
-          color: ${COLORS.mutedForeground};
-          font-size: 14px;
-          font-family: 'Doto', sans-serif;
-        }
-        .timestamp {
-          background: ${COLORS.secondary};
-          border-left-color: ${COLORS.warning};
-          border-color: ${COLORS.border};
-          font-family: 'Besley', serif;
-        }
-        .timestamp .field-label {
-          color: ${COLORS.foreground};
-        }
-        .timestamp .field-value {
-          color: ${COLORS.foreground};
+      <script>
+        @media only screen and (max-width: 600px) {
+          .container { width: 100% !important; padding: 10px !important; }
+          .content { padding: 20px !important; }
+          .field { padding: 15px !important; }
         }
       </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>SAAD Portfolio</h1>
-          <p>New Contact Form Submission</p>
+    <body style="background-color: #2d2d2d; color: #f2f2f2; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; margin: 0; padding: 20px;">
+      <div class="container" style="max-width: 600px; margin: 0 auto; background-color: #363636; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); overflow: hidden; border: 1px solid #3c3c3c;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #363636 0%, #404040 100%); border-top: 4px solid #e0f2fe; color: #f2f2f2; padding: 32px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: bold; letter-spacing: -0.025em;">SAAD Portfolio</h1>
+          <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 16px;">New Contact Form Submission</p>
         </div>
-        <div class="content">
-          <div class="field">
-            <div class="field-label">Name</div>
-            <div class="field-value">${formData.name}</div>
+
+        <!-- Content -->
+        <div class="content" style="padding: 32px; background-color: #363636;">
+          <!-- Name Field -->
+          <div class="field" style="margin-bottom: 24px; padding: 20px; background-color: #404040; border-radius: 12px; border-left: 4px solid #e0f2fe; border: 1px solid #3c3c3c;">
+            <div style="font-weight: 600; color: #c4c4c4; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Name</div>
+            <div style="color: #f2f2f2; font-size: 16px; word-break: break-word;">${formData.name}</div>
           </div>
-          <div class="field">
-            <div class="field-label">Email</div>
-            <div class="field-value">${formData.email}</div>
+
+          <!-- Email Field -->
+          <div class="field" style="margin-bottom: 24px; padding: 20px; background-color: #404040; border-radius: 12px; border-left: 4px solid #e0f2fe; border: 1px solid #3c3c3c;">
+            <div style="font-weight: 600; color: #c4c4c4; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Email</div>
+            <div style="color: #f2f2f2; font-size: 16px; word-break: break-word;">${formData.email}</div>
           </div>
-          <div class="field">
-            <div class="field-label">Subject</div>
-            <div class="field-value">${formData.subject}</div>
+
+          <!-- Subject Field -->
+          <div class="field" style="margin-bottom: 24px; padding: 20px; background-color: #404040; border-radius: 12px; border-left: 4px solid #e0f2fe; border: 1px solid #3c3c3c;">
+            <div style="font-weight: 600; color: #c4c4c4; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Subject</div>
+            <div style="color: #f2f2f2; font-size: 16px; word-break: break-word;">${formData.subject}</div>
           </div>
-          <div class="field message-field">
-            <div class="field-label">Message</div>
-            <div class="field-value">${formData.message.replace(/\n/g, '<br>')}</div>
+
+          <!-- Message Field -->
+          <div class="field" style="margin-bottom: 24px; padding: 20px; background-color: #363636; border-radius: 12px; border-left: 4px solid #3b82f6; border: 1px solid #3c3c3c;">
+            <div style="font-weight: 600; color: #c4c4c4; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Message</div>
+            <div style="color: #f2f2f2; font-size: 16px; word-break: break-word;">${formData.message.replace(/\n/g, '<br>')}</div>
           </div>
-          <div class="field timestamp">
-            <div class="field-label">Submitted At</div>
-            <div class="field-value">${timestamp}</div>
+
+          <!-- Timestamp Field -->
+          <div class="field" style="margin-bottom: 24px; padding: 20px; background-color: #404040; border-radius: 12px; border-left: 4px solid #eab308; border: 1px solid #3c3c3c;">
+            <div style="font-weight: 600; color: #f2f2f2; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">Submitted At</div>
+            <div style="color: #f2f2f2; font-size: 16px; word-break: break-word;">${timestamp}</div>
           </div>
         </div>
-        <div class="footer">
-          <p>This email was sent from your SAAD portfolio contact form.</p>
+
+        <!-- Footer -->
+        <div style="background-color: #404040; padding: 24px; text-align: center; border-top: 1px solid #3c3c3c;">
+          <p style="margin: 0; color: #c4c4c4; font-size: 14px;">This email was sent from your SAAD portfolio contact form.</p>
         </div>
       </div>
     </body>
@@ -211,185 +114,65 @@ function getUserConfirmationTemplate(formData: ContactFormData): string {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Message Received - SAAD Portfolio</title>
-      <style>
-        @import url('https://fonts.googleapis.com/css2?family=Doto:wght@100..900&family=Besley:ital,wght@0,400..900;1,400..900&display=swap');
-
-        body {
-          font-family: 'Doto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          line-height: 1.6;
-          color: ${COLORS.foreground};
-          background-color: ${COLORS.background};
-          margin: 0;
-          padding: 20px;
-        }
-        .container {
-          max-width: 600px;
-          margin: 0 auto;
-          background: ${COLORS.card};
-          border-radius: 16px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          overflow: hidden;
-          border: 1px solid ${COLORS.border};
-        }
-        .header {
-          background: linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.muted} 100%);
-          border-top: 3px solid ${COLORS.success};
-          color: ${COLORS.foreground};
-          padding: 32px 24px;
-          text-align: center;
-        }
-        .header h1 {
-          margin: 0;
-          font-size: 28px;
-          font-weight: 700;
-          letter-spacing: -0.025em;
-          font-family: 'Doto', sans-serif;
-        }
-        .header p {
-          margin: 8px 0 0 0;
-          opacity: 0.9;
-          font-size: 16px;
-          font-family: 'Doto', sans-serif;
-        }
-        .content {
-          padding: 32px 24px;
-          background: ${COLORS.card};
-        }
-        .content p {
-          font-family: 'Besley', serif;
-        }
-        .content h1, .content h2, .content h3, .content h4, .content h5, .content h6 {
-          font-family: 'Doto', sans-serif;
-        }
-        .greeting {
-          font-size: 18px;
-          color: ${COLORS.foreground};
-          margin-bottom: 24px;
-          font-weight: 600;
-          font-family: 'Besley', serif;
-        }
-        .message-summary {
-          background: ${COLORS.muted};
-          border: 1px solid ${COLORS.border};
-          border-radius: 12px;
-          padding: 20px;
-          margin: 24px 0;
-          border-left: 4px solid ${COLORS.success};
-        }
-        .message-summary h3 {
-          margin: 0 0 12px 0;
-          color: ${COLORS.foreground};
-          font-size: 16px;
-          font-weight: 600;
-          font-family: 'Doto', sans-serif;
-        }
-        .message-summary p {
-          margin: 0;
-          color: ${COLORS.mutedForeground};
-          font-family: 'Besley', serif;
-        }
-        .response-info {
-          background: ${COLORS.accent};
-          border: 1px solid ${COLORS.border};
-          border-radius: 12px;
-          padding: 20px;
-          margin: 24px 0;
-          border-left: 4px solid ${COLORS.primary};
-        }
-        .response-info h3 {
-          margin: 0 0 12px 0;
-          color: ${COLORS.foreground};
-          font-size: 16px;
-          font-weight: 600;
-          font-family: 'Doto', sans-serif;
-        }
-        .response-info p {
-          margin: 0;
-          color: ${COLORS.mutedForeground};
-          font-family: 'Besley', serif;
-        }
-        .footer {
-          background: ${COLORS.muted};
-          padding: 24px;
-          text-align: center;
-          border-top: 1px solid ${COLORS.border};
-        }
-        .footer p {
-          margin: 0;
-          color: ${COLORS.mutedForeground};
-          font-size: 14px;
-          font-family: 'Doto', sans-serif;
-        }
-        .signature {
-          margin-top: 32px;
-          padding-top: 24px;
-          border-top: 1px solid ${COLORS.border};
-          color: ${COLORS.mutedForeground};
-          font-family: 'Besley', serif;
-        }
-        .links {
-          margin: 16px 0;
-          font-family: 'Besley', serif;
-        }
-        .links a {
-          color: ${COLORS.primary};
-          text-decoration: none;
-          font-weight: 500;
-          font-family: 'Doto', sans-serif;
-        }
-        .links a:hover {
-          text-decoration: underline;
-        }
-        .links ul {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-        .links li {
-          margin: 8px 0;
+      <script>
+        @media only screen and (max-width: 600px) {
+          .container { width: 100% !important; padding: 10px !important; }
+          .content { padding: 20px !important; }
+          .info-box { padding: 15px !important; }
         }
       </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>SAAD</h1>
-          <p>Message Received Successfully</p>
+    <body style="background-color: #2d2d2d; color: #f2f2f2; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; margin: 0; padding: 20px;">
+      <div class="container" style="max-width: 600px; margin: 0 auto; background-color: #363636; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); overflow: hidden; border: 1px solid #3c3c3c;">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #363636 0%, #404040 100%); border-top: 4px solid #22c55e; color: #f2f2f2; padding: 32px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: bold; letter-spacing: -0.025em;">SAAD</h1>
+          <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 16px;">Message Received Successfully</p>
         </div>
-        <div class="content">
-          <div class="greeting">
+
+        <!-- Content -->
+        <div class="content" style="padding: 32px; background-color: #363636;">
+          <!-- Greeting -->
+          <div style="font-size: 18px; color: #f2f2f2; margin-bottom: 24px; font-weight: 600;">
             Hi ${formData.name},
           </div>
-          <p>Thank you for reaching out! I've successfully received your message and wanted to confirm that it's in my inbox.</p>
-          
-          <div class="message-summary">
-            <h3>Your Message Summary:</h3>
-            <p><strong>Subject:</strong> ${formData.subject}</p>
+
+          <p style="margin-bottom: 24px; color: #c4c4c4;">Thank you for reaching out! I've successfully received your message and wanted to confirm that it's in my inbox.</p>
+
+          <!-- Message Summary -->
+          <div class="info-box" style="background-color: #404040; border: 1px solid #3c3c3c; border-radius: 12px; padding: 20px; margin: 24px 0; border-left: 4px solid #22c55e;">
+            <h3 style="margin: 0 0 12px 0; color: #f2f2f2; font-size: 16px; font-weight: 600;">Your Message Summary:</h3>
+            <p style="margin: 0; color: #c4c4c4;"><strong>Subject:</strong> ${formData.subject}</p>
           </div>
-          
-          <div class="response-info">
-            <h3>What's Next?</h3>
-            <p>I typically respond to messages within 24-48 hours. I'll review your message carefully and get back to you soon with a thoughtful response.</p>
+
+          <!-- Response Info -->
+          <div class="info-box" style="background-color: #363636; border: 1px solid #3c3c3c; border-radius: 12px; padding: 20px; margin: 24px 0; border-left: 4px solid #e0f2fe;">
+            <h3 style="margin: 0 0 12px 0; color: #f2f2f2; font-size: 16px; font-weight: 600;">What's Next?</h3>
+            <p style="margin: 0; color: #c4c4c4;">I typically respond to messages within 24-48 hours. I'll review your message carefully and get back to you soon with a thoughtful response.</p>
           </div>
-          
-          <div class="links">
-            <p>In the meantime, feel free to:</p>
-            <ul>
-              <li>Check out my latest projects on <a href="https://github.com/mudabbirulsaad">GitHub</a></li>
-              <li>Connect with me on <a href="https://www.linkedin.com/in/mudabbirul-saad-b71a0a211/">LinkedIn</a></li>
-              <li>Follow my journey on social media</li>
+
+          <!-- Links -->
+          <div style="margin: 16px 0;">
+            <p style="color: #c4c4c4; margin-bottom: 12px;">In the meantime, feel free to:</p>
+            <ul style="list-style: none; padding: 0; margin: 0;">
+              <li style="color: #c4c4c4; margin-bottom: 8px;">• Check out my latest projects on <a href="https://github.com/mudabbirulsaad" style="color: #e0f2fe; text-decoration: none; font-weight: 500;">GitHub</a></li>
+              <li style="color: #c4c4c4; margin-bottom: 8px;">• Connect with me on <a href="https://www.linkedin.com/in/mudabbirul-saad-b71a0a211/" style="color: #e0f2fe; text-decoration: none; font-weight: 500;">LinkedIn</a></li>
+              <li style="color: #c4c4c4;">• Follow my journey on social media</li>
             </ul>
           </div>
-          
-          <div class="signature">
-            <p>Best regards,<br>
-            <strong>Mudabbirul Saad</strong><br>
+
+          <!-- Signature -->
+          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #3c3c3c; color: #c4c4c4;">
+            <p style="margin: 0;">Best regards,<br>
+            <strong style="color: #f2f2f2;">Mudabbirul Saad</strong><br>
             AI Student & Developer<br>
             Swinburne University of Technology</p>
           </div>
         </div>
-        <div class="footer">
-          <p>This is an automated confirmation email from SAAD Portfolio.</p>
+
+        <!-- Footer -->
+        <div style="background-color: #404040; padding: 24px; text-align: center; border-top: 1px solid #3c3c3c;">
+          <p style="margin: 0; color: #c4c4c4; font-size: 14px;">This is an automated confirmation email from SAAD Portfolio.</p>
         </div>
       </div>
     </body>
@@ -463,6 +246,136 @@ export async function sendContactEmails(
       error: 'Email service unavailable',
       adminEmailSent: false,
       userEmailSent: false
+    }
+  }
+}
+
+// Subscription Email Templates
+function getSubscriptionWelcomeTemplate(name: string, email: string): string {
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to SAAD Newsletter</title>
+        <style>
+          @media only screen and (max-width: 600px) {
+            .container { width: 100% !important; padding: 10px !important; }
+            .content { padding: 20px !important; }
+            .feature-item { flex-direction: column !important; text-align: center !important; }
+            .feature-icon { margin: 0 auto 10px auto !important; }
+          }
+        </style>
+      </head>
+      <body style="background-color: #2d2d2d; color: #f2f2f2; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; margin: 0; padding: 0;">
+        <div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px;">
+          <!-- Header -->
+          <div style="text-align: center; padding: 40px 0; border-bottom: 1px solid #3c3c3c;">
+            <div style="font-size: 24px; font-weight: bold; color: #e0f2fe; margin-bottom: 8px;">SAAD</div>
+            <p style="color: #c4c4c4; font-size: 14px; margin: 0;">AI Student & Full-Stack Developer</p>
+          </div>
+
+          <!-- Content -->
+          <div class="content" style="padding: 40px 0;">
+            <h1 style="font-size: 28px; font-weight: bold; color: #f2f2f2; margin-bottom: 20px; text-align: center;">Welcome to the Newsletter! 🎉</h1>
+            <p style="font-size: 16px; color: #c4c4c4; margin-bottom: 32px; text-align: center;">
+              Hi ${name || 'there'}! Thank you for subscribing to my newsletter.
+              You'll now receive updates whenever I publish new articles about AI, technology, and development.
+            </p>
+
+            <!-- Features -->
+            <div style="background-color: #363636; border: 1px solid #3c3c3c; border-radius: 12px; padding: 32px; margin: 32px 0;">
+              <div class="feature-item" style="display: flex; align-items: flex-start; margin-bottom: 20px;">
+                <div class="feature-icon" style="width: 20px; height: 20px; background-color: #e0f2fe; border-radius: 50%; margin-right: 16px; margin-top: 4px; flex-shrink: 0;"></div>
+                <div>
+                  <div style="font-weight: 600; color: #f2f2f2; margin-bottom: 4px;">Latest AI Insights</div>
+                  <div style="color: #c4c4c4;">Deep dives into machine learning, AI trends, and practical applications</div>
+                </div>
+              </div>
+              <div class="feature-item" style="display: flex; align-items: flex-start; margin-bottom: 20px;">
+                <div class="feature-icon" style="width: 20px; height: 20px; background-color: #e0f2fe; border-radius: 50%; margin-right: 16px; margin-top: 4px; flex-shrink: 0;"></div>
+                <div>
+                  <div style="font-weight: 600; color: #f2f2f2; margin-bottom: 4px;">Development Tutorials</div>
+                  <div style="color: #c4c4c4;">Step-by-step guides on modern web development and best practices</div>
+                </div>
+              </div>
+              <div class="feature-item" style="display: flex; align-items: flex-start;">
+                <div class="feature-icon" style="width: 20px; height: 20px; background-color: #e0f2fe; border-radius: 50%; margin-right: 16px; margin-top: 4px; flex-shrink: 0;"></div>
+                <div>
+                  <div style="font-weight: 600; color: #f2f2f2; margin-bottom: 4px;">Tech Industry Updates</div>
+                  <div style="color: #c4c4c4;">Analysis of the latest trends and technologies shaping our future</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CTA Button -->
+            <div style="text-align: center;">
+              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/blog"
+                 style="display: inline-block; background-color: #e0f2fe; color: #1e3a8a; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;">
+                Browse Latest Articles
+              </a>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div style="text-align: center; padding: 32px 0; border-top: 1px solid #3c3c3c; color: #c4c4c4; font-size: 14px;">
+            <p style="margin-bottom: 8px;">You're receiving this because you subscribed to SAAD Newsletter.</p>
+            <p style="margin: 0;">
+              <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/unsubscribe?email=${encodeURIComponent(email)}"
+                 style="color: #c4c4c4; text-decoration: none; font-size: 12px;">
+                Unsubscribe
+              </a>
+            </p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `
+}
+
+
+
+// Send subscription welcome email (no admin notification for subscriptions)
+export async function sendSubscriptionWelcomeEmail(
+  name: string,
+  email: string,
+  config: EmailConfig
+): Promise<SubscriptionEmailResult> {
+  try {
+    const transporter = createTransporter(config)
+
+    let welcomeEmailSent = false
+    const errors: string[] = []
+
+    // Send welcome email to subscriber only
+    try {
+      await transporter.sendMail({
+        from: `"SAAD Newsletter" <${config.gmailUser}>`,
+        to: email,
+        subject: 'Welcome to SAAD Newsletter! 🚀',
+        html: getSubscriptionWelcomeTemplate(name, email),
+      })
+      welcomeEmailSent = true
+    } catch (error) {
+      console.error('Failed to send welcome email:', error)
+      errors.push('Failed to send welcome email')
+    }
+
+    return {
+      success: welcomeEmailSent,
+      welcomeEmailSent,
+      adminNotificationSent: false, // No admin notification for subscriptions
+      error: errors.length > 0 ? errors.join(', ') : undefined
+    }
+
+  } catch (error) {
+    console.error('Subscription email service error:', error)
+    return {
+      success: false,
+      error: 'Email service unavailable',
+      welcomeEmailSent: false,
+      adminNotificationSent: false
     }
   }
 }

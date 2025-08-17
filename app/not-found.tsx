@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Home, ArrowLeft } from "lucide-react"
+import { BackButton } from "@/components/ui/back-button"
+import { Home } from "lucide-react"
 
 export default function NotFound() {
   return (
@@ -32,12 +33,7 @@ export default function NotFound() {
             </Link>
           </Button>
           
-          <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
-            <Link href="javascript:history.back()">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Go Back
-            </Link>
-          </Button>
+          <BackButton />
         </div>
 
         {/* Helpful Links */}
@@ -56,14 +52,20 @@ export default function NotFound() {
             >
               Projects
             </Link>
-            <Link 
-              href="/#skills" 
+            <Link
+              href="/#skills"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               Skills
             </Link>
-            <Link 
-              href="/#contact" 
+            <Link
+              href="/blog"
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              Blog
+            </Link>
+            <Link
+              href="/#contact"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               Contact

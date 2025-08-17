@@ -20,8 +20,8 @@ const navigationItems = [
   { name: "About", href: "#about" },
   { name: "Projects", href: "#projects" },
   { name: "Skills", href: "#skills" },
+  { name: "Blog", href: "/blog" },
   { name: "Contact", href: "#contact" },
-  { name: "Get In Touch", href: "#contact-form" },
 ]
 
 export function Navigation() {
@@ -45,27 +45,40 @@ export function Navigation() {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              {navigationItems.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => {
-                    const element = document.getElementById(item.href.substring(1))
-                    element?.scrollIntoView({ behavior: 'smooth' })
-                  }}
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {item.name}
-                </button>
-              ))}
+              {navigationItems.map((item) => {
+                const isExternal = item.href.startsWith('/')
+
+                if (isExternal) {
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {item.name}
+                    </Link>
+                  )
+                }
+
+                return (
+                  <button
+                    key={item.name}
+                    onClick={() => {
+                      const element = document.getElementById(item.href.substring(1))
+                      element?.scrollIntoView({ behavior: 'smooth' })
+                    }}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {item.name}
+                  </button>
+                )
+              })}
             </nav>
 
             {/* Desktop CTA Buttons */}
             <div className="hidden md:flex items-center space-x-4">
               <Button variant="default" size="sm">
                 View Resume
-              </Button>
-              <Button variant="outline" size="sm">
-                Blog
               </Button>
             </div>
 
@@ -116,19 +129,36 @@ export function Navigation() {
 
                     {/* Mobile Navigation */}
                     <nav className="flex flex-col items-center space-y-4 w-full">
-                      {navigationItems.map((item) => (
-                        <button
-                          key={item.name}
-                          onClick={() => {
-                            const element = document.getElementById(item.href.substring(1))
-                            element?.scrollIntoView({ behavior: 'smooth' })
-                            setIsOpen(false)
-                          }}
-                          className="text-xl font-medium text-muted-foreground hover:text-foreground transition-colors text-center py-3 px-4 rounded-lg hover:bg-muted/20 w-full"
-                        >
-                          {item.name}
-                        </button>
-                      ))}
+                      {navigationItems.map((item) => {
+                        const isExternal = item.href.startsWith('/')
+
+                        if (isExternal) {
+                          return (
+                            <Link
+                              key={item.name}
+                              href={item.href}
+                              onClick={() => setIsOpen(false)}
+                              className="text-xl font-medium text-muted-foreground hover:text-foreground transition-colors text-center py-3 px-4 rounded-lg hover:bg-muted/20 w-full"
+                            >
+                              {item.name}
+                            </Link>
+                          )
+                        }
+
+                        return (
+                          <button
+                            key={item.name}
+                            onClick={() => {
+                              const element = document.getElementById(item.href.substring(1))
+                              element?.scrollIntoView({ behavior: 'smooth' })
+                              setIsOpen(false)
+                            }}
+                            className="text-xl font-medium text-muted-foreground hover:text-foreground transition-colors text-center py-3 px-4 rounded-lg hover:bg-muted/20 w-full"
+                          >
+                            {item.name}
+                          </button>
+                        )
+                      })}
                     </nav>
 
                     {/* Mobile CTA Buttons */}
