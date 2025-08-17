@@ -1,13 +1,17 @@
-import { NextRequest } from 'next/server'
+// import { NextRequest } from 'next/server' // Not needed with middleware approach
 import { createClient } from '@/lib/supabase/server'
 import { withAuth } from '@/lib/api/middleware'
 import { createSuccessResponse, createErrorResponse, createValidationErrorResponse } from '@/lib/api/response'
 import type { UpdateBlogPostData } from '@/lib/types/blog'
 
 // GET - Get single post for editing
-async function getPostHandler({ request }: { request: NextRequest }, { params }: { params: Promise<{ id: string }> }) {
+async function getPostHandler(context: any) {
   try {
-    const resolvedParams = await params
+    // Extract params from the URL
+    const url = new URL(context.request.url)
+    const pathSegments = url.pathname.split('/')
+    const id = pathSegments[pathSegments.length - 1] // Get the last segment as ID
+
     const supabase = await createClient()
     
     const { data: post, error } = await supabase
@@ -28,27 +32,31 @@ async function getPostHandler({ request }: { request: NextRequest }, { params }:
           )
         )
       `)
-      .eq('id', resolvedParams.id)
+      .eq('id', id)
       .single()
 
     if (error) {
       console.error('Error fetching post:', error)
-      return createErrorResponse('Post not found', 404)
+      return createErrorResponse('NOT_FOUND', 'Post not found', 404)
     }
 
     return createSuccessResponse(post)
 
   } catch (error) {
     console.error('Error in getPostHandler:', error)
-    return createErrorResponse('Internal server error', 500)
+    return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
 // PUT - Update post
-async function updatePostHandler({ request }: { request: NextRequest }, { params }: { params: Promise<{ id: string }> }) {
+async function updatePostHandler(context: any) {
   try {
-    const resolvedParams = await params
-    const body = await request.json()
+    // Extract params from the URL
+    const url = new URL(context.request.url)
+    const pathSegments = url.pathname.split('/')
+    const id = pathSegments[pathSegments.length - 1] // Get the last segment as ID
+
+    const body = await context.request.json()
     const {
       title,
       slug,
@@ -57,22 +65,22 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
       category_id,
       tag_ids = [],
       status,
-      is_featured,
+      featured,
       meta_title,
       meta_description
     }: UpdateBlogPostData = body
 
     // Validation
     if (title !== undefined && !title?.trim()) {
-      return createValidationErrorResponse('Title is required')
+      return createValidationErrorResponse(['Title is required'])
     }
 
     if (slug !== undefined && !slug?.trim()) {
-      return createValidationErrorResponse('Slug is required')
+      return createValidationErrorResponse(['Slug is required'])
     }
 
     if (content !== undefined && !content?.trim()) {
-      return createValidationErrorResponse('Content is required')
+      return createValidationErrorResponse(['Content is required'])
     }
 
     const supabase = await createClient()
@@ -81,11 +89,11 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
     const { data: existingPost } = await supabase
       .from('blog_posts')
       .select('id, slug, category_id')
-      .eq('id', resolvedParams.id)
+      .eq('id', id)
       .single()
 
     if (!existingPost) {
-      return createErrorResponse('Post not found', 404)
+      return createErrorResponse('NOT_FOUND', 'Post not found', 404)
     }
 
     // Check if slug already exists (excluding current post)
@@ -94,11 +102,11 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
         .from('blog_posts')
         .select('id')
         .eq('slug', slug.trim())
-        .neq('id', resolvedParams.id)
+        .neq('id', id)
         .single()
 
       if (duplicatePost) {
-        return createValidationErrorResponse('A post with this slug already exists')
+        return createValidationErrorResponse(['A post with this slug already exists'])
       }
     }
 
@@ -138,7 +146,7 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
         updateData.published_at = new Date().toISOString()
       }
     }
-    if (is_featured !== undefined) updateData.is_featured = is_featured
+    if (featured !== undefined) updateData.featured = featured
     if (meta_title !== undefined) updateData.meta_title = meta_title?.trim() || null
     if (meta_description !== undefined) updateData.meta_description = meta_description?.trim() || null
     if (readingTime !== undefined) updateData.reading_time = readingTime
@@ -147,13 +155,13 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
     const { data: post, error: postError } = await supabase
       .from('blog_posts')
       .update(updateData)
-      .eq('id', resolvedParams.id)
+      .eq('id', id)
       .select()
       .single()
 
     if (postError) {
       console.error('Error updating post:', postError)
-      return createErrorResponse('Failed to update post', 500)
+      return createErrorResponse('INTERNAL_ERROR', 'Failed to update post', 500)
     }
 
     // Update tags if provided
@@ -162,7 +170,7 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
       const { data: currentTags } = await supabase
         .from('blog_post_tags')
         .select('tag_id')
-        .eq('post_id', resolvedParams.id)
+        .eq('post_id', id)
 
       const currentTagIds = currentTags?.map(t => t.tag_id) || []
 
@@ -170,12 +178,12 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
       await supabase
         .from('blog_post_tags')
         .delete()
-        .eq('post_id', resolvedParams.id)
+        .eq('post_id', id)
 
       // Add new tags
       if (tag_ids.length > 0) {
         const tagRelations = tag_ids.map(tag_id => ({
-          post_id: resolvedParams.id,
+          post_id: id,
           tag_id
         }))
 
@@ -221,14 +229,18 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
 
   } catch (error) {
     console.error('Error in updatePostHandler:', error)
-    return createErrorResponse('Internal server error', 500)
+    return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
 // DELETE - Delete post
-async function deletePostHandler({ request }: { request: NextRequest }, { params }: { params: Promise<{ id: string }> }) {
+async function deletePostHandler(context: any) {
   try {
-    const resolvedParams = await params
+    // Extract params from the URL
+    const url = new URL(context.request.url)
+    const pathSegments = url.pathname.split('/')
+    const id = pathSegments[pathSegments.length - 1] // Get the last segment as ID
+
     const supabase = await createClient()
 
     // Get post details before deletion for cleanup
@@ -240,22 +252,22 @@ async function deletePostHandler({ request }: { request: NextRequest }, { params
         category_id,
         tags:blog_post_tags(tag_id)
       `)
-      .eq('id', resolvedParams.id)
+      .eq('id', id)
       .single()
 
     if (fetchError || !post) {
-      return createErrorResponse('Post not found', 404)
+      return createErrorResponse('NOT_FOUND', 'Post not found', 404)
     }
 
     // Delete the post (cascade will handle blog_post_tags and blog_views)
     const { error: deleteError } = await supabase
       .from('blog_posts')
       .delete()
-      .eq('id', resolvedParams.id)
+      .eq('id', id)
 
     if (deleteError) {
       console.error('Error deleting post:', deleteError)
-      return createErrorResponse('Failed to delete post', 500)
+      return createErrorResponse('INTERNAL_ERROR', 'Failed to delete post', 500)
     }
 
     // Update tag usage counts
@@ -277,7 +289,7 @@ async function deletePostHandler({ request }: { request: NextRequest }, { params
 
   } catch (error) {
     console.error('Error in deletePostHandler:', error)
-    return createErrorResponse('Internal server error', 500)
+    return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
