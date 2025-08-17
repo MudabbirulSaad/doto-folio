@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 
 // Force dynamic rendering to prevent build-time API calls
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { BlogPostHeader } from '@/components/blog/blog-post-header'
@@ -169,23 +170,5 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 }
 
-// Generate static params for popular posts (optional optimization)
-export async function generateStaticParams() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/blog/posts?limit=10&sortBy=view_count&sortOrder=desc`)
-    
-    if (!response.ok) {
-      return []
-    }
-
-    const data = await response.json()
-    const posts = data.data?.posts || []
-
-    return posts.map((post: any) => ({
-      slug: post.slug
-    }))
-  } catch (error) {
-    console.error('Error generating static params:', error)
-    return []
-  }
-}
+// Removed generateStaticParams to ensure dynamic rendering
+// This allows real-time view counts, new posts, and dynamic content

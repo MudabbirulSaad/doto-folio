@@ -3,6 +3,7 @@ import { Metadata } from 'next'
 
 // Force dynamic rendering to prevent build-time API calls
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 import { BlogHero } from '@/components/blog/blog-hero'
 import { BlogFilters } from '@/components/blog/blog-filters'
 import { BlogGrid } from '@/components/blog/blog-grid'
