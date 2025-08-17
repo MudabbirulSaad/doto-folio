@@ -5,8 +5,9 @@ import { createSuccessResponse, createErrorResponse, createValidationErrorRespon
 import type { UpdateBlogPostData } from '@/lib/types/blog'
 
 // GET - Get single post for editing
-async function getPostHandler({ request }: { request: NextRequest }, { params }: { params: { id: string } }) {
+async function getPostHandler({ request }: { request: NextRequest }, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const resolvedParams = await params
     const supabase = await createClient()
     
     const { data: post, error } = await supabase
@@ -27,7 +28,7 @@ async function getPostHandler({ request }: { request: NextRequest }, { params }:
           )
         )
       `)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (error) {
@@ -44,8 +45,9 @@ async function getPostHandler({ request }: { request: NextRequest }, { params }:
 }
 
 // PUT - Update post
-async function updatePostHandler({ request }: { request: NextRequest }, { params }: { params: { id: string } }) {
+async function updatePostHandler({ request }: { request: NextRequest }, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const resolvedParams = await params
     const body = await request.json()
     const {
       title,
@@ -79,7 +81,7 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
     const { data: existingPost } = await supabase
       .from('blog_posts')
       .select('id, slug, category_id')
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (!existingPost) {
@@ -92,7 +94,7 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
         .from('blog_posts')
         .select('id')
         .eq('slug', slug.trim())
-        .neq('id', params.id)
+        .neq('id', resolvedParams.id)
         .single()
 
       if (duplicatePost) {
@@ -145,7 +147,7 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
     const { data: post, error: postError } = await supabase
       .from('blog_posts')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .select()
       .single()
 
@@ -160,7 +162,7 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
       const { data: currentTags } = await supabase
         .from('blog_post_tags')
         .select('tag_id')
-        .eq('post_id', params.id)
+        .eq('post_id', resolvedParams.id)
 
       const currentTagIds = currentTags?.map(t => t.tag_id) || []
 
@@ -168,12 +170,12 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
       await supabase
         .from('blog_post_tags')
         .delete()
-        .eq('post_id', params.id)
+        .eq('post_id', resolvedParams.id)
 
       // Add new tags
       if (tag_ids.length > 0) {
         const tagRelations = tag_ids.map(tag_id => ({
-          post_id: params.id,
+          post_id: resolvedParams.id,
           tag_id
         }))
 
@@ -224,8 +226,9 @@ async function updatePostHandler({ request }: { request: NextRequest }, { params
 }
 
 // DELETE - Delete post
-async function deletePostHandler({ request }: { request: NextRequest }, { params }: { params: { id: string } }) {
+async function deletePostHandler({ request }: { request: NextRequest }, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const resolvedParams = await params
     const supabase = await createClient()
 
     // Get post details before deletion for cleanup
@@ -237,7 +240,7 @@ async function deletePostHandler({ request }: { request: NextRequest }, { params
         category_id,
         tags:blog_post_tags(tag_id)
       `)
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .single()
 
     if (fetchError || !post) {
@@ -248,7 +251,7 @@ async function deletePostHandler({ request }: { request: NextRequest }, { params
     const { error: deleteError } = await supabase
       .from('blog_posts')
       .delete()
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
 
     if (deleteError) {
       console.error('Error deleting post:', deleteError)
