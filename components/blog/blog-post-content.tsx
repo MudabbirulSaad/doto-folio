@@ -21,9 +21,86 @@ interface BlogPostContentProps {
   post: BlogPostWithRelations
 }
 
+// Helper function to parse Editor.js content
+function parseEditorJSContent(content: string) {
+  try {
+    const parsed = JSON.parse(content)
+    return parsed.blocks || []
+  } catch (error) {
+    console.error('Error parsing Editor.js content:', error)
+    return []
+  }
+}
+
+// Helper function to render Editor.js blocks
+function renderEditorJSBlock(block: any, index: number) {
+  const { type, data } = block
+
+  switch (type) {
+    case 'paragraph':
+      return (
+        <p key={index} className="mb-4 text-foreground leading-relaxed">
+          {data.text}
+        </p>
+      )
+
+    case 'header':
+      const HeaderTag = `h${data.level}` as keyof JSX.IntrinsicElements
+      return (
+        <HeaderTag key={index} className={`font-bold mb-4 text-foreground ${
+          data.level === 1 ? 'text-3xl' :
+          data.level === 2 ? 'text-2xl' :
+          data.level === 3 ? 'text-xl' :
+          data.level === 4 ? 'text-lg' :
+          'text-base'
+        }`}>
+          {data.text}
+        </HeaderTag>
+      )
+
+    case 'list':
+      const ListTag = data.style === 'ordered' ? 'ol' : 'ul'
+      return (
+        <ListTag key={index} className={`mb-4 ${data.style === 'ordered' ? 'list-decimal' : 'list-disc'} list-inside space-y-2`}>
+          {data.items.map((item: string, itemIndex: number) => (
+            <li key={itemIndex} className="text-foreground">{item}</li>
+          ))}
+        </ListTag>
+      )
+
+    case 'code':
+      return (
+        <pre key={index} className="bg-muted p-4 rounded-lg mb-4 overflow-x-auto">
+          <code className="text-sm text-foreground">{data.code}</code>
+        </pre>
+      )
+
+    case 'quote':
+      return (
+        <blockquote key={index} className="border-l-4 border-primary pl-4 mb-4 italic text-muted-foreground">
+          {data.text}
+          {data.caption && (
+            <cite className="block mt-2 text-sm not-italic">— {data.caption}</cite>
+          )}
+        </blockquote>
+      )
+
+    default:
+      return (
+        <div key={index} className="mb-4 p-4 bg-muted rounded-lg">
+          <p className="text-sm text-muted-foreground">Unsupported block type: {type}</p>
+        </div>
+      )
+  }
+}
+
 export function BlogPostContent({ post }: BlogPostContentProps) {
   const contentRef = useRef<HTMLDivElement>(null)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
+
+  // Check if content is Editor.js JSON or Markdown
+  const isEditorJS = post.content.startsWith('{') && post.content.includes('"blocks"')
+  const editorBlocks = isEditorJS ? parseEditorJSContent(post.content) : []
 
   useEffect(() => {
     const content = contentRef.current
@@ -254,13 +331,23 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
 
       {/* Main Content */}
       <div ref={contentRef} className="prose prose-lg max-w-none">
-        <ReactMarkdown
-          components={components}
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeHighlight, rehypeSlug]}
-        >
-          {post.content}
-        </ReactMarkdown>
+        {isEditorJS ? (
+          // Render Editor.js content
+          <div className="space-y-4">
+            {editorBlocks.map((block: any, index: number) =>
+              renderEditorJSBlock(block, index)
+            )}
+          </div>
+        ) : (
+          // Render Markdown content
+          <ReactMarkdown
+            components={components}
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeHighlight, rehypeSlug]}
+          >
+            {post.content}
+          </ReactMarkdown>
+        )}
       </div>
     </div>
   )

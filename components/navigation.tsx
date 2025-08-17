@@ -77,6 +77,11 @@ export function Navigation() {
 
             {/* Desktop CTA Buttons */}
             <div className="hidden md:flex items-center space-x-4">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/blog">
+                  Blog
+                </Link>
+              </Button>
               <Button variant="default" size="sm">
                 View Resume
               </Button>
@@ -163,11 +168,13 @@ export function Navigation() {
 
                     {/* Mobile CTA Buttons */}
                     <div className="flex flex-col space-y-3 w-full pt-6">
+                      <Button asChild variant="outline" size="lg" className="w-full text-base py-4">
+                        <Link href="/blog" onClick={() => setIsOpen(false)}>
+                          Blog
+                        </Link>
+                      </Button>
                       <Button variant="default" size="lg" className="w-full text-base py-4">
                         View Resume
-                      </Button>
-                      <Button variant="outline" size="lg" className="w-full text-base py-4">
-                        Blog
                       </Button>
                     </div>
                   </div>

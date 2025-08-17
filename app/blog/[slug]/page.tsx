@@ -1,4 +1,7 @@
 import { Metadata } from 'next'
+
+// Force dynamic rendering to prevent build-time API calls
+export const dynamic = 'force-dynamic'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
 import { BlogPostHeader } from '@/components/blog/blog-post-header'

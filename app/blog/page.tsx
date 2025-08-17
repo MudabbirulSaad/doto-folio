@@ -1,5 +1,8 @@
 import { Suspense } from 'react'
 import { Metadata } from 'next'
+
+// Force dynamic rendering to prevent build-time API calls
+export const dynamic = 'force-dynamic'
 import { BlogHero } from '@/components/blog/blog-hero'
 import { BlogFilters } from '@/components/blog/blog-filters'
 import { BlogGrid } from '@/components/blog/blog-grid'

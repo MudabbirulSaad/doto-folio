@@ -107,28 +107,31 @@ export function BlogFilters({
           <h3 className="text-lg font-semibold text-foreground">Search & Filter Articles</h3>
         </div>
 
-        <form onSubmit={handleSearch} className="relative mb-4">
-          <Input
-            type="text"
-            placeholder="Search by title, content, or tags..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-4 pr-32 py-3 text-base bg-background/80 border-border/50 focus:border-primary/50 transition-colors"
-          />
-          <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-2">
-            <Button type="submit" size="sm" className="h-8 px-3">
-              Search
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-8 px-3"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <Filter className="w-3 h-3 mr-1" />
-              Filters
-            </Button>
+        <form onSubmit={handleSearch} className="relative mb-6">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search by title, content, or tags..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 pr-36 py-4 text-base bg-background/90 border-border/60 focus:border-primary/60 focus:bg-background transition-all duration-200 rounded-xl shadow-sm hover:shadow-md focus:shadow-lg"
+            />
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex gap-2">
+              <Button type="submit" size="sm" className="h-9 px-4 rounded-lg">
+                Search
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-9 px-4 rounded-lg"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter className="w-4 h-4 mr-2" />
+                Filters
+              </Button>
+            </div>
           </div>
         </form>
 

@@ -40,7 +40,12 @@ import {
   X,
   Loader2
 } from 'lucide-react'
-import NotionEditor from '@/components/admin/blog/notion-editor'
+import dynamic from 'next/dynamic'
+
+const NotionEditor = dynamic(() => import('@/components/admin/blog/notion-editor'), {
+  ssr: false,
+  loading: () => <div className="min-h-[400px] flex items-center justify-center text-muted-foreground">Loading editor...</div>
+})
 import type { BlogCategory, BlogTag, BlogPostWithRelations } from '@/lib/types/blog'
 import type { OutputData } from '@editorjs/editorjs'
 
