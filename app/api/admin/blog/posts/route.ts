@@ -62,7 +62,7 @@ async function getPostsHandler({ request }: { request: NextRequest }) {
 
     if (error) {
       console.error('Error fetching posts:', error)
-      return createErrorResponse('Failed to fetch posts', 500)
+      return createErrorResponse('INTERNAL_ERROR', 'Failed to fetch posts', 500)
     }
 
     return createSuccessResponse({
@@ -78,7 +78,7 @@ async function getPostsHandler({ request }: { request: NextRequest }) {
 
   } catch (error) {
     console.error('Error in getPostsHandler:', error)
-    return createErrorResponse('Internal server error', 500)
+    return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
@@ -101,15 +101,15 @@ async function createPostHandler({ request }: { request: NextRequest }) {
 
     // Validation
     if (!title?.trim()) {
-      return createValidationErrorResponse('Title is required')
+      return createValidationErrorResponse(['Title is required'])
     }
 
     if (!slug?.trim()) {
-      return createValidationErrorResponse('Slug is required')
+      return createValidationErrorResponse(['Slug is required'])
     }
 
     if (!content?.trim()) {
-      return createValidationErrorResponse('Content is required')
+      return createValidationErrorResponse(['Content is required'])
     }
 
     const supabase = await createClient()
@@ -122,7 +122,7 @@ async function createPostHandler({ request }: { request: NextRequest }) {
       .single()
 
     if (existingPost) {
-      return createValidationErrorResponse('A post with this slug already exists')
+      return createValidationErrorResponse(['A post with this slug already exists'])
     }
 
     // Calculate reading time (rough estimate: 200 words per minute)
@@ -163,7 +163,7 @@ async function createPostHandler({ request }: { request: NextRequest }) {
 
     if (postError) {
       console.error('Error creating post:', postError)
-      return createErrorResponse('Failed to create post', 500)
+      return createErrorResponse('INTERNAL_ERROR', 'Failed to create post', 500)
     }
 
     // Add tags if provided
@@ -193,11 +193,11 @@ async function createPostHandler({ request }: { request: NextRequest }) {
       await supabase.rpc('update_category_post_count', { category_id })
     }
 
-    return createSuccessResponse(post, 201)
+    return createSuccessResponse(post, 'Post created successfully')
 
   } catch (error) {
     console.error('Error in createPostHandler:', error)
-    return createErrorResponse('Internal server error', 500)
+    return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
