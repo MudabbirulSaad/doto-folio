@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Doto, Besley } from "next/font/google";
 import Script from "next/script";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { ReCaptchaProvider } from "next-recaptcha-v3";
 import "./globals.css";
 
 const doto = Doto({
@@ -159,8 +160,10 @@ export default function RootLayout({
       <body
         className={`${doto.variable} ${besley.variable} antialiased`}
       >
-        <GoogleAnalytics />
-        {children}
+        <ReCaptchaProvider>
+          <GoogleAnalytics />
+          {children}
+        </ReCaptchaProvider>
 
         {/* Structured Data for SEO */}
         <Script

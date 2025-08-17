@@ -17,7 +17,7 @@ export function HeroSection() {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const response = await fetch('/api/admin/content/site')
+        const response = await fetch('/api/site-content')
         if (response.ok) {
           const result = await response.json()
           setContent(result.data)
@@ -26,8 +26,13 @@ export function HeroSection() {
         }
       } catch (error) {
         console.error('Error fetching hero content:', error)
-        // Let the error surface - no fallback
-        throw error
+        // Fallback to default content if API fails
+        setContent({
+          hero_title: 'I build beautiful and intelligent digital experiences.',
+          hero_subtitle: undefined,
+          hero_cta_text: 'Explore My Work',
+          hero_cta_link: '#projects'
+        })
       } finally {
         setLoading(false)
       }

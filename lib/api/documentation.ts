@@ -24,7 +24,7 @@ export interface Parameter {
   required: boolean
   schema: Schema
   description: string
-  example?: any
+  example?: unknown
 }
 
 export interface RequestBody {
@@ -34,7 +34,7 @@ export interface RequestBody {
 
 export interface MediaType {
   schema: Schema
-  example?: any
+  example?: unknown
 }
 
 export interface Response {
@@ -53,14 +53,14 @@ export interface Schema {
   properties?: Record<string, Schema>
   items?: Schema
   required?: string[]
-  example?: any
+  example?: unknown
   format?: string
   minimum?: number
   maximum?: number
   minLength?: number
   maxLength?: number
   pattern?: string
-  enum?: any[]
+  enum?: unknown[]
 }
 
 export interface SecurityRequirement {
@@ -255,7 +255,7 @@ export const API_DOCUMENTATION: ApiEndpoint[] = [
 // OPENAPI SPEC GENERATOR
 // =============================================
 
-export function generateOpenApiSpec(): any {
+export function generateOpenApiSpec(): Record<string, unknown> {
   const spec = {
     openapi: '3.0.3',
     info: {
@@ -278,7 +278,7 @@ export function generateOpenApiSpec(): any {
         description: 'Development server'
       }
     ],
-    paths: {} as any,
+    paths: {} as Record<string, unknown>,
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -321,14 +321,15 @@ export function generateOpenApiSpec(): any {
       spec.paths[endpoint.path] = {}
     }
 
-    spec.paths[endpoint.path][endpoint.method.toLowerCase()] = {
+    const pathObj = spec.paths[endpoint.path] as Record<string, unknown>
+    pathObj[endpoint.method.toLowerCase()] = {
       summary: endpoint.summary,
       description: endpoint.description,
       tags: endpoint.tags,
       parameters: endpoint.parameters,
       requestBody: endpoint.requestBody,
       responses: endpoint.responses,
-      security: endpoint.security?.map(sec => 
+      security: endpoint.security?.map(sec =>
         sec.type === 'bearer' ? { bearerAuth: [] } : {}
       )
     }

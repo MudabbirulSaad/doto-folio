@@ -5,7 +5,7 @@ import { getSecurityHeaders, getCorsHeaders, createRateLimitHeaders, type RateLi
 // STANDARD API RESPONSE TYPES
 // =============================================
 
-export interface ApiSuccessResponse<T = any> {
+export interface ApiSuccessResponse<T = unknown> {
   success: true
   data: T
   message?: string
@@ -28,7 +28,7 @@ export interface ApiErrorResponse {
   requestId?: string
 }
 
-export type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse
+export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse
 
 // =============================================
 // ERROR CODES
@@ -256,7 +256,7 @@ export function createOptionsResponse(options: ResponseOptions = {}): NextRespon
 // RESPONSE COMPRESSION
 // =============================================
 
-export function shouldCompress(data: any): boolean {
+export function shouldCompress(data: unknown): boolean {
   const jsonString = JSON.stringify(data)
   return jsonString.length > 1024 // Compress responses larger than 1KB
 }

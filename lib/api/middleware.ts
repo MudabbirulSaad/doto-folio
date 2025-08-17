@@ -15,7 +15,11 @@ import {
 
 export interface ApiContext {
   request: NextRequest
-  user?: any
+  user?: {
+    id: string
+    email?: string
+    role?: string
+  }
   rateLimitResult?: RateLimitResult
   startTime: number
   origin?: string
@@ -37,7 +41,7 @@ export function withMiddleware(
   handler: ApiHandler,
   options: MiddlewareOptions = {}
 ) {
-  return async (request: NextRequest, params?: any): Promise<NextResponse> => {
+  return async (request: NextRequest): Promise<NextResponse> => {
     const startTime = Date.now()
     const origin = request.headers.get('origin') || undefined
     const method = request.method
@@ -177,7 +181,7 @@ export function getPaginationParams(request: NextRequest) {
 
 export function getFilterParams(request: NextRequest, allowedFilters: string[]) {
   const url = new URL(request.url)
-  const filters: Record<string, any> = {}
+  const filters: Record<string, string | number | boolean> = {}
   
   allowedFilters.forEach(filter => {
     const value = url.searchParams.get(filter)
@@ -198,7 +202,7 @@ export function getFilterParams(request: NextRequest, allowedFilters: string[]) 
 // ERROR HANDLING HELPERS
 // =============================================
 
-export function handleDatabaseError(error: any, operation: string): never {
+export function handleDatabaseError(error: Error, operation: string): never {
   const message = `Database ${operation} failed: ${error.message}`
   logApiError(new Error(message), { method: 'UNKNOWN', path: 'UNKNOWN' })
   throw new Error(message)
@@ -217,8 +221,7 @@ export function createPaginatedResponse<T>(
   data: T[],
   total: number,
   page: number,
-  limit: number,
-  context: ApiContext
+  limit: number
 ) {
   const hasMore = (page * limit) < total
   

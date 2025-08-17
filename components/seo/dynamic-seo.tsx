@@ -20,7 +20,7 @@ export function DynamicSEO() {
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const response = await fetch('/api/admin/content/site')
+        const response = await fetch('/api/site-content')
         if (response.ok) {
           const result = await response.json()
           setContent(result.data)

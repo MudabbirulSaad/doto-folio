@@ -23,7 +23,7 @@ interface QueryOptions {
   offset?: number
   orderBy?: string
   orderDirection?: 'asc' | 'desc'
-  filters?: Record<string, any>
+  filters?: Record<string, unknown>
 }
 
 interface PaginationResult<T> {
@@ -32,6 +32,36 @@ interface PaginationResult<T> {
   hasMore: boolean
   page: number
   limit: number
+}
+
+type ProjectWithTechnologies = {
+  id: string
+  title: string
+  description: string
+  status: string
+  display_order: number
+  is_featured: boolean
+  is_published: boolean
+  created_at: string
+  project_technologies: Array<{
+    technology_name: string
+    display_order: number
+  }>
+}
+
+type SkillCategory = {
+  id: string
+  name: string
+  display_order: number
+  is_published: boolean
+  skills: Array<{
+    id: string
+    name: string
+    level: string
+    description: string
+    display_order: number
+    is_published: boolean
+  }>
 }
 
 // =============================================
@@ -65,10 +95,19 @@ export class OptimizedQueries {
 
   async getSiteContent(): Promise<Database['public']['Tables']['site_content']['Row'] | null> {
     const now = Date.now()
-    
+
     // Return cached data if still valid
     if (this.siteContentCache && (now - this.siteContentCacheTime) < this.CACHE_TTL) {
       return this.siteContentCache
+    }
+
+    if (!this.supabase) {
+      await this.init()
+    }
+
+    if (!this.supabase) {
+      console.error('Supabase client not initialized')
+      return null
     }
 
     try {
@@ -95,7 +134,15 @@ export class OptimizedQueries {
   // PROJECTS QUERIES (OPTIMIZED)
   // =============================================
 
-  async getProjects(options: QueryOptions = {}): Promise<PaginationResult<any>> {
+  async getProjects(options: QueryOptions = {}): Promise<PaginationResult<ProjectWithTechnologies>> {
+    if (!this.supabase) {
+      await this.init()
+    }
+
+    if (!this.supabase) {
+      throw new Error('Supabase client not initialized')
+    }
+
     const {
       limit = 50,
       offset = 0,
@@ -140,10 +187,10 @@ export class OptimizedQueries {
       if (error) throw error
 
       // Sort technologies by display_order for each project
-      const projectsWithSortedTech = data?.map((project: any) => ({
+      const projectsWithSortedTech = data?.map((project: ProjectWithTechnologies) => ({
         ...project,
         project_technologies: project.project_technologies?.sort(
-          (a: any, b: any) => a.display_order - b.display_order
+          (a: { display_order: number }, b: { display_order: number }) => a.display_order - b.display_order
         ) || []
       })) || []
 
@@ -160,7 +207,15 @@ export class OptimizedQueries {
     }
   }
 
-  async getProjectById(id: string): Promise<any | null> {
+  async getProjectById(id: string): Promise<ProjectWithTechnologies | null> {
+    if (!this.supabase) {
+      await this.init()
+    }
+
+    if (!this.supabase) {
+      throw new Error('Supabase client not initialized')
+    }
+
     try {
       const { data, error } = await this.supabase
         .from('projects')
@@ -181,7 +236,7 @@ export class OptimizedQueries {
       const projectWithSortedTech = {
         ...data,
         project_technologies: data.project_technologies?.sort(
-          (a: any, b: any) => a.display_order - b.display_order
+          (a: { display_order: number }, b: { display_order: number }) => a.display_order - b.display_order
         ) || []
       }
 
@@ -196,15 +251,23 @@ export class OptimizedQueries {
   // SKILLS QUERIES (OPTIMIZED)
   // =============================================
 
-  private skillsCache: any[] | null = null
+  private skillsCache: SkillCategory[] | null = null
   private skillsCacheTime = 0
 
-  async getSkillsWithCategories(): Promise<any[]> {
+  async getSkillsWithCategories(): Promise<SkillCategory[]> {
     const now = Date.now()
-    
+
     // Return cached data if still valid
     if (this.skillsCache && (now - this.skillsCacheTime) < this.CACHE_TTL) {
       return this.skillsCache
+    }
+
+    if (!this.supabase) {
+      await this.init()
+    }
+
+    if (!this.supabase) {
+      throw new Error('Supabase client not initialized')
     }
 
     try {
@@ -228,10 +291,10 @@ export class OptimizedQueries {
       if (error) throw error
 
       // Sort skills within each category
-      const categoriesWithSortedSkills = data?.map((category: any) => ({
+      const categoriesWithSortedSkills = data?.map((category: SkillCategory) => ({
         ...category,
         skills: category.skills?.sort(
-          (a: any, b: any) => a.display_order - b.display_order
+          (a: { display_order: number }, b: { display_order: number }) => a.display_order - b.display_order
         ) || []
       })) || []
 
@@ -250,7 +313,15 @@ export class OptimizedQueries {
   // CONTACT SUBMISSIONS QUERIES (OPTIMIZED)
   // =============================================
 
-  async getContactSubmissions(options: QueryOptions = {}): Promise<PaginationResult<any>> {
+  async getContactSubmissions(options: QueryOptions = {}): Promise<PaginationResult<Database['public']['Tables']['contact_submissions']['Row']>> {
+    if (!this.supabase) {
+      await this.init()
+    }
+
+    if (!this.supabase) {
+      throw new Error('Supabase client not initialized')
+    }
+
     const {
       limit = 20,
       offset = 0,
@@ -270,8 +341,8 @@ export class OptimizedQueries {
           if (key === 'search') {
             // Full-text search across multiple fields
             query = query.or(`name.ilike.%${value}%,email.ilike.%${value}%,subject.ilike.%${value}%`)
-          } else if (key === 'dateRange') {
-            const { start, end } = value
+          } else if (key === 'dateRange' && typeof value === 'object' && value !== null) {
+            const { start, end } = value as { start?: string; end?: string }
             if (start) query = query.gte('created_at', start)
             if (end) query = query.lte('created_at', end)
           } else {
@@ -305,10 +376,18 @@ export class OptimizedQueries {
   // BATCH OPERATIONS
   // =============================================
 
-  async batchUpdateProjects(updates: Array<{ id: string; data: any }>): Promise<void> {
+  async batchUpdateProjects(updates: Array<{ id: string; data: Database['public']['Tables']['projects']['Update'] }>): Promise<void> {
+    if (!this.supabase) {
+      await this.init()
+    }
+
+    if (!this.supabase) {
+      throw new Error('Supabase client not initialized')
+    }
+
     try {
       const promises = updates.map(({ id, data }) =>
-        this.supabase
+        this.supabase!
           .from('projects')
           .update(data)
           .eq('id', id)
@@ -341,6 +420,10 @@ export class OptimizedQueries {
       // Ensure we have a client
       if (!this.supabase) {
         await this.init(true)
+      }
+
+      if (!this.supabase) {
+        return false
       }
 
       const { error } = await this.supabase

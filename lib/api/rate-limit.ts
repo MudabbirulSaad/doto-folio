@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server'
 // RATE LIMITING CONFIGURATION
 // =============================================
 
-interface RateLimitConfig {
+export interface RateLimitConfig {
   windowMs: number // Time window in milliseconds
   maxRequests: number // Maximum requests per window
   skipSuccessfulRequests?: boolean
