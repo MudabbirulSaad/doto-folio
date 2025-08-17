@@ -1,47 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getCurrentAdminUser } from '@/lib/auth/server'
+import { withAuth } from '@/lib/api/middleware'
+import { createSuccessResponse, createInternalErrorResponse, createValidationErrorResponse } from '@/lib/api/response'
 
 // GET - Fetch site content
-export async function GET() {
+async function getSiteContentHandler() {
   try {
     const supabase = await createClient()
-    
+
     const { data: siteContent, error } = await supabase
       .from('site_content')
       .select('*')
       .single()
 
     if (error) {
-      console.error('Error fetching site content:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch site content' },
-        { status: 500 }
-      )
+      throw new Error(`Failed to fetch site content: ${error.message}`)
     }
 
-    return NextResponse.json({ data: siteContent })
+    return createSuccessResponse(siteContent, 'Site content retrieved successfully')
   } catch (error) {
-    console.error('Error in GET /api/admin/content/site:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    return createInternalErrorResponse(
+      'Failed to fetch site content',
+      [(error as Error).message]
     )
   }
 }
 
-// PUT - Update site content
-export async function PUT(request: NextRequest) {
-  try {
-    // Check authentication
-    const user = await getCurrentAdminUser()
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+export const GET = withAuth(getSiteContentHandler)
 
+// PUT - Update site content
+async function updateSiteContentHandler(context: { request: NextRequest }) {
+  try {
+    const { request } = context
     const body = await request.json()
     const supabase = await createClient()
 
@@ -60,9 +50,9 @@ export async function PUT(request: NextRequest) {
 
     for (const field of requiredFields) {
       if (!body[field] || body[field].trim() === '') {
-        return NextResponse.json(
-          { error: `${field} is required` },
-          { status: 400 }
+        return createValidationErrorResponse(
+          [`${field} is required`],
+          field
         )
       }
     }
@@ -149,23 +139,20 @@ export async function PUT(request: NextRequest) {
     }
 
     if (result.error) {
-      console.error('Error updating site content:', result.error)
-      return NextResponse.json(
-        { error: 'Failed to update site content' },
-        { status: 500 }
-      )
+      throw new Error(`Failed to update site content: ${result.error.message}`)
     }
 
-    return NextResponse.json({ 
-      data: result.data,
-      message: 'Site content updated successfully'
-    })
+    return createSuccessResponse(
+      result.data,
+      'Site content updated successfully'
+    )
 
   } catch (error) {
-    console.error('Error in PUT /api/admin/content/site:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    return createInternalErrorResponse(
+      'Failed to update site content',
+      [(error as Error).message]
     )
   }
 }
+
+export const PUT = withAuth(updateSiteContentHandler)

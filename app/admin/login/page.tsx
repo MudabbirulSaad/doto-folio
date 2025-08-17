@@ -1,12 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { loginAdmin, isAuthenticated } from '@/lib/auth/admin'
-import { Eye, EyeOff, Lock, Mail, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, AlertCircle, Shield } from 'lucide-react'
+
+declare global {
+  interface Window {
+    grecaptcha: any
+  }
+}
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
@@ -14,7 +20,50 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false)
+  const [recaptchaToken, setRecaptchaToken] = useState('')
+  const recaptchaRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+
+  // Load reCAPTCHA
+  useEffect(() => {
+    const loadRecaptcha = () => {
+      if (window.grecaptcha) {
+        setRecaptchaLoaded(true)
+        return
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit'
+      script.async = true
+      script.defer = true
+      document.head.appendChild(script)
+
+      window.onRecaptchaLoad = () => {
+        setRecaptchaLoaded(true)
+      }
+    }
+
+    loadRecaptcha()
+  }, [])
+
+  // Initialize reCAPTCHA widget
+  useEffect(() => {
+    if (recaptchaLoaded && recaptchaRef.current && !recaptchaRef.current.hasChildNodes()) {
+      const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+      if (siteKey) {
+        window.grecaptcha.render(recaptchaRef.current, {
+          sitekey: siteKey,
+          callback: (token: string) => {
+            setRecaptchaToken(token)
+          },
+          'expired-callback': () => {
+            setRecaptchaToken('')
+          }
+        })
+      }
+    }
+  }, [recaptchaLoaded])
 
   // Check if already authenticated
   useEffect(() => {
@@ -32,16 +81,55 @@ export default function AdminLoginPage() {
     setIsLoading(true)
     setError('')
 
+    // Validate reCAPTCHA
+    if (!recaptchaToken) {
+      setError('Please complete the reCAPTCHA verification')
+      setIsLoading(false)
+      return
+    }
+
     try {
+      // Verify reCAPTCHA server-side
+      const recaptchaResponse = await fetch('/api/admin/auth/verify-recaptcha', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: recaptchaToken }),
+      })
+
+      const recaptchaResult = await recaptchaResponse.json()
+
+      if (!recaptchaResult.success) {
+        setError('reCAPTCHA verification failed. Please try again.')
+        // Reset reCAPTCHA
+        if (window.grecaptcha) {
+          window.grecaptcha.reset()
+          setRecaptchaToken('')
+        }
+        setIsLoading(false)
+        return
+      }
+
       const result = await loginAdmin({ email, password })
-      
+
       if (result.success) {
         router.push('/admin/dashboard')
       } else {
         setError(result.error || 'Login failed')
+        // Reset reCAPTCHA on failed login
+        if (window.grecaptcha) {
+          window.grecaptcha.reset()
+          setRecaptchaToken('')
+        }
       }
     } catch {
       setError('An unexpected error occurred')
+      // Reset reCAPTCHA on error
+      if (window.grecaptcha) {
+        window.grecaptcha.reset()
+        setRecaptchaToken('')
+      }
     } finally {
       setIsLoading(false)
     }
@@ -118,16 +206,32 @@ export default function AdminLoginPage() {
               </div>
             )}
 
+            {/* reCAPTCHA */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">
+                Security Verification
+              </Label>
+              <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg border">
+                <Shield className="w-5 h-5 text-primary flex-shrink-0" />
+                <div className="flex-1">
+                  <div ref={recaptchaRef} className="recaptcha-container"></div>
+                  {!recaptchaLoaded && (
+                    <div className="text-sm text-muted-foreground">Loading security verification...</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Submit Button */}
             <Button
               type="submit"
               className="w-full h-12 text-base font-medium"
-              disabled={isLoading || !email || !password}
+              disabled={isLoading || !email || !password || !recaptchaToken}
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  Signing In...
+                  Verifying & Signing In...
                 </div>
               ) : (
                 'Sign In'

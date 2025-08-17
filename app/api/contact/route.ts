@@ -1,37 +1,50 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendContactEmails } from '@/lib/services/email'
+import { ContactFormSchema, parseAndValidateJSON } from '@/lib/api/validation'
+import { rateLimit } from '@/lib/api/rate-limit'
+import {
+  createSuccessResponse,
+  createValidationErrorResponse,
+  createRateLimitResponse,
+  createInternalErrorResponse,
+  createOptionsResponse,
+  logApiRequest,
+  logApiError
+} from '@/lib/api/response'
 import type { ContactSubmissionInsert } from '@/lib/types/database'
 import type { ContactFormData } from '@/lib/services/contact'
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+  const origin = request.headers.get('origin') || undefined
+
   try {
-    const body = await request.json()
-    const { name, email, subject, message } = body
-
-    // Validate required fields
-    if (!name?.trim() || !email?.trim() || !subject?.trim() || !message?.trim()) {
-      return NextResponse.json(
-        { error: 'All fields are required' },
-        { status: 400 }
-      )
+    // Rate limiting
+    const rateLimitResult = rateLimit(request, 'contact')
+    if (!rateLimitResult.success) {
+      logApiRequest('POST', '/api/contact', 429, Date.now() - startTime)
+      return createRateLimitResponse(rateLimitResult, { origin })
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Please enter a valid email address' },
-        { status: 400 }
-      )
+    // Validate and parse request
+    const validation = await parseAndValidateJSON(request, ContactFormSchema)
+    if (!validation.success) {
+      logApiRequest('POST', '/api/contact', 400, Date.now() - startTime)
+      return createValidationErrorResponse(validation.errors!, undefined, {
+        origin,
+        rateLimitResult
+      })
     }
+
+    const { name, email, subject, message } = validation.data!
 
     // Prepare form data
     const formData: ContactFormData = {
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      subject: subject.trim(),
-      message: message.trim(),
+      name,
+      email: email.toLowerCase(),
+      subject,
+      message,
     }
 
     // Create admin Supabase client (bypasses RLS)
@@ -45,7 +58,7 @@ export async function POST(request: NextRequest) {
       message: formData.message,
     }
 
-    // Insert into Supabase
+    // Insert into Supabase with error handling
     const { data, error } = await supabase
       .from('contact_submissions')
       .insert(submissionData)
@@ -53,10 +66,15 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Supabase error:', error)
-      return NextResponse.json(
-        { error: 'Failed to submit your message. Please try again later.' },
-        { status: 500 }
+      logApiError(new Error(`Database error: ${error.message}`), {
+        method: 'POST',
+        path: '/api/contact'
+      })
+      logApiRequest('POST', '/api/contact', 500, Date.now() - startTime)
+      return createInternalErrorResponse(
+        'Failed to submit your message. Please try again later.',
+        undefined,
+        { origin, rateLimitResult }
       )
     }
 
@@ -81,43 +99,50 @@ export async function POST(request: NextRequest) {
           emailStatus = `Email notifications: ${emailParts.join(', ')}`
         } else {
           emailStatus = `Email notifications failed: ${emailResult.error}`
-          console.error('Email sending failed:', emailResult.error)
+          logApiError(new Error(`Email error: ${emailResult.error}`), {
+            method: 'POST',
+            path: '/api/contact'
+          })
         }
       } catch (emailError) {
         emailStatus = 'Email notifications failed: service error'
-        console.error('Email service error:', emailError)
+        logApiError(emailError as Error, {
+          method: 'POST',
+          path: '/api/contact'
+        })
       }
     }
 
-    console.log(`Contact form submission processed: ${emailStatus}`)
+    logApiRequest('POST', '/api/contact', 200, Date.now() - startTime)
 
-    return NextResponse.json(
+    return createSuccessResponse(
+      data,
+      "Your message has been sent successfully! I'll get back to you soon.",
+      undefined,
       {
-        success: true,
-        message: 'Your message has been sent successfully! I\'ll get back to you soon.',
-        data,
-        emailStatus: emailStatus // For debugging, remove in production if desired
-      },
-      { status: 200 }
+        origin,
+        rateLimitResult,
+        headers: process.env.NODE_ENV === 'development' ? { 'X-Email-Status': emailStatus } : undefined
+      }
     )
 
   } catch (error) {
-    console.error('Contact API error:', error)
-    return NextResponse.json(
-      { error: 'An unexpected error occurred. Please try again later.' },
-      { status: 500 }
+    logApiError(error as Error, {
+      method: 'POST',
+      path: '/api/contact'
+    })
+    logApiRequest('POST', '/api/contact', 500, Date.now() - startTime)
+
+    return createInternalErrorResponse(
+      'An unexpected error occurred. Please try again later.',
+      undefined,
+      { origin }
     )
   }
 }
 
 // Handle OPTIONS request for CORS
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  })
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin') || undefined
+  return createOptionsResponse({ origin })
 }

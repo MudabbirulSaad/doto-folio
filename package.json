@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "api:docs": "node -e \"const { generateOpenApiSpec, generateMarkdownDocs } = require('./lib/api/documentation.ts'); console.log(JSON.stringify(generateOpenApiSpec(), null, 2))\"",
+    "api:health": "curl http://localhost:3000/api/health",
+    "api:metrics": "curl -H 'Authorization: Bearer YOUR_TOKEN' http://localhost:3000/api/admin/metrics"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",

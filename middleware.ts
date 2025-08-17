@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   // Update user's auth session
   const response = await updateSession(request)
 
-  // Check if this is an admin route
+  // Check if this is an admin route (web pages)
   if (request.nextUrl.pathname.startsWith('/admin')) {
     // Allow access to login page
     if (request.nextUrl.pathname === '/admin/login') {
@@ -38,6 +38,26 @@ export async function middleware(request: NextRequest) {
       const loginUrl = new URL('/admin/login', request.url)
       return NextResponse.redirect(loginUrl)
     }
+  }
+
+  // Enhanced security for admin API routes
+  if (request.nextUrl.pathname.startsWith('/api/admin')) {
+    // Allow auth endpoints (login, verify-recaptcha)
+    if (request.nextUrl.pathname.startsWith('/api/admin/auth/')) {
+      return response
+    }
+
+    // Add security headers for admin API routes
+    response.headers.set('X-Content-Type-Options', 'nosniff')
+    response.headers.set('X-Frame-Options', 'DENY')
+    response.headers.set('X-XSS-Protection', '1; mode=block')
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+
+    // Note: Authentication is handled by the withAuth middleware in each route
+    // This provides defense in depth
   }
 
   return response
