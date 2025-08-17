@@ -4,6 +4,73 @@ import { withPublicApi } from '@/lib/api/middleware'
 import { createSuccessResponse, createInternalErrorResponse } from '@/lib/api/response'
 import type { BlogPost, BlogCategory, BlogTag, BlogSearchParams } from '@/lib/types/blog'
 
+// Helper function to get filter conditions
+async function getFilterConditions(params: BlogSearchParams, supabase: any) {
+  const conditions: any = {}
+
+  // Get category ID if category filter is provided
+  if (params.category) {
+    const { data: categoryData } = await supabase
+      .from('blog_categories')
+      .select('id')
+      .eq('slug', params.category)
+      .single()
+
+    if (categoryData) {
+      conditions.categoryId = categoryData.id
+    }
+  }
+
+  // Get post IDs for tag filter if tag is provided
+  if (params.tag) {
+    const { data: tagData } = await supabase
+      .from('blog_tags')
+      .select('id')
+      .eq('slug', params.tag)
+      .single()
+
+    if (tagData) {
+      const { data: postIds } = await supabase
+        .from('blog_post_tags')
+        .select('post_id')
+        .eq('tag_id', tagData.id)
+
+      if (postIds && postIds.length > 0) {
+        conditions.postIds = postIds.map(p => p.post_id)
+      } else {
+        conditions.postIds = ['no-posts-found'] // Empty result
+      }
+    }
+  }
+
+  return conditions
+}
+
+// Helper function to apply filters to a query
+function applyFiltersToQuery(query: any, params: BlogSearchParams, conditions: any) {
+  // Apply category filter
+  if (conditions.categoryId) {
+    query = query.eq('category_id', conditions.categoryId)
+  }
+
+  // Apply tag filter
+  if (conditions.postIds) {
+    query = query.in('id', conditions.postIds)
+  }
+
+  // Apply featured filter
+  if (params.featured) {
+    query = query.eq('featured', true)
+  }
+
+  // Apply search filter
+  if (params.query) {
+    query = query.or(`title.ilike.%${params.query}%,excerpt.ilike.%${params.query}%,content.ilike.%${params.query}%`)
+  }
+
+  return query
+}
+
 // GET - Fetch blog posts with filtering, search, and pagination
 async function getBlogPostsHandler(context: { request: NextRequest }) {
   try {
@@ -24,6 +91,9 @@ async function getBlogPostsHandler(context: { request: NextRequest }) {
 
     const supabase = await createClient()
     const offset = ((params.page || 1) - 1) * (params.limit || 12)
+
+    // Get filter conditions first
+    const filterConditions = await getFilterConditions(params, supabase)
 
     // Build the query
     let query = supabase
@@ -46,18 +116,8 @@ async function getBlogPostsHandler(context: { request: NextRequest }) {
       `)
       .eq('status', 'published')
 
-    // Apply filters
-    if (params.category) {
-      query = query.eq('blog_categories.slug', params.category)
-    }
-
-    if (params.featured) {
-      query = query.eq('featured', true)
-    }
-
-    if (params.query) {
-      query = query.or(`title.ilike.%${params.query}%,excerpt.ilike.%${params.query}%,content.ilike.%${params.query}%`)
-    }
+    // Apply filters using helper function
+    query = applyFiltersToQuery(query, params, filterConditions)
 
     // Apply sorting
     const sortColumn = params.sortBy === 'published_at' ? 'published_at' : 
@@ -66,21 +126,14 @@ async function getBlogPostsHandler(context: { request: NextRequest }) {
     
     query = query.order(sortColumn, { ascending: params.sortOrder === 'asc' })
 
-    // Get total count for pagination
-    const countQuery = supabase
+    // Get total count for pagination (apply same filters)
+    let countQuery = supabase
       .from('blog_posts')
       .select('id', { count: 'exact', head: true })
       .eq('status', 'published')
 
-    if (params.category) {
-      countQuery.eq('blog_categories.slug', params.category)
-    }
-    if (params.featured) {
-      countQuery.eq('is_featured', true)
-    }
-    if (params.query) {
-      countQuery.or(`title.ilike.%${params.query}%,excerpt.ilike.%${params.query}%,content.ilike.%${params.query}%`)
-    }
+    // Apply the same filters to count query
+    countQuery = applyFiltersToQuery(countQuery, params, filterConditions)
 
     // Execute queries
     const [postsResult, countResult] = await Promise.all([
