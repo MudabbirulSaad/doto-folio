@@ -9,6 +9,8 @@ import { BlogFilters } from '@/components/blog/blog-filters'
 import { BlogGrid } from '@/components/blog/blog-grid'
 import { BlogPagination } from '@/components/blog/blog-pagination'
 import { BlogSkeleton } from '@/components/blog/blog-skeleton'
+import { BlogServerData } from '@/lib/data/blog-server'
+import type { BlogPost, BlogCategory, BlogTag } from '@/lib/types/blog'
 
 export const metadata: Metadata = {
   title: 'Blog & Insights | SAAD Portfolio',
@@ -69,16 +71,7 @@ export default function BlogPage({ searchParams }: BlogPageProps) {
 // Hero Section Component
 async function BlogHeroSection() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/blog/posts?featured=true&limit=3`, {
-      next: { revalidate: 300 } // Revalidate every 5 minutes
-    })
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch featured posts')
-    }
-
-    const data = await response.json()
-    const featuredPosts = data.data?.posts || []
+    const featuredPosts = await BlogServerData.getFeaturedPosts(3)
 
     return (
       <BlogHero
@@ -103,24 +96,8 @@ async function BlogHeroSection() {
 async function BlogFiltersSection({ searchParams }: { searchParams: BlogPageProps['searchParams'] }) {
   const resolvedSearchParams = await searchParams
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/blog/categories`, {
-      next: { revalidate: 600 } // Revalidate every 10 minutes
-    })
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch categories')
-    }
-
-    const categoriesData = await response.json()
-    const categories = categoriesData.data || []
-
-    // Get popular tags
-    const tagsResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/blog/posts?limit=1`, {
-      next: { revalidate: 600 }
-    })
-
-    const tagsData = await tagsResponse.json()
-    const tags = tagsData.data?.tags || []
+    const categories = await BlogServerData.getCategories()
+    const tags = await BlogServerData.getPopularTags(10)
 
     return (
       <BlogFilters
@@ -147,34 +124,27 @@ async function BlogFiltersSection({ searchParams }: { searchParams: BlogPageProp
 async function BlogGridSection({ searchParams }: { searchParams: BlogPageProps['searchParams'] }) {
   try {
     const resolvedSearchParams = await searchParams
-    const params = new URLSearchParams()
 
-    if (resolvedSearchParams.query) params.set('query', resolvedSearchParams.query)
-    if (resolvedSearchParams.category) params.set('category', resolvedSearchParams.category)
-    if (resolvedSearchParams.tag) params.set('tag', resolvedSearchParams.tag)
-    if (resolvedSearchParams.page) params.set('page', resolvedSearchParams.page)
-    if (resolvedSearchParams.limit) params.set('limit', resolvedSearchParams.limit)
-
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/blog/posts?${params.toString()}`, {
-      next: { revalidate: 60 } // Revalidate every minute for fresh content
-    })
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch blog posts')
+    const options = {
+      search: resolvedSearchParams.query,
+      category: resolvedSearchParams.category,
+      tag: resolvedSearchParams.tag,
+      page: resolvedSearchParams.page ? parseInt(resolvedSearchParams.page) : 1,
+      limit: resolvedSearchParams.limit ? parseInt(resolvedSearchParams.limit) : 10
     }
 
-    const data = await response.json()
-    const { posts, total, page, limit, hasMore } = data.data
+    const result = await BlogServerData.getBlogPosts(options)
+    const { posts, pagination } = result
 
     return (
       <div className="space-y-8">
         <BlogGrid posts={posts} />
-        
-        {total > limit && (
+
+        {pagination.total > pagination.limit && (
           <BlogPagination
-            currentPage={page}
-            totalPages={Math.ceil(total / limit)}
-            hasMore={hasMore}
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            hasMore={pagination.page < pagination.totalPages}
           />
         )}
       </div>

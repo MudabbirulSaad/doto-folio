@@ -11,6 +11,7 @@ import { BlogPostSidebar } from '@/components/blog/blog-post-sidebar'
 import { BlogRelatedPosts } from '@/components/blog/blog-related-posts'
 import { BlogSkeleton } from '@/components/blog/blog-skeleton'
 import { TableOfContents } from '@/components/blog/table-of-contents'
+import { BlogServerData } from '@/lib/data/blog-server'
 
 import type { BlogPostWithRelations } from '@/lib/types/blog'
 
@@ -24,19 +25,14 @@ interface BlogPostPageProps {
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   try {
     const resolvedParams = await params
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/blog/posts/${resolvedParams.slug}`, {
-      next: { revalidate: 300 }
-    })
+    const post = await BlogServerData.getBlogPost(resolvedParams.slug)
 
-    if (!response.ok) {
+    if (!post) {
       return {
         title: 'Post Not Found | SAAD Portfolio',
         description: 'The requested blog post could not be found.'
       }
     }
-
-    const data = await response.json()
-    const post: BlogPostWithRelations = data.data.post
 
     const title = post.meta_title || post.title
     const description = post.meta_description || post.excerpt
@@ -88,30 +84,22 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   try {
     const resolvedParams = await params
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/blog/posts/${resolvedParams.slug}`, {
-      next: { revalidate: 60 } // Revalidate every minute for view counts
-    })
+    const post = await BlogServerData.getBlogPost(resolvedParams.slug)
 
-    if (!response.ok) {
+    if (!post) {
       notFound()
     }
 
-    const data = await response.json()
-    const { post } = data.data
-
-    // Fetch AI-powered recommendations
+    // For now, get related posts by category (we can implement AI recommendations later)
     let relatedPosts = []
     try {
-      const recResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/blog/posts/${resolvedParams.slug}/recommendations`, {
-        next: { revalidate: 300 } // Cache for 5 minutes
+      const categoryPosts = await BlogServerData.getBlogPosts({
+        category: post.blog_categories?.slug,
+        limit: 4
       })
-
-      if (recResponse.ok) {
-        const recData = await recResponse.json()
-        relatedPosts = recData.data?.recommendations || []
-      }
+      relatedPosts = categoryPosts.posts.filter(p => p.id !== post.id).slice(0, 3)
     } catch (error) {
-      console.error('Failed to fetch recommendations:', error)
+      console.error('Failed to fetch related posts:', error)
       // Fallback to empty array - component will handle gracefully
     }
 
