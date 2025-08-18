@@ -380,6 +380,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
               {/* Content Editor */}
               <div className="min-h-[600px] mt-8">
                 <NotionEditor
+                  key={`editor-${resolvedParams.id}`}
                   data={editorData || undefined}
                   onChange={setEditorData}
                   placeholder="Press '/' for commands, or start writing..."

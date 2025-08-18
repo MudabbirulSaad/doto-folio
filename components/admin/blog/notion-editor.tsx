@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+
+// Global registry to track active editors and prevent duplicates
+const editorRegistry = new Map<string, boolean>()
 import EditorJS, { OutputData } from '@editorjs/editorjs'
 import Header from '@editorjs/header'
 import List from '@editorjs/list'
@@ -19,25 +22,50 @@ interface NotionEditorProps {
   readOnly?: boolean
 }
 
-export default function NotionEditor({ 
-  data, 
-  onChange, 
+export default function NotionEditor({
+  data,
+  onChange,
   placeholder = "Tell your story...",
-  readOnly = false 
+  readOnly = false
 }: NotionEditorProps) {
   const editorRef = useRef<EditorJS | null>(null)
   const holderRef = useRef<HTMLDivElement>(null)
   const [isReady, setIsReady] = useState(false)
+  const initializingRef = useRef(false)
+  const editorIdRef = useRef(`editor-${Math.random().toString(36).substr(2, 9)}`)
+  const mountedRef = useRef(false)
 
   useEffect(() => {
     if (!holderRef.current) return
+
+    const editorId = editorIdRef.current
+
+    // Prevent double initialization using global registry
+    if (editorRef.current || initializingRef.current || editorRegistry.has(editorId)) {
+      return
+    }
+
+    // Check if holder already has EditorJS content
+    if (holderRef.current.querySelector('.codex-editor')) {
+      return
+    }
+
+    // Register this editor instance
+    editorRegistry.set(editorId, true)
+    mountedRef.current = true
+    initializingRef.current = true
+
+    // Clear any existing content in the holder
+    if (holderRef.current) {
+      holderRef.current.innerHTML = ''
+    }
 
     // Initialize Editor.js
     const editor = new EditorJS({
       holder: holderRef.current,
       placeholder,
       readOnly,
-      data: data || {
+      data: {
         time: Date.now(),
         blocks: [],
         version: "2.28.2"
@@ -141,24 +169,40 @@ export default function NotionEditor({
     editorRef.current = editor
 
     return () => {
-      if (editorRef.current && editorRef.current.destroy) {
-        editorRef.current.destroy()
-        editorRef.current = null
+      const editorId = editorIdRef.current
+
+      if (editorRef.current) {
+        try {
+          if (typeof editorRef.current.destroy === 'function') {
+            editorRef.current.destroy()
+          }
+        } catch (error) {
+          console.error('Error destroying editor:', error)
+        } finally {
+          editorRef.current = null
+          setIsReady(false)
+          initializingRef.current = false
+          mountedRef.current = false
+          // Unregister this editor instance
+          editorRegistry.delete(editorId)
+        }
       }
     }
   }, [])
 
   // Update editor data when prop changes
   useEffect(() => {
-    if (isReady && editorRef.current && data) {
-      // Check if render method exists, otherwise skip
-      if (typeof editorRef.current.render === 'function') {
-        editorRef.current.render(data).catch((error: any) => {
-          console.error('Error rendering editor data:', error)
-        })
-      } else {
-        console.log('Editor render method not available, data will be set on next initialization')
-      }
+    if (isReady && editorRef.current && data && data.blocks && data.blocks.length > 0) {
+      // Add a small delay to ensure editor is fully ready
+      const timer = setTimeout(() => {
+        if (editorRef.current && typeof editorRef.current.render === 'function') {
+          editorRef.current.render(data).catch((error: any) => {
+            console.error('Error rendering editor data:', error)
+          })
+        }
+      }, 100)
+
+      return () => clearTimeout(timer)
     }
   }, [data, isReady])
 
@@ -196,8 +240,9 @@ export default function NotionEditor({
 
   return (
     <div className="notion-editor">
-      <div 
+      <div
         ref={holderRef}
+        id={editorIdRef.current}
         className="prose prose-lg max-w-none dark:prose-invert focus:outline-none"
         style={{
           minHeight: '400px',
@@ -206,6 +251,12 @@ export default function NotionEditor({
           color: 'hsl(var(--foreground))',
         }}
       />
+      {/* Hide duplicate editors created by React Strict Mode */}
+      <style jsx>{`
+        .notion-editor .codex-editor:not(:first-child) {
+          display: none !important;
+        }
+      `}</style>
       
       <style jsx global>{`
         .notion-editor .codex-editor {

@@ -339,6 +339,7 @@ export default function NewPostPage() {
               {/* Content Editor */}
               <div className="min-h-[600px] mt-8">
                 <NotionEditor
+                  key="editor-new"
                   data={editorData || undefined}
                   onChange={setEditorData}
                   placeholder="Press '/' for commands, or start writing..."
