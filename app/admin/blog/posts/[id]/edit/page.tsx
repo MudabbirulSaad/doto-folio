@@ -28,17 +28,33 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { 
-  Save, 
-  Eye, 
-  ArrowLeft, 
-  Calendar, 
-  Tag, 
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
+  Save,
+  Eye,
+  ArrowLeft,
+  Calendar,
+  Tag,
   FolderOpen,
   Check,
   ChevronsUpDown,
   X,
-  Loader2
+  Loader2,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Send
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
@@ -74,6 +90,16 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const [metaTitle, setMetaTitle] = useState('')
   const [metaDescription, setMetaDescription] = useState('')
   const [editorData, setEditorData] = useState<OutputData | null>(null)
+
+  // Collapsible state
+  const [categoryOpen, setCategoryOpen] = useState(true)
+  const [tagsOpen, setTagsOpen] = useState(true)
+  const [seoOpen, setSeoOpen] = useState(false)
+
+  // New category dialog state
+  const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [newCategoryColor, setNewCategoryColor] = useState('#3b82f6')
 
   useEffect(() => {
     fetchPost()
@@ -256,99 +282,120 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     )
   }
 
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      // Focus the editor
+      const editorElement = document.querySelector('.notion-editor .codex-editor')
+      if (editorElement) {
+        (editorElement as HTMLElement).focus()
+      }
+    }
+  }
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Edit Post</h1>
-            <p className="text-muted-foreground">Update your blog post</p>
+    <div className="min-h-screen bg-background">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/admin/blog/posts')}
+                className="text-muted-foreground hover:text-foreground -ml-2"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                Edit Blog Post
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSave(false)}
+                disabled={saving}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-1" />
+                )}
+                Save Changes
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                Preview
+              </Button>
+              <Button
+                onClick={() => handleSave(true)}
+                disabled={saving}
+                size="sm"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Eye className="h-4 w-4 mr-1" />
+                )}
+                {status === 'published' ? 'Update' : 'Publish'}
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => handleSave(false)}
-            disabled={saving}
-          >
-            {saving ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
-            Save Changes
-          </Button>
-          <Button 
-            onClick={() => handleSave(true)}
-            disabled={saving}
-          >
-            <Eye className="w-4 h-4 mr-2" />
-            {status === 'published' ? 'Update & Publish' : 'Publish'}
-          </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Title */}
-          <Card>
-            <CardContent className="pt-6">
+      {/* Main Content Area */}
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Main Editor Area */}
+          <div className="lg:col-span-3">
+            <div className="space-y-8">
+              {/* Title Section */}
               <div className="space-y-4">
-                <div>
-                  <Input
-                    placeholder="Post title..."
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="text-3xl font-bold border-none px-0 py-2 h-auto resize-none focus-visible:ring-0 placeholder:text-muted-foreground/50"
-                    style={{ fontSize: '2rem', lineHeight: '1.2' }}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="slug" className="text-sm text-muted-foreground">
-                    URL Slug
-                  </Label>
-                  <Input
-                    id="slug"
-                    placeholder="post-url-slug"
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
-                    className="mt-1"
-                  />
-                </div>
+                <Input
+                  placeholder="Untitled"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onKeyDown={handleTitleKeyDown}
+                  className="text-4xl font-bold border-none px-0 py-0 h-auto bg-transparent focus-visible:ring-0 placeholder:text-muted-foreground/40"
+                  style={{ fontSize: '2.5rem', lineHeight: '1.1' }}
+                />
+                {slug && (
+                  <div className="text-sm text-muted-foreground">
+                    URL: <span className="font-mono">{slug}</span>
+                  </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Content Editor */}
-          <Card>
-            <CardContent className="pt-6">
-              <NotionEditor
-                data={editorData || undefined}
-                onChange={setEditorData}
-                placeholder="Start writing your post..."
-              />
-            </CardContent>
-          </Card>
-        </div>
+              {/* Content Editor */}
+              <div className="min-h-[600px] mt-8">
+                <NotionEditor
+                  data={editorData || undefined}
+                  onChange={setEditorData}
+                  placeholder="Press '/' for commands, or start writing..."
+                />
+              </div>
+            </div>
+          </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Post Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Post Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="status">Status</Label>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Post Settings */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Status</Label>
                 <Select value={status} onValueChange={(value: 'draft' | 'published' | 'archived') => setStatus(value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-32 h-8">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -358,17 +405,14 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="flex items-center justify-between">
-                <Label htmlFor="featured">Featured Post</Label>
+                <Label className="text-sm font-medium">Featured Post</Label>
                 <Switch
-                  id="featured"
                   checked={isFeatured}
                   onCheckedChange={setIsFeatured}
                 />
               </div>
-
-              {post.published_at && (
+              {post?.published_at && (
                 <div className="text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
@@ -376,137 +420,146 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Category */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <FolderOpen className="w-4 h-4" />
-                Category
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Select value={categoryId || "none"} onValueChange={(value) => setCategoryId(value === "none" ? "" : value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No category</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: category.color }}
-                        />
-                        {category.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-
-          {/* Tags */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Tag className="w-4 h-4" />
-                Tags
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={tagSearchOpen}
-                    className="w-full justify-between"
-                  >
-                    Add tags...
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command>
-                    <CommandInput placeholder="Search tags..." />
-                    <CommandEmpty>No tags found.</CommandEmpty>
-                    <CommandGroup>
-                      {tags
-                        .filter(tag => !selectedTags.find(t => t.id === tag.id))
-                        .map((tag) => (
-                          <CommandItem
-                            key={tag.id}
-                            onSelect={() => handleTagSelect(tag)}
-                          >
-                            <Check className="mr-2 h-4 w-4 opacity-0" />
-                            {tag.name}
-                          </CommandItem>
-                        ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-
-              {selectedTags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedTags.map((tag) => (
-                    <Badge key={tag.id} variant="secondary" className="flex items-center gap-1">
-                      {tag.name}
-                      <button
-                        onClick={() => handleTagRemove(tag.id)}
-                        className="ml-1 hover:bg-destructive hover:text-destructive-foreground rounded-full p-0.5"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
+            {/* Category Section */}
+            <Collapsible open={categoryOpen} onOpenChange={setCategoryOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-sm font-medium hover:text-foreground">
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4" />
+                  Category
                 </div>
-              )}
-            </CardContent>
-          </Card>
+                {categoryOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-2">
+                <Select value={categoryId || "none"} onValueChange={(value) => setCategoryId(value === "none" ? "" : value)}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No category</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: category.color }}
+                          />
+                          {category.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* SEO */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">SEO Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="excerpt">Excerpt</Label>
-                <Textarea
-                  id="excerpt"
-                  placeholder="Brief description of the post..."
-                  value={excerpt}
-                  onChange={(e) => setExcerpt(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              <div>
-                <Label htmlFor="meta-title">Meta Title</Label>
-                <Input
-                  id="meta-title"
-                  placeholder="SEO title (optional)"
-                  value={metaTitle}
-                  onChange={(e) => setMetaTitle(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="meta-description">Meta Description</Label>
-                <Textarea
-                  id="meta-description"
-                  placeholder="SEO description (optional)"
-                  value={metaDescription}
-                  onChange={(e) => setMetaDescription(e.target.value)}
-                  rows={2}
-                />
-              </div>
-            </CardContent>
-          </Card>
+            {/* Tags Section */}
+            <Collapsible open={tagsOpen} onOpenChange={setTagsOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-sm font-medium hover:text-foreground">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  Tags
+                </div>
+                {tagsOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-2">
+                <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={tagSearchOpen}
+                      className="w-full justify-between h-8"
+                    >
+                      Add tags...
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Command>
+                      <CommandInput placeholder="Search tags..." />
+                      <CommandEmpty>No tags found.</CommandEmpty>
+                      <CommandGroup>
+                        {tags
+                          .filter(tag => !selectedTags.find(t => t.id === tag.id))
+                          .map((tag) => (
+                            <CommandItem
+                              key={tag.id}
+                              onSelect={() => handleTagSelect(tag)}
+                            >
+                              <Check className="mr-2 h-4 w-4 opacity-0" />
+                              {tag.name}
+                            </CommandItem>
+                          ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+
+                {selectedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedTags.map((tag) => (
+                      <Badge key={tag.id} variant="secondary" className="flex items-center gap-1">
+                        {tag.name}
+                        <button
+                          onClick={() => handleTagRemove(tag.id)}
+                          className="ml-1 hover:bg-destructive hover:text-destructive-foreground rounded-full p-0.5"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* SEO Section */}
+            <Collapsible open={seoOpen} onOpenChange={setSeoOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-sm font-medium hover:text-foreground">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  SEO & Excerpt
+                </div>
+                {seoOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-2">
+                <div>
+                  <Label htmlFor="excerpt" className="text-xs text-muted-foreground">Excerpt</Label>
+                  <Textarea
+                    id="excerpt"
+                    placeholder="Brief description of the post..."
+                    value={excerpt}
+                    onChange={(e) => setExcerpt(e.target.value)}
+                    rows={3}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="meta-title" className="text-xs text-muted-foreground">Meta Title</Label>
+                  <Input
+                    id="meta-title"
+                    placeholder="SEO title (optional)"
+                    value={metaTitle}
+                    onChange={(e) => setMetaTitle(e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="meta-description" className="text-xs text-muted-foreground">Meta Description</Label>
+                  <Textarea
+                    id="meta-description"
+                    placeholder="SEO description (optional)"
+                    value={metaDescription}
+                    onChange={(e) => setMetaDescription(e.target.value)}
+                    rows={2}
+                    className="text-sm"
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
         </div>
       </div>
     </div>
