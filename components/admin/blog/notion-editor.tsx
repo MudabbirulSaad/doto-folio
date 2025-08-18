@@ -151,7 +151,14 @@ export default function NotionEditor({
   // Update editor data when prop changes
   useEffect(() => {
     if (isReady && editorRef.current && data) {
-      editorRef.current.render(data)
+      // Check if render method exists, otherwise skip
+      if (typeof editorRef.current.render === 'function') {
+        editorRef.current.render(data).catch((error: any) => {
+          console.error('Error rendering editor data:', error)
+        })
+      } else {
+        console.log('Editor render method not available, data will be set on next initialization')
+      }
     }
   }, [data, isReady])
 

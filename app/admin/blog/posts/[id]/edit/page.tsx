@@ -105,6 +105,21 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           setEditorData(contentData)
         } catch (e) {
           console.error('Error parsing content:', e)
+          // If content is not JSON (e.g., Markdown), create a basic EditorJS structure
+          const markdownContent = postData.content || ''
+          setEditorData({
+            time: Date.now(),
+            blocks: [
+              {
+                id: "fallback-block",
+                type: "paragraph",
+                data: {
+                  text: markdownContent.substring(0, 1000) + (markdownContent.length > 1000 ? '...' : '')
+                }
+              }
+            ],
+            version: "2.28.2"
+          })
         }
         
         // Set selected tags
@@ -373,17 +388,17 @@ export default function EditPostPage({ params }: EditPostPageProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Select value={categoryId} onValueChange={setCategoryId}>
+              <Select value={categoryId || "none"} onValueChange={(value) => setCategoryId(value === "none" ? "" : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No category</SelectItem>
+                  <SelectItem value="none">No category</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
+                        <div
+                          className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: category.color }}
                         />
                         {category.name}
