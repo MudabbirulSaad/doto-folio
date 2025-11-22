@@ -47,10 +47,10 @@ function renderEditorJSBlock(block: any, index: number) {
       const HeaderTag = `h${data.level}` as keyof JSX.IntrinsicElements
       return (
         <HeaderTag key={index} className={`font-bold mb-4 text-foreground ${data.level === 1 ? 'text-3xl' :
-            data.level === 2 ? 'text-2xl' :
-              data.level === 3 ? 'text-xl' :
-                data.level === 4 ? 'text-lg' :
-                  'text-base'
+          data.level === 2 ? 'text-2xl' :
+            data.level === 3 ? 'text-xl' :
+              data.level === 4 ? 'text-lg' :
+                'text-base'
           }`}>
           {data.text}
         </HeaderTag>
@@ -216,7 +216,7 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
 
     // Blockquotes
     blockquote: ({ children, ...props }: any) => (
-      <blockquote className="border-l-4 border-primary/30 pl-4 py-2 my-6 bg-muted/30 rounded-r-lg italic text-muted-foreground" {...props}>
+      <blockquote className="border-l-4 border-primary pl-6 py-4 my-8 bg-background/5 backdrop-blur-sm rounded-r-xl italic text-muted-foreground shadow-sm" {...props}>
         {children}
       </blockquote>
     ),
@@ -241,17 +241,17 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
 
       if (!inline && match) {
         return (
-          <div className="relative group my-6">
-            <div className="flex items-center justify-between bg-muted/50 px-4 py-2 rounded-t-lg border border-b-0">
-              <span className="text-sm font-medium text-muted-foreground">{language}</span>
+          <div className="relative group my-8 rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#282c34]">
+            <div className="flex items-center justify-between bg-white/5 px-4 py-2 border-b border-white/5">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{language}</span>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/10 text-muted-foreground hover:text-white"
                 onClick={() => copyToClipboard(codeString, codeId)}
               >
                 {copiedCode === codeId ? (
-                  <Check className="w-3 h-3" />
+                  <Check className="w-3 h-3 text-green-400" />
                 ) : (
                   <Copy className="w-3 h-3" />
                 )}
@@ -261,7 +261,8 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
               style={oneDark}
               language={language}
               PreTag="div"
-              className="!mt-0 !rounded-t-none border border-t-0 rounded-b-lg"
+              className="!mt-0 !bg-transparent !p-4 overflow-x-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+              customStyle={{ margin: 0, background: 'transparent' }}
             >
               {codeString}
             </SyntaxHighlighter>
@@ -270,7 +271,7 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
       }
 
       return (
-        <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
+        <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-sm font-mono border border-primary/20" {...props}>
           {typeof children === 'string' ? children : String(children)}
         </code>
       )
