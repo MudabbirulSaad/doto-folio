@@ -1,5 +1,6 @@
 import { AnimatedSection, AnimatedCard } from "./animations"
 import { RevealCard } from "./reveal-card"
+import { SectionNebula } from "./section-nebula"
 
 export function SkillsSection() {
   const skillCategories = [
@@ -45,7 +46,8 @@ export function SkillsSection() {
   }
 
   return (
-    <section id="skills" className="py-20 sm:py-24 lg:py-32">
+    <section id="skills" className="relative py-20 sm:py-24 lg:py-32 overflow-hidden z-0">
+      <SectionNebula />
       <div className="container mx-auto px-8 sm:px-12 lg:px-16">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
@@ -62,23 +64,23 @@ export function SkillsSection() {
             {skillCategories.map((category, categoryIndex) => (
               <AnimatedCard key={categoryIndex} delay={categoryIndex * 0.1}>
                 <RevealCard className="bg-background/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-border/50 hover:shadow-2xl hover:border-primary/30 hover:bg-background/90 transition-all duration-500">
-                <h3 className="text-xl font-bold text-foreground mb-6 text-center">
-                  {category.title}
-                </h3>
+                  <h3 className="text-xl font-bold text-foreground mb-6 text-center">
+                    {category.title}
+                  </h3>
 
-                <div className="space-y-4">
-                  {category.skills.map((skill, skillIndex) => (
-                    <RevealCard key={skillIndex} className="bg-background/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-border/50 hover:shadow-xl hover:border-primary/30 hover:bg-background/90 transition-all duration-300">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-foreground">{skill.name}</h4>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getLevelColor(skill.level)}`}>
-                          {skill.level}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{skill.description}</p>
-                    </RevealCard>
-                  ))}
-                </div>
+                  <div className="space-y-4">
+                    {category.skills.map((skill, skillIndex) => (
+                      <RevealCard key={skillIndex} className="bg-background/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-border/50 hover:shadow-xl hover:border-primary/30 hover:bg-background/90 transition-all duration-300">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium text-foreground">{skill.name}</h4>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getLevelColor(skill.level)}`}>
+                            {skill.level}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{skill.description}</p>
+                      </RevealCard>
+                    ))}
+                  </div>
                 </RevealCard>
               </AnimatedCard>
             ))}

@@ -1,6 +1,7 @@
 import { Mail, Linkedin, Github, MessageCircle, Facebook, Instagram, GraduationCap } from "lucide-react"
 import { AnimatedSection, AnimatedCard } from "./animations"
 import { RevealLinkCard, RevealSocialCard, RevealInfoCard, RevealCard } from "./reveal-card"
+import { SectionNebula } from "./section-nebula"
 
 export function ContactSection() {
   const contactMethods = [
@@ -50,7 +51,8 @@ export function ContactSection() {
   ]
 
   return (
-    <section id="contact" className="py-20 sm:py-24 lg:py-32 bg-muted/30">
+    <section id="contact" className="relative py-20 sm:py-24 lg:py-32 bg-muted/30 overflow-hidden z-0">
+      <SectionNebula />
       <div className="container mx-auto px-8 sm:px-12 lg:px-16">
         <div className="max-w-6xl mx-auto">
           <AnimatedSection animation="fadeUp" className="text-center mb-16">
@@ -73,23 +75,23 @@ export function ContactSection() {
                   rel="noopener noreferrer"
                   className="h-full"
                 >
-                <div className="flex items-start space-x-5 p-2">
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/8 group-hover:scale-110 group-hover:from-primary/25 group-hover:to-primary/15 transition-all duration-300 text-primary flex-shrink-0">
-                    <method.icon className="w-7 h-7 sm:w-8 sm:h-8" />
+                  <div className="flex items-start space-x-5 p-2">
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/8 group-hover:scale-110 group-hover:from-primary/25 group-hover:to-primary/15 transition-all duration-300 text-primary flex-shrink-0">
+                      <method.icon className="w-7 h-7 sm:w-8 sm:h-8" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors duration-300">
+                        {method.title}
+                      </h3>
+                      <p className="text-foreground font-semibold mb-4 text-base sm:text-lg break-words">
+                        {method.value}
+                      </p>
+                      <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                        {method.description}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors duration-300">
-                      {method.title}
-                    </h3>
-                    <p className="text-foreground font-semibold mb-4 text-base sm:text-lg break-words">
-                      {method.value}
-                    </p>
-                    <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                      {method.description}
-                    </p>
-                  </div>
-                </div>
-              </RevealLinkCard>
+                </RevealLinkCard>
               </AnimatedCard>
             ))}
           </div>
@@ -109,14 +111,14 @@ export function ContactSection() {
                       rel="noopener noreferrer"
                       className="block h-full"
                     >
-                  <div className="text-center p-2">
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/8 group-hover:scale-110 group-hover:from-primary/25 group-hover:to-primary/15 transition-all duration-300 inline-flex items-center justify-center mb-4 text-primary">
-                      <social.icon className="w-6 h-6 sm:w-7 sm:h-7" />
-                    </div>
-                    <p className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors duration-300">
-                      {social.title}
-                    </p>
-                  </div>
+                      <div className="text-center p-2">
+                        <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/8 group-hover:scale-110 group-hover:from-primary/25 group-hover:to-primary/15 transition-all duration-300 inline-flex items-center justify-center mb-4 text-primary">
+                          <social.icon className="w-6 h-6 sm:w-7 sm:h-7" />
+                        </div>
+                        <p className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors duration-300">
+                          {social.title}
+                        </p>
+                      </div>
                     </a>
                   </RevealSocialCard>
                 </AnimatedCard>
@@ -127,22 +129,22 @@ export function ContactSection() {
           {/* University Information */}
           <AnimatedSection animation="fadeUp" delay={0.4}>
             <RevealInfoCard className="mb-16">
-            <div className="flex items-start space-x-4">
-              <div className="p-3 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 text-amber-600 dark:text-amber-400">
-                <GraduationCap className="w-6 h-6" />
+              <div className="flex items-start space-x-4">
+                <div className="p-3 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 text-amber-600 dark:text-amber-400">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-foreground mb-3">
+                    University
+                  </h3>
+                  <p className="text-foreground font-semibold mb-3 text-base">
+                    Swinburne University of Technology
+                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Currently pursuing Bachelor&apos;s in Artificial Intelligence
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-foreground mb-3">
-                  University
-                </h3>
-                <p className="text-foreground font-semibold mb-3 text-base">
-                  Swinburne University of Technology
-                </p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Currently pursuing Bachelor&apos;s in Artificial Intelligence
-                </p>
-              </div>
-            </div>
             </RevealInfoCard>
           </AnimatedSection>
 

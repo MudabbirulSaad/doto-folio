@@ -1,9 +1,11 @@
 import { AnimatedCard } from "./animations"
 import { RevealCard } from "./reveal-card"
+import { SectionNebula } from "./section-nebula"
 
 export function AboutSection() {
   return (
-    <section id="about" className="py-20 sm:py-24 lg:py-32">
+    <section id="about" className="relative py-20 sm:py-24 lg:py-32 overflow-hidden z-0">
+      <SectionNebula />
       <div className="container mx-auto px-8 sm:px-12 lg:px-16">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-12 font-serif text-center">
