@@ -4,6 +4,7 @@ import { Metadata } from 'next'
 // Force dynamic rendering to prevent build-time API calls
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+import { SectionNebula } from '@/components/section-nebula'
 import { BlogHero } from '@/components/blog/blog-hero'
 import { BlogFilters } from '@/components/blog/blog-filters'
 import { BlogGrid } from '@/components/blog/blog-grid'
@@ -40,27 +41,22 @@ interface BlogPageProps {
 
 export default function BlogPage({ searchParams }: BlogPageProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden z-0">
+      <SectionNebula />
       {/* Hero Section */}
-      <Suspense fallback={<BlogSkeleton variant="hero" />}>
-        <BlogHeroSection />
-      </Suspense>
+      <BlogHeroSection />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Filters */}
           <div id="featured">
-            <Suspense fallback={<BlogSkeleton variant="filters" />}>
-              <BlogFiltersSection searchParams={searchParams} />
-            </Suspense>
+            <BlogFiltersSection searchParams={searchParams} />
           </div>
 
           {/* Blog Grid */}
           <div id="latest">
-            <Suspense fallback={<BlogSkeleton variant="grid" />}>
-              <BlogGridSection searchParams={searchParams} />
-            </Suspense>
+            <BlogGridSection searchParams={searchParams} />
           </div>
         </div>
       </div>

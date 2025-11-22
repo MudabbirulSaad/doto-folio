@@ -120,9 +120,9 @@ export function BlogCard({
   }
 
   return (
-    <Card 
+    <Card
       ref={cardRef}
-      className={`group cursor-pointer transition-all duration-300 hover:shadow-lg border-border/50 bg-card/50 backdrop-blur-sm ${cardVariants[variant]} ${className}`}
+      className={`group cursor-pointer transition-all duration-300 hover:shadow-[0_0_30px_-10px_rgba(var(--primary),0.2)] border-white/10 hover:border-primary/50 bg-background/5 backdrop-blur-md ${cardVariants[variant]} ${className}`}
     >
       <Link href={`/blog/${post.slug}`} className="block h-full">
         {/* Featured Image */}
@@ -137,12 +137,12 @@ export function BlogCard({
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               />
             </div>
-            
+
             {/* Category Badge */}
             {showCategory && post.category && (
               <div className="absolute top-4 left-4">
-                <Badge 
-                  variant="secondary" 
+                <Badge
+                  variant="secondary"
                   className="bg-background/90 backdrop-blur-sm text-foreground border-0"
                   style={{ backgroundColor: `${post.category.color}20`, color: post.category.color }}
                 >
@@ -172,7 +172,7 @@ export function BlogCard({
                   <span>{post.author_name}</span>
                 </div>
               )}
-              
+
               <div className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 <span>{formatDate(post.published_at || post.created_at)}</span>
@@ -192,9 +192,8 @@ export function BlogCard({
             </div>
 
             {/* Title */}
-            <h3 className={`font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 ${
-              variant === 'featured' ? 'text-xl md:text-2xl' : 'text-lg'
-            }`}>
+            <h3 className={`font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 ${variant === 'featured' ? 'text-xl md:text-2xl' : 'text-lg'
+              }`}>
               {post.title}
             </h3>
           </div>
@@ -202,9 +201,8 @@ export function BlogCard({
 
         <CardContent ref={contentRef} className="pt-0">
           {/* Excerpt */}
-          <p className={`text-muted-foreground mb-4 ${
-            variant === 'featured' ? 'text-base line-clamp-3' : 'text-sm line-clamp-2'
-          }`}>
+          <p className={`text-muted-foreground mb-4 ${variant === 'featured' ? 'text-base line-clamp-3' : 'text-sm line-clamp-2'
+            }`}>
             {post.excerpt}
           </p>
 
@@ -213,9 +211,9 @@ export function BlogCard({
             <div className="flex items-center gap-2 flex-wrap">
               <Tag className="w-3 h-3 text-muted-foreground" />
               {post.tags.slice(0, 3).map((tag) => (
-                <Badge 
-                  key={tag.id} 
-                  variant="outline" 
+                <Badge
+                  key={tag.id}
+                  variant="outline"
                   className="text-xs border-border/50 hover:border-primary/50 transition-colors"
                 >
                   {tag.name}

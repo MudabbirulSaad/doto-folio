@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { gsap } from 'gsap'
-import { Search, Filter, X, Tag, Folder, BookOpen } from 'lucide-react'
+import { Search, Filter, X, Tag, Folder, BookOpen, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { BlogFilterProps } from '@/lib/types/blog'
+// import { useDebounce } from '@/lib/hooks/use-debounce' // Assuming this hook exists or I'll implement a simple one inside
 
 export function BlogFilters({
   categories,
@@ -26,39 +27,74 @@ export function BlogFilters({
 }: Omit<BlogFilterProps, 'onCategoryChange' | 'onTagChange' | 'onSearch'>) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const filtersRef = useRef<HTMLDivElement>(null)
-  const searchRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const filtersContentRef = useRef<HTMLDivElement>(null)
 
+  // Debounce search query
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery)
   useEffect(() => {
-    const filters = filtersRef.current
-    const search = searchRef.current
-
-    if (!filters || !search) return
-
-    // Initial animation
-    gsap.fromTo([search, filters], 
-      { opacity: 0, y: 20 },
-      { 
-        opacity: 1, 
-        y: 0, 
-        duration: 0.6, 
-        ease: 'power2.out',
-        stagger: 0.1,
-        delay: 0.3
-      }
-    )
-  }, [])
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   useEffect(() => {
     // Sync with URL params
     const query = searchParams.get('query') || ''
     setSearchQuery(query)
+    setDebouncedQuery(query)
   }, [searchParams])
+
+  useEffect(() => {
+    // Effect for debounced search update
+    if (debouncedQuery !== (searchParams.get('query') || '')) {
+      updateURL({ query: debouncedQuery })
+    }
+  }, [debouncedQuery])
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    gsap.fromTo(container,
+      { opacity: 0, y: 20 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        ease: 'power2.out',
+        delay: 0.3
+      }
+    )
+  }, [])
+
+  // Animate filters expansion
+  useEffect(() => {
+    const content = filtersContentRef.current
+    if (!content) return
+
+    if (showFilters) {
+      gsap.to(content, {
+        height: 'auto',
+        opacity: 1,
+        duration: 0.4,
+        ease: 'power2.out'
+      })
+    } else {
+      gsap.to(content, {
+        height: 0,
+        opacity: 0,
+        duration: 0.3,
+        ease: 'power2.in'
+      })
+    }
+  }, [showFilters])
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    // Trigger immediate update on enter
     updateURL({ query: searchQuery })
   }
 
@@ -73,198 +109,172 @@ export function BlogFilters({
   }
 
   const updateURL = (params: { query?: string; category?: string; tag?: string }) => {
-    const current = new URLSearchParams(searchParams.toString())
-    
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) {
-        current.set(key, value)
-      } else {
-        current.delete(key)
-      }
+    startTransition(() => {
+      const current = new URLSearchParams(searchParams.toString())
+
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) {
+          current.set(key, value)
+        } else {
+          current.delete(key)
+        }
+      })
+
+      // Reset page when filters change
+      current.delete('page')
+
+      const search = current.toString()
+      const query = search ? `?${search}` : ''
+
+      // Use scroll: false to prevent jumping to top
+      router.push(`/blog${query}`, { scroll: false })
     })
-
-    // Reset page when filters change
-    current.delete('page')
-
-    const search = current.toString()
-    const query = search ? `?${search}` : ''
-    router.push(`/blog${query}`)
   }
 
   const clearFilters = () => {
     setSearchQuery('')
-    router.push('/blog')
+    setDebouncedQuery('')
+    startTransition(() => {
+      router.push('/blog', { scroll: false })
+    })
   }
 
   const hasActiveFilters = selectedCategory || selectedTag || searchQuery
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Enhanced Search Bar */}
-      <div ref={searchRef} className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Search className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold text-foreground">Search & Filter Articles</h3>
-        </div>
+    <div ref={containerRef} className={`relative z-20 ${className}`}>
+      {/* Unified Glass Container */}
+      <div className="bg-background/5 backdrop-blur-md border border-white/10 hover:border-primary/50 transition-all duration-300 rounded-2xl overflow-hidden shadow-[0_0_20px_-10px_rgba(var(--primary),0.1)] hover:shadow-[0_0_30px_-5px_rgba(var(--primary),0.2)]">
 
-        <form onSubmit={handleSearch} className="relative mb-6">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        {/* Top Section: Search & Toggle */}
+        <div className="p-2">
+          <form onSubmit={handleSearch} className="relative flex items-center">
+            <Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search by title, content, or tags..."
+              placeholder="Search articles..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-36 py-4 text-base bg-background/90 border-border/60 focus:border-primary/60 focus:bg-background transition-all duration-200 rounded-xl shadow-sm hover:shadow-md focus:shadow-lg"
+              className="pl-12 pr-32 py-6 text-lg bg-transparent border-none focus-visible:ring-0 placeholder:text-muted-foreground/50"
             />
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex gap-2">
-              <Button type="submit" size="sm" className="h-9 px-4 rounded-lg">
-                Search
-              </Button>
+
+            <div className="absolute right-2 flex items-center gap-2">
+              {isPending && (
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
+              )}
               <Button
                 type="button"
+                variant={showFilters ? "secondary" : "ghost"}
                 size="sm"
-                variant="outline"
-                className="h-9 px-4 rounded-lg"
+                className={`h-9 px-4 rounded-xl transition-all ${showFilters ? 'bg-primary/10 text-primary' : 'hover:bg-white/5'}`}
                 onClick={() => setShowFilters(!showFilters)}
               >
                 <Filter className="w-4 h-4 mr-2" />
                 Filters
+                <ChevronDown className={`w-3 h-3 ml-2 transition-transform duration-300 ${showFilters ? 'rotate-180' : ''}`} />
               </Button>
             </div>
-          </div>
-        </form>
-
-        {/* Quick Stats */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <BookOpen className="w-4 h-4" />
-            {categories.length} Categories
-          </span>
-          <span className="flex items-center gap-1">
-            <Tag className="w-4 h-4" />
-            {tags.length} Tags
-          </span>
+          </form>
         </div>
-      </div>
 
-      {/* Filters Panel */}
-      <div ref={filtersRef}>
-        {(showFilters || hasActiveFilters) && (
-          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-            <CardContent className="p-4 space-y-4">
-              {/* Active Filters */}
-              {hasActiveFilters && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-muted-foreground">Active filters:</span>
-                  
-                  {selectedCategory && (
-                    <Badge variant="secondary" className="gap-1">
-                      <Folder className="w-3 h-3" />
-                      {categories.find(c => c.slug === selectedCategory)?.name}
-                      <button
-                        onClick={() => handleCategorySelect('all')}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  )}
+        {/* Expandable Filters Section */}
+        <div ref={filtersContentRef} className="h-0 opacity-0 overflow-hidden">
+          <div className="p-6 pt-0 border-t border-white/5 space-y-6">
 
-                  {selectedTag && (
-                    <Badge variant="secondary" className="gap-1">
-                      <Tag className="w-3 h-3" />
-                      {tags.find(t => t.slug === selectedTag)?.name}
-                      <button
-                        onClick={() => handleTagSelect(selectedTag)}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  )}
+            {/* Active Filters Display */}
+            {hasActiveFilters && (
+              <div className="flex items-center gap-2 flex-wrap pt-4">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active:</span>
 
-                  {searchQuery && (
-                    <Badge variant="secondary" className="gap-1">
-                      <Search className="w-3 h-3" />
-                      &quot;{searchQuery}&quot;
-                      <button
-                        onClick={() => {
-                          setSearchQuery('')
-                          updateURL({ query: undefined })
-                        }}
-                        className="ml-1 hover:text-destructive"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  )}
+                {selectedCategory && (
+                  <Badge variant="secondary" className="gap-1 bg-primary/10 text-primary border-primary/20">
+                    <Folder className="w-3 h-3" />
+                    {categories.find(c => c.slug === selectedCategory)?.name}
+                    <button onClick={() => handleCategorySelect('all')} className="ml-1 hover:text-destructive">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFilters}
-                    className="h-6 px-2 text-xs"
+                {selectedTag && (
+                  <Badge variant="secondary" className="gap-1 bg-secondary/10 text-secondary-foreground border-secondary/20">
+                    <Tag className="w-3 h-3" />
+                    {tags.find(t => t.slug === selectedTag)?.name}
+                    <button onClick={() => handleTagSelect(selectedTag)} className="ml-1 hover:text-destructive">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                )}
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
+                >
+                  Clear all
+                </Button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
+              {/* Categories */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Folder className="w-4 h-4 text-primary" />
+                  Browse by Category
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handleCategorySelect('all')}
+                    className={`text-sm text-left px-3 py-2 rounded-lg transition-colors ${!selectedCategory
+                        ? 'bg-primary/20 text-primary font-medium'
+                        : 'hover:bg-white/5 text-muted-foreground hover:text-foreground'
+                      }`}
                   >
-                    Clear all
-                  </Button>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Categories */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                    <Folder className="w-4 h-4" />
-                    Category
-                  </label>
-                  <Select value={selectedCategory || 'all'} onValueChange={handleCategorySelect}>
-                    <SelectTrigger className="bg-background/50 border-border/50">
-                      <SelectValue placeholder="All categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All categories</SelectItem>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.slug}>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-2 h-2 rounded-full" 
-                              style={{ backgroundColor: category.color }}
-                            />
-                            {category.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Tags */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                    <Tag className="w-4 h-4" />
-                    Popular Tags
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {tags.slice(0, 8).map((tag) => (
-                      <Badge
-                        key={tag.id}
-                        variant={selectedTag === tag.slug ? "default" : "outline"}
-                        className="cursor-pointer hover:bg-primary/10 transition-colors"
-                        onClick={() => handleTagSelect(tag.slug)}
-                      >
-                        {tag.name}
-                        <span className="ml-1 text-xs opacity-70">
-                          {tag.usage_count}
-                        </span>
-                      </Badge>
-                    ))}
-                  </div>
+                    All Categories
+                  </button>
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => handleCategorySelect(category.slug)}
+                      className={`text-sm text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${selectedCategory === category.slug
+                          ? 'bg-primary/20 text-primary font-medium'
+                          : 'hover:bg-white/5 text-muted-foreground hover:text-foreground'
+                        }`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: category.color }} />
+                      {category.name}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+
+              {/* Tags */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-secondary" />
+                  Popular Topics
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {tags.slice(0, 12).map((tag) => (
+                    <Badge
+                      key={tag.id}
+                      variant={selectedTag === tag.slug ? "default" : "outline"}
+                      className={`cursor-pointer transition-all ${selectedTag === tag.slug
+                          ? 'bg-primary hover:bg-primary/90'
+                          : 'border-white/10 hover:border-primary/50 hover:bg-primary/5'
+                        }`}
+                      onClick={() => handleTagSelect(tag.slug)}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

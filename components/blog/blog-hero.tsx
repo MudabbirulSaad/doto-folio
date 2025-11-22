@@ -46,30 +46,30 @@ export function BlogHero({
       duration: 0.8,
       ease: 'power2.out'
     })
-    .to(descEl, {
-      opacity: 1,
-      y: 0,
-      duration: 0.6,
-      ease: 'power2.out'
-    }, '-=0.4')
-    .to(searchEl, {
-      opacity: 1,
-      y: 0,
-      duration: 0.6,
-      ease: 'power2.out'
-    }, '-=0.3')
-    .to(statsEl, {
-      opacity: 1,
-      y: 0,
-      duration: 0.6,
-      ease: 'power2.out'
-    }, '-=0.3')
-    .to(featuredEl, {
-      opacity: 1,
-      y: 0,
-      duration: 0.8,
-      ease: 'power2.out'
-    }, '-=0.2')
+      .to(descEl, {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        ease: 'power2.out'
+      }, '-=0.4')
+      .to(searchEl, {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        ease: 'power2.out'
+      }, '-=0.3')
+      .to(statsEl, {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        ease: 'power2.out'
+      }, '-=0.3')
+      .to(featuredEl, {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        ease: 'power2.out'
+      }, '-=0.2')
 
     // Parallax effect for hero background
     ScrollTrigger.create({
@@ -100,25 +100,25 @@ export function BlogHero({
 
   return (
     <section ref={heroRef} className={`relative py-20 md:py-32 overflow-hidden ${className}`}>
-      {/* Background Elements */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.1),transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,107,107,0.1),transparent_50%)]" />
+      {/* Background Elements - Removed for Nebula visibility */}
+      {/* <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" /> */}
+      {/* <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.1),transparent_50%)]" /> */}
+      {/* <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,107,107,0.1),transparent_50%)]" /> */}
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           {/* Title */}
-          <h1 
+          <h1
             ref={titleRef}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight drop-shadow-lg"
           >
             {title}
           </h1>
 
           {/* Description */}
-          <p 
+          <p
             ref={descriptionRef}
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed"
+            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed drop-shadow-md font-medium"
           >
             {description}
           </p>
