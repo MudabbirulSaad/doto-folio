@@ -39,25 +39,25 @@ export function BlogPostSidebar({ post }: BlogPostSidebarProps) {
 
 
   return (
-    <div ref={sidebarRef} className="relative">
-      {/* Sidebar Container */}
-      <div className="space-y-6">
+    <div ref={sidebarRef} className="relative h-full">
+      {/* Sidebar Container - Sticky */}
+      <div className="sticky top-24 space-y-6">
         {/* Table of Contents */}
         <TableOfContents content={post.content} className="sidebar-card" />
 
         {/* Stay Updated Card */}
-        <Card className="sidebar-card bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20 shadow-lg backdrop-blur-sm">
+        <Card className="sidebar-card bg-background/5 backdrop-blur-md border-white/10 shadow-[0_0_20px_-10px_rgba(var(--primary),0.1)] hover:shadow-[0_0_30px_-5px_rgba(var(--primary),0.2)] transition-all duration-300">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Bell className="w-4 h-4" />
+              <Bell className="w-4 h-4 text-primary" />
               Stay Updated
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0 space-y-3">
+          <CardContent className="pt-0 space-y-4">
             <p className="text-xs text-muted-foreground leading-relaxed">
               Get notified when I publish new articles about AI, technology, and development.
             </p>
-            <Button asChild size="sm" className="w-full">
+            <Button asChild size="sm" className="w-full bg-primary/80 hover:bg-primary text-primary-foreground backdrop-blur-sm shadow-lg shadow-primary/20">
               <Link href="/subscribe">
                 <Mail className="w-4 h-4 mr-2" />
                 Subscribe

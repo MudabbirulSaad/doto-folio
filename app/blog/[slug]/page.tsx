@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
+import { SectionNebula } from '@/components/section-nebula'
 import { BlogPostHeader } from '@/components/blog/blog-post-header'
 import { BlogPostContent } from '@/components/blog/blog-post-content'
 import { BlogPostSidebar } from '@/components/blog/blog-post-sidebar'
@@ -104,9 +105,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     }
 
     return (
-      <div className="min-h-screen bg-background">
-        <article className="container mx-auto px-4 py-8">
-          <div className="max-w-6xl mx-auto">
+      <div className="min-h-screen bg-background relative overflow-hidden z-0">
+        <SectionNebula />
+        <article className="container mx-auto px-4 py-8 relative z-10">
+          <div className="max-w-7xl mx-auto">
             {/* Post Header */}
             <Suspense fallback={<BlogSkeleton variant="post" />}>
               <BlogPostHeader post={post} />
@@ -119,16 +121,16 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               </Suspense>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-12">
               {/* Main Content */}
-              <div className="lg:col-span-3">
+              <div className="lg:col-span-8 xl:col-span-9">
                 <Suspense fallback={<BlogSkeleton variant="post" />}>
                   <BlogPostContent post={post} />
                 </Suspense>
               </div>
 
               {/* Desktop Sidebar - Show only on desktop */}
-              <div className="hidden lg:block lg:col-span-1">
+              <div className="hidden lg:block lg:col-span-4 xl:col-span-3">
                 <Suspense fallback={<div className="space-y-4">
                   <div className="h-64 bg-muted rounded-lg animate-pulse" />
                   <div className="h-32 bg-muted rounded-lg animate-pulse" />
@@ -142,7 +144,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
             {/* Related Posts */}
             {relatedPosts && relatedPosts.length > 0 && (
-              <div className="mt-16">
+              <div className="mt-20 border-t border-white/10 pt-12">
+                <h3 className="text-2xl font-bold mb-8">Related Articles</h3>
                 <Suspense fallback={<BlogSkeleton variant="grid" count={3} />}>
                   <BlogRelatedPosts posts={relatedPosts} />
                 </Suspense>
