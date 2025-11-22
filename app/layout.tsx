@@ -153,12 +153,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body
         className={`${doto.variable} ${besley.variable} antialiased`}
+        suppressHydrationWarning
       >
         <GoogleAnalytics />
         {children}
