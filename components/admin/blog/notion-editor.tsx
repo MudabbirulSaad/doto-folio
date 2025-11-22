@@ -65,7 +65,7 @@ export default function NotionEditor({
       holder: holderRef.current,
       placeholder,
       readOnly,
-      data: {
+      data: data || {
         time: Date.now(),
         blocks: [],
         version: "2.28.2"
@@ -161,6 +161,12 @@ export default function NotionEditor({
       onReady: () => {
         setIsReady(true)
         console.log('Editor.js is ready to work!')
+
+        // Attach markdown shortcuts listener
+        const holder = holderRef.current
+        if (holder) {
+          holder.addEventListener('keyup', handleMarkdownShortcuts)
+        }
       },
       autofocus: !readOnly,
       logLevel: 'ERROR' as const
@@ -170,6 +176,11 @@ export default function NotionEditor({
 
     return () => {
       const editorId = editorIdRef.current
+
+      // Remove listener
+      if (holderRef.current) {
+        holderRef.current.removeEventListener('keyup', handleMarkdownShortcuts)
+      }
 
       if (editorRef.current) {
         try {
@@ -190,21 +201,67 @@ export default function NotionEditor({
     }
   }, [])
 
-  // Update editor data when prop changes
-  useEffect(() => {
-    if (isReady && editorRef.current && data && data.blocks && data.blocks.length > 0) {
-      // Add a small delay to ensure editor is fully ready
-      const timer = setTimeout(() => {
-        if (editorRef.current && typeof editorRef.current.render === 'function') {
-          editorRef.current.render(data).catch((error: any) => {
-            console.error('Error rendering editor data:', error)
-          })
-        }
-      }, 100)
+  const handleMarkdownShortcuts = async (e: KeyboardEvent) => {
+    if (e.key !== ' ') return
 
-      return () => clearTimeout(timer)
+    const editor = editorRef.current
+    if (!editor) return
+
+    try {
+      const index = editor.blocks.getCurrentBlockIndex()
+      const block = editor.blocks.getBlockByIndex(index)
+
+      if (!block) return
+
+      const savedData = await block.save()
+      const text = savedData.data.text || ''
+
+      // Check patterns
+      if (text === '#') {
+        // Header 1 (using level 2 as default big header)
+        editor.blocks.insert('header', { text: '', level: 1 }, {}, index, true)
+        editor.caret.setToBlock(index)
+        editor.blocks.delete(index + 1) // Remove the old block which was pushed down? No, insert with replace=true replaces it? 
+        // Actually insert(..., true) replaces.
+      } else if (text === '##') {
+        editor.blocks.insert('header', { text: '', level: 2 }, {}, index, true)
+        editor.caret.setToBlock(index)
+      } else if (text === '###') {
+        editor.blocks.insert('header', { text: '', level: 3 }, {}, index, true)
+        editor.caret.setToBlock(index)
+      } else if (text === '*' || text === '-') {
+        editor.blocks.insert('list', { style: 'unordered', items: [] }, {}, index, true)
+        editor.caret.setToBlock(index)
+      } else if (text === '1.') {
+        editor.blocks.insert('list', { style: 'ordered', items: [] }, {}, index, true)
+        editor.caret.setToBlock(index)
+      } else if (text === '>') {
+        editor.blocks.insert('quote', { text: '', caption: '' }, {}, index, true)
+        editor.caret.setToBlock(index)
+      } else if (text === '```') {
+        editor.blocks.insert('code', { code: '' }, {}, index, true)
+        editor.caret.setToBlock(index)
+      }
+    } catch (err) {
+      console.error('Error handling markdown shortcut:', err)
     }
-  }, [data, isReady])
+  }
+
+  // Update editor data when prop changes
+  // useEffect(() => {
+  //   if (isReady && editorRef.current && data && data.blocks && data.blocks.length > 0) {
+  //     // Add a small delay to ensure editor is fully ready
+  //     const timer = setTimeout(() => {
+  //       if (editorRef.current && typeof editorRef.current.render === 'function') {
+  //         editorRef.current.render(data).catch((error: any) => {
+  //           console.error('Error rendering editor data:', error)
+  //         })
+  //       }
+  //     }, 100)
+
+  //     return () => clearTimeout(timer)
+  //   }
+  // }, [data, isReady])
 
   const save = async (): Promise<OutputData | null> => {
     if (editorRef.current) {
@@ -257,7 +314,7 @@ export default function NotionEditor({
           display: none !important;
         }
       `}</style>
-      
+
       <style jsx global>{`
         .notion-editor .codex-editor {
           z-index: 1;

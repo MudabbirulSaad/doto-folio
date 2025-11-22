@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -54,9 +54,11 @@ import {
   ChevronDown,
   ChevronRight,
   Plus,
-  Send
+  Send,
+  Trash2
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { markdownToBlocks } from '@/lib/markdown-converter'
 
 const NotionEditor = dynamic(() => import('@/components/admin/blog/notion-editor'), {
   ssr: false,
@@ -74,12 +76,13 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [editorVersion, setEditorVersion] = useState(0)
   const [post, setPost] = useState<BlogPostWithRelations | null>(null)
   const [categories, setCategories] = useState<BlogCategory[]>([])
   const [tags, setTags] = useState<BlogTag[]>([])
   const [selectedTags, setSelectedTags] = useState<BlogTag[]>([])
   const [tagSearchOpen, setTagSearchOpen] = useState(false)
-  
+
   // Form state
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
@@ -114,7 +117,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         const data = await response.json()
         const postData = data.data
         setPost(postData)
-        
+
         // Populate form fields
         setTitle(postData.title)
         setSlug(postData.slug)
@@ -124,30 +127,71 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         setIsFeatured(postData.is_featured)
         setMetaTitle(postData.meta_title || '')
         setMetaDescription(postData.meta_description || '')
-        
+
         // Parse editor content
         try {
           const contentData = JSON.parse(postData.content)
-          setEditorData(contentData)
+
+          // Check if it's a valid EditorJS object (has blocks array)
+          if (contentData && Array.isArray(contentData.blocks)) {
+            // Check if it's "fake" JSON (just one paragraph with markdown)
+            // This happens when we save raw markdown into a single paragraph block
+            const isRawMarkdown = contentData.blocks.length === 1 &&
+              contentData.blocks[0].type === 'paragraph' &&
+              (contentData.blocks[0].data.text.includes('#') ||
+                contentData.blocks[0].data.text.includes('```') ||
+                contentData.blocks[0].data.text.includes('* ') ||
+                contentData.blocks[0].data.text.includes('- ') ||
+                contentData.blocks[0].data.text.includes('1. ') ||
+                contentData.blocks[0].data.text.includes('> ') ||
+                contentData.blocks[0].data.text.includes('**') ||
+                contentData.blocks[0].data.text.includes('__') ||
+                contentData.blocks[0].data.text.includes('[') ||
+                contentData.blocks[0].data.text.includes('![') ||
+                contentData.blocks[0].data.text.length > 200); // heuristic
+
+            if (isRawMarkdown) {
+              console.log('Detected raw markdown in JSON, converting...')
+              const markdownContent = contentData.blocks[0].data.text
+              markdownToBlocks(markdownContent).then((blocksData: any) => {
+                setEditorData(blocksData)
+              }).catch((err: any) => {
+                console.error('Error converting markdown:', err)
+                setEditorData(contentData)
+              })
+            } else {
+              setEditorData(contentData)
+            }
+          } else {
+            throw new Error('Invalid EditorJS data')
+          }
         } catch (e) {
-          console.error('Error parsing content:', e)
-          // If content is not JSON (e.g., Markdown), create a basic EditorJS structure
+          console.log('Content is not JSON, attempting to parse as Markdown:', e)
+          // If content is not JSON (e.g., Markdown), parse it to EditorJS blocks
           const markdownContent = postData.content || ''
-          setEditorData({
-            time: Date.now(),
-            blocks: [
-              {
-                id: "fallback-block",
-                type: "paragraph",
-                data: {
-                  text: markdownContent.substring(0, 1000) + (markdownContent.length > 1000 ? '...' : '')
+
+          // Use the new converter
+          markdownToBlocks(markdownContent).then((blocksData: any) => {
+            setEditorData(blocksData)
+          }).catch((err: any) => {
+            console.error('Error converting markdown:', err)
+            // Fallback to simple paragraph if conversion fails
+            setEditorData({
+              time: Date.now(),
+              blocks: [
+                {
+                  id: "fallback-block",
+                  type: "paragraph",
+                  data: {
+                    text: markdownContent
+                  }
                 }
-              }
-            ],
-            version: "2.28.2"
+              ],
+              version: "2.28.2"
+            })
           })
         }
-        
+
         // Set selected tags
         if (postData.tags) {
           setSelectedTags(postData.tags.map((tagRel: any) => tagRel.tag))
@@ -282,6 +326,31 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     )
   }
 
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+      return
+    }
+
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/admin/blog/posts/${resolvedParams.id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        router.push('/admin/blog/posts')
+      } else {
+        const error = await response.json()
+        alert(error.message || 'Failed to delete post')
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error)
+      alert('Failed to delete post')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
@@ -317,6 +386,20 @@ export default function EditPostPage({ params }: EditPostPageProps) {
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={handleDelete}
+                disabled={saving}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-1" />
+                )}
+                Delete
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => handleSave(false)}
                 disabled={saving}
                 className="text-muted-foreground hover:text-foreground"
@@ -339,226 +422,279 @@ export default function EditPostPage({ params }: EditPostPageProps) {
               <Button
                 onClick={() => handleSave(true)}
                 disabled={saving}
-                size="sm"
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                 ) : (
-                  <Eye className="h-4 w-4 mr-1" />
+                  <Send className="h-4 w-4 mr-1" />
                 )}
-                {status === 'published' ? 'Update' : 'Publish'}
+                Publish
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="max-w-5xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Main Editor Area */}
-          <div className="lg:col-span-3">
-            <div className="space-y-8">
-              {/* Title Section */}
-              <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Title Input */}
+            <div className="space-y-4">
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={handleTitleKeyDown}
+                placeholder="Post Title"
+                className="text-4xl font-bold border-none px-0 shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/50 h-auto py-2"
+              />
+              <div className="flex items-center text-sm text-muted-foreground">
+                <span className="mr-2">URL:</span>
                 <Input
-                  placeholder="Untitled"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  onKeyDown={handleTitleKeyDown}
-                  className="text-4xl font-bold border-none px-0 py-0 h-auto bg-transparent focus-visible:ring-0 placeholder:text-muted-foreground/40"
-                  style={{ fontSize: '2.5rem', lineHeight: '1.1' }}
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  className="h-6 py-0 px-1 w-full max-w-[300px] text-sm"
                 />
-                {slug && (
-                  <div className="text-sm text-muted-foreground">
-                    URL: <span className="font-mono">{slug}</span>
-                  </div>
-                )}
               </div>
+            </div>
 
-              {/* Content Editor */}
-              <div className="min-h-[600px] mt-8">
-                <NotionEditor
-                  key={`editor-${resolvedParams.id}`}
-                  data={editorData || undefined}
-                  onChange={setEditorData}
-                  placeholder="Press '/' for commands, or start writing..."
-                />
-              </div>
+            {/* Content Editor */}
+            <div className="flex justify-end mb-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (confirm('This will attempt to convert the current content from Markdown to Editor blocks. Continue?')) {
+                    // Get current content - if it's in the editor, we might need to save it first or just use the raw post content
+                    // For now, let's use the post.content if it exists, or try to grab from editor
+                    if (post?.content) {
+                      let contentToConvert = post.content;
+                      try {
+                        const json = JSON.parse(contentToConvert);
+                        if (json.blocks && json.blocks.length > 0) {
+                          // Extract text from the first block if it's a paragraph
+                          contentToConvert = json.blocks.map((b: any) => b.data.text).join('\n\n');
+                        }
+                      } catch (e) {
+                        // It's raw text, use as is
+                      }
+
+                      fetch('/api/admin/blog/convert-markdown', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ content: contentToConvert }),
+                      })
+                        .then(res => res.json())
+                        .then((blocksData: any) => {
+                          if (blocksData.blocks) {
+                            setEditorData(blocksData)
+                            setEditorVersion(v => v + 1)
+                            console.log('Converted markdown to blocks:', blocksData)
+                          } else {
+                            console.error('Conversion failed:', blocksData)
+                          }
+                        })
+                        .catch(err => console.error('Error converting markdown:', err))
+                    }
+                  }
+                }}
+              >
+                <FolderOpen className="w-4 h-4 mr-2" />
+                Convert Markdown
+              </Button>
+            </div>
+            <div className="min-h-[600px]">
+              <NotionEditor
+                key={`editor-${resolvedParams.id}-${editorVersion}`}
+                data={editorData || undefined}
+                onChange={setEditorData}
+                placeholder="Press '/' for commands, or start writing..."
+              />
             </div>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Post Settings */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Status</Label>
-                <Select value={status} onValueChange={(value: 'draft' | 'published' | 'archived') => setStatus(value)}>
-                  <SelectTrigger className="w-32 h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="published">Published</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Featured Post</Label>
-                <Switch
-                  checked={isFeatured}
-                  onCheckedChange={setIsFeatured}
-                />
-              </div>
-              {post?.published_at && (
-                <div className="text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Published: {new Date(post.published_at).toLocaleDateString()}
-                  </div>
+            {/* Status Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Status</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Current Status</span>
+                  <Badge variant={status === 'published' ? 'default' : 'secondary'}>
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </Badge>
                 </div>
-              )}
-            </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Featured</span>
+                  <Switch
+                    checked={isFeatured}
+                    onCheckedChange={setIsFeatured}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Category Section */}
+            {/* Categories */}
             <Collapsible open={categoryOpen} onOpenChange={setCategoryOpen}>
-              <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-sm font-medium hover:text-foreground">
-                <div className="flex items-center gap-2">
-                  <FolderOpen className="w-4 h-4" />
-                  Category
-                </div>
-                {categoryOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-3 pt-2">
-                <Select value={categoryId || "none"} onValueChange={(value) => setCategoryId(value === "none" ? "" : value)}>
-                  <SelectTrigger className="h-8">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No category</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: category.color }}
-                          />
-                          {category.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Tags Section */}
-            <Collapsible open={tagsOpen} onOpenChange={setTagsOpen}>
-              <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-sm font-medium hover:text-foreground">
-                <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4" />
-                  Tags
-                </div>
-                {tagsOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-3 pt-2">
-                <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
-                  <PopoverTrigger asChild>
+              <Card>
+                <CardHeader className="py-3">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full">
+                    <CardTitle className="text-sm font-medium flex items-center">
+                      <FolderOpen className="w-4 h-4 mr-2" />
+                      Category
+                    </CardTitle>
+                    {categoryOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  </CollapsibleTrigger>
+                </CardHeader>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-0">
+                    <Select value={categoryId} onValueChange={setCategoryId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            <div className="flex items-center">
+                              <div
+                                className="w-2 h-2 rounded-full mr-2"
+                                style={{ backgroundColor: category.color }}
+                              />
+                              {category.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button
                       variant="outline"
-                      role="combobox"
-                      aria-expanded={tagSearchOpen}
-                      className="w-full justify-between h-8"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setShowNewCategoryDialog(true)}
                     >
-                      Add tags...
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      <Plus className="w-4 h-4 mr-2" />
+                      New Category
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Command>
-                      <CommandInput placeholder="Search tags..." />
-                      <CommandEmpty>No tags found.</CommandEmpty>
-                      <CommandGroup>
-                        {tags
-                          .filter(tag => !selectedTags.find(t => t.id === tag.id))
-                          .map((tag) => (
-                            <CommandItem
-                              key={tag.id}
-                              onSelect={() => handleTagSelect(tag)}
-                            >
-                              <Check className="mr-2 h-4 w-4 opacity-0" />
-                              {tag.name}
-                            </CommandItem>
-                          ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-
-                {selectedTags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {selectedTags.map((tag) => (
-                      <Badge key={tag.id} variant="secondary" className="flex items-center gap-1">
-                        {tag.name}
-                        <button
-                          onClick={() => handleTagRemove(tag.id)}
-                          className="ml-1 hover:bg-destructive hover:text-destructive-foreground rounded-full p-0.5"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </CollapsibleContent>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
             </Collapsible>
 
-            {/* SEO Section */}
+            {/* Tags */}
+            <Collapsible open={tagsOpen} onOpenChange={setTagsOpen}>
+              <Card>
+                <CardHeader className="py-3">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full">
+                    <CardTitle className="text-sm font-medium flex items-center">
+                      <Tag className="w-4 h-4 mr-2" />
+                      Tags
+                    </CardTitle>
+                    {tagsOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  </CollapsibleTrigger>
+                </CardHeader>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-0">
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {selectedTags.map((tag) => (
+                        <Badge key={tag.id} variant="secondary" className="pl-2 pr-1 py-1">
+                          {tag.name}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 w-4 ml-1 p-0 hover:bg-transparent"
+                            onClick={() => handleTagRemove(tag.id)}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                    <Popover open={tagSearchOpen} onOpenChange={setTagSearchOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="w-full justify-start text-muted-foreground">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Tags
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search tags..." />
+                          <CommandEmpty>No tags found.</CommandEmpty>
+                          <CommandGroup>
+                            {tags
+                              .filter(tag => !selectedTags.find(t => t.id === tag.id))
+                              .map((tag) => (
+                                <CommandItem
+                                  key={tag.id}
+                                  onSelect={() => handleTagSelect(tag)}
+                                >
+                                  <Check
+                                    className={`mr-2 h-4 w-4 ${selectedTags.find(t => t.id === tag.id)
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                      }`}
+                                  />
+                                  {tag.name}
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
+
+            {/* SEO Settings */}
             <Collapsible open={seoOpen} onOpenChange={setSeoOpen}>
-              <CollapsibleTrigger className="flex items-center justify-between w-full py-2 text-sm font-medium hover:text-foreground">
-                <div className="flex items-center gap-2">
-                  <Tag className="w-4 h-4" />
-                  SEO & Excerpt
-                </div>
-                {seoOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-3 pt-2">
-                <div>
-                  <Label htmlFor="excerpt" className="text-xs text-muted-foreground">Excerpt</Label>
-                  <Textarea
-                    id="excerpt"
-                    placeholder="Brief description of the post..."
-                    value={excerpt}
-                    onChange={(e) => setExcerpt(e.target.value)}
-                    rows={3}
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="meta-title" className="text-xs text-muted-foreground">Meta Title</Label>
-                  <Input
-                    id="meta-title"
-                    placeholder="SEO title (optional)"
-                    value={metaTitle}
-                    onChange={(e) => setMetaTitle(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="meta-description" className="text-xs text-muted-foreground">Meta Description</Label>
-                  <Textarea
-                    id="meta-description"
-                    placeholder="SEO description (optional)"
-                    value={metaDescription}
-                    onChange={(e) => setMetaDescription(e.target.value)}
-                    rows={2}
-                    className="text-sm"
-                  />
-                </div>
-              </CollapsibleContent>
+              <Card>
+                <CardHeader className="py-3">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full">
+                    <CardTitle className="text-sm font-medium flex items-center">
+                      <Eye className="w-4 h-4 mr-2" />
+                      SEO Settings
+                    </CardTitle>
+                    {seoOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  </CollapsibleTrigger>
+                </CardHeader>
+                <CollapsibleContent>
+                  <CardContent className="space-y-4 pt-0">
+                    <div className="space-y-2">
+                      <Label>Meta Title</Label>
+                      <Input
+                        value={metaTitle}
+                        onChange={(e) => setMetaTitle(e.target.value)}
+                        placeholder="SEO Title"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Meta Description</Label>
+                      <Textarea
+                        value={metaDescription}
+                        onChange={(e) => setMetaDescription(e.target.value)}
+                        placeholder="SEO Description"
+                        className="h-24 resize-none"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Excerpt</Label>
+                      <Textarea
+                        value={excerpt}
+                        onChange={(e) => setExcerpt(e.target.value)}
+                        placeholder="Post excerpt..."
+                        className="h-24 resize-none"
+                      />
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
             </Collapsible>
           </div>
         </div>

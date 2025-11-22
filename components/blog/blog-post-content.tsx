@@ -5,7 +5,6 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import rehypeHighlight from 'rehype-highlight'
 import rehypeSlug from 'rehype-slug'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
@@ -47,13 +46,12 @@ function renderEditorJSBlock(block: any, index: number) {
     case 'header':
       const HeaderTag = `h${data.level}` as keyof JSX.IntrinsicElements
       return (
-        <HeaderTag key={index} className={`font-bold mb-4 text-foreground ${
-          data.level === 1 ? 'text-3xl' :
-          data.level === 2 ? 'text-2xl' :
-          data.level === 3 ? 'text-xl' :
-          data.level === 4 ? 'text-lg' :
-          'text-base'
-        }`}>
+        <HeaderTag key={index} className={`font-bold mb-4 text-foreground ${data.level === 1 ? 'text-3xl' :
+            data.level === 2 ? 'text-2xl' :
+              data.level === 3 ? 'text-xl' :
+                data.level === 4 ? 'text-lg' :
+                  'text-base'
+          }`}>
           {data.text}
         </HeaderTag>
       )
@@ -62,8 +60,10 @@ function renderEditorJSBlock(block: any, index: number) {
       const ListTag = data.style === 'ordered' ? 'ol' : 'ul'
       return (
         <ListTag key={index} className={`mb-4 ${data.style === 'ordered' ? 'list-decimal' : 'list-disc'} list-inside space-y-2`}>
-          {data.items.map((item: string, itemIndex: number) => (
-            <li key={itemIndex} className="text-foreground">{item}</li>
+          {data.items.map((item: any, itemIndex: number) => (
+            <li key={itemIndex} className="text-foreground">
+              {typeof item === 'string' ? item : item.content}
+            </li>
           ))}
         </ListTag>
       )
@@ -343,7 +343,7 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
           <ReactMarkdown
             components={components}
             remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeHighlight, rehypeSlug]}
+            rehypePlugins={[rehypeSlug]}
           >
             {post.content}
           </ReactMarkdown>
