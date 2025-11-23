@@ -12,6 +12,7 @@ import { BlogPostSidebar } from '@/components/blog/blog-post-sidebar'
 import { BlogRelatedPosts } from '@/components/blog/blog-related-posts'
 import { BlogSkeleton } from '@/components/blog/blog-skeleton'
 import { TableOfContents } from '@/components/blog/table-of-contents'
+import { CommentSection } from '@/components/blog/comments/comment-section'
 import { BlogServerData } from '@/lib/data/blog-server'
 
 import type { BlogPostWithRelations } from '@/lib/types/blog'
@@ -127,6 +128,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 <Suspense fallback={<BlogSkeleton variant="post" />}>
                   <BlogPostContent post={post} />
                 </Suspense>
+
+                {/* Comments Section */}
+                <CommentSection
+                  postId={post.id}
+                  allowComments={post.allow_comments ?? true}
+                />
               </div>
 
               {/* Desktop Sidebar - Show only on desktop */}
