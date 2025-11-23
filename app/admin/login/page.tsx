@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { loginAdmin, isAuthenticated } from '@/lib/auth/admin'
-import { useReCaptcha, ReCaptchaProvider } from 'next-recaptcha-v3'
+import { useGoogleReCaptcha, GoogleReCaptchaProvider } from 'react-google-recaptcha-v3'
 import { Eye, EyeOff, Lock, Mail, AlertCircle, Shield, ArrowLeft } from 'lucide-react'
 import { SectionNebula } from '@/components/section-nebula'
 import { motion } from 'framer-motion'
@@ -20,7 +20,7 @@ function AdminLoginForm() {
   const router = useRouter()
 
   // reCAPTCHA v3 hook
-  const { executeRecaptcha, loaded } = useReCaptcha()
+  const { executeRecaptcha } = useGoogleReCaptcha()
 
   // Check if already authenticated
   useEffect(() => {
@@ -192,14 +192,10 @@ function AdminLoginForm() {
                 <Shield className="w-4 h-4 text-primary flex-shrink-0" />
                 <div className="flex-1">
                   <div className="text-xs text-white/60">
-                    {loaded ? (
-                      <span className="text-green-400 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                        Security verification active
-                      </span>
-                    ) : (
-                      <span className="animate-pulse">Initializing security...</span>
-                    )}
+                    <span className="text-green-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                      Security verification active
+                    </span>
                   </div>
                 </div>
               </div>
@@ -209,7 +205,7 @@ function AdminLoginForm() {
             <Button
               type="submit"
               className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              disabled={isLoading || !email || !password || !loaded}
+              disabled={isLoading || !email || !password}
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
@@ -246,8 +242,8 @@ function AdminLoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <ReCaptchaProvider>
+    <GoogleReCaptchaProvider reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}>
       <AdminLoginForm />
-    </ReCaptchaProvider>
+    </GoogleReCaptchaProvider>
   )
 }
