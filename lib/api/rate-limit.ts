@@ -29,6 +29,18 @@ const RATE_LIMIT_CONFIGS = {
     maxRequests: 100, // 100 requests per minute
     skipSuccessfulRequests: true,
     skipFailedRequests: false
+  },
+  auth: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxRequests: 5, // 5 requests per 15 minutes
+    skipSuccessfulRequests: false,
+    skipFailedRequests: false
+  },
+  comments: {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 10, // 10 requests per minute
+    skipSuccessfulRequests: false,
+    skipFailedRequests: false
   }
 } as const
 
@@ -117,12 +129,12 @@ function getClientIdentifier(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for')
   const realIp = request.headers.get('x-real-ip')
   const cfConnectingIp = request.headers.get('cf-connecting-ip')
-  
+
   const ip = forwarded?.split(',')[0] || realIp || cfConnectingIp || 'unknown'
-  
+
   // Include user agent for additional uniqueness
   const userAgent = request.headers.get('user-agent') || 'unknown'
-  
+
   return `${ip}:${userAgent.slice(0, 50)}`
 }
 
