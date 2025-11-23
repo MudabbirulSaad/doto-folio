@@ -18,7 +18,7 @@ export interface AdminAuthResult {
 export async function loginAdmin(credentials: AdminLoginData): Promise<AdminAuthResult> {
   try {
     const supabase = createClient()
-    
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email: credentials.email,
       password: credentials.password,
@@ -56,8 +56,13 @@ export async function loginAdmin(credentials: AdminLoginData): Promise<AdminAuth
 export async function logoutAdmin(): Promise<AdminAuthResult> {
   try {
     const supabase = createClient()
-    
+
     const { error } = await supabase.auth.signOut()
+
+    // Also call server-side logout to ensure cookies are cleared
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+    })
 
     if (error) {
       return {

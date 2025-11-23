@@ -20,7 +20,10 @@ import {
   PenTool,
   FolderOpen,
   Tags,
-  BookOpen
+  BookOpen,
+  Code2,
+  Briefcase,
+  MessageSquare
 } from 'lucide-react'
 
 export default function AdminNavigation() {
@@ -65,12 +68,15 @@ export default function AdminNavigation() {
   const handleLogout = async () => {
     setIsLoading(true)
     try {
-      await logoutAdmin()
+      // Optimistic navigation - move to login immediately
       router.push('/admin/login')
+
+      // Perform logout in background
+      await logoutAdmin()
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
-      setIsLoading(false)
+      // No need to set loading false as we navigated away
     }
   }
 
@@ -94,6 +100,18 @@ export default function AdminNavigation() {
       current: pathname === '/admin/blog/posts/new'
     },
     {
+      name: 'Projects',
+      href: '/admin/content/projects',
+      icon: Briefcase,
+      current: pathname.startsWith('/admin/content/projects')
+    },
+    {
+      name: 'Skills',
+      href: '/admin/content/skills',
+      icon: Code2,
+      current: pathname.startsWith('/admin/content/skills')
+    },
+    {
       name: 'Categories',
       href: '/admin/blog/categories',
       icon: FolderOpen,
@@ -106,10 +124,16 @@ export default function AdminNavigation() {
       current: pathname.startsWith('/admin/blog/tags')
     },
     {
-      name: 'Content Management',
+      name: 'Site Content',
       href: '/admin/content',
       icon: FileText,
-      current: pathname.startsWith('/admin/content')
+      current: pathname === '/admin/content'
+    },
+    {
+      name: 'Comments',
+      href: '/admin/comments',
+      icon: MessageSquare,
+      current: pathname.startsWith('/admin/comments')
     },
     {
       name: 'Contact Submissions',
@@ -123,20 +147,18 @@ export default function AdminNavigation() {
     <>
       {/* Desktop Sidebar */}
       <aside
-        className={`admin-sidebar fixed top-0 left-0 h-full z-50 transition-all duration-300 ease-in-out ${
-          isSidebarCollapsed ? 'admin-sidebar-collapsed' : 'admin-sidebar-expanded'
-        } hidden md:flex flex-col`}
+        className={`admin-sidebar fixed top-0 left-0 h-full z-50 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'admin-sidebar-collapsed' : 'admin-sidebar-expanded'
+          } hidden md:flex flex-col border-r border-white/10 bg-black/20 backdrop-blur-xl`}
       >
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
           <Link
             href="/admin/dashboard"
-            className={`flex items-center transition-all duration-300 ${
-              isSidebarCollapsed ? 'justify-center' : 'space-x-3'
-            }`}
+            className={`flex items-center transition-all duration-300 ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'
+              }`}
           >
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-primary-foreground font-bold text-sm">S</span>
+            <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
+              <span className="text-white font-bold text-sm">S</span>
             </div>
             {!isSidebarCollapsed && (
               <span className="font-bold text-lg text-foreground whitespace-nowrap">
@@ -150,7 +172,7 @@ export default function AdminNavigation() {
               variant="ghost"
               size="sm"
               onClick={toggleSidebar}
-              className="flex-shrink-0"
+              className="flex-shrink-0 hover:bg-white/5"
               aria-label="Collapse sidebar"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -159,23 +181,21 @@ export default function AdminNavigation() {
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
           {navigationItems.map((item) => {
             const Icon = item.icon
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`admin-sidebar-item nav-item-glass relative flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200 group ${
-                  item.current
-                    ? 'active bg-primary text-primary-foreground shadow-lg'
-                    : 'text-muted-foreground hover:text-foreground'
-                } ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'}`}
+                className={`admin-sidebar-item nav-item-glass relative flex items-center rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200 group ${item.current
+                  ? 'active bg-primary/20 text-primary border-primary/20 shadow-[0_0_20px_rgba(var(--primary),0.2)]'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+                  } ${isSidebarCollapsed ? 'justify-center' : 'space-x-3'}`}
                 title={isSidebarCollapsed ? item.name : undefined}
               >
-                <Icon className={`flex-shrink-0 transition-transform duration-200 ${
-                  item.current ? 'w-5 h-5' : 'w-4 h-4 group-hover:scale-110'
-                }`} />
+                <Icon className={`flex-shrink-0 transition-transform duration-200 ${item.current ? 'w-5 h-5' : 'w-4 h-4 group-hover:scale-110'
+                  }`} />
                 {!isSidebarCollapsed && (
                   <span className="whitespace-nowrap">{item.name}</span>
                 )}
@@ -190,15 +210,14 @@ export default function AdminNavigation() {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-border space-y-2">
+        <div className="p-4 border-t border-white/10 space-y-2 bg-black/10">
           {/* Portfolio Link */}
           <Link href="/">
             <Button
               variant="ghost"
               size="sm"
-              className={`w-full transition-all duration-200 ${
-                isSidebarCollapsed ? 'px-2' : 'justify-start'
-              }`}
+              className={`w-full transition-all duration-200 hover:bg-white/5 ${isSidebarCollapsed ? 'px-2' : 'justify-start'
+                }`}
               title={isSidebarCollapsed ? 'Portfolio' : undefined}
             >
               <Home className="w-4 h-4 flex-shrink-0" />
@@ -208,7 +227,7 @@ export default function AdminNavigation() {
 
           {/* User Info */}
           {!isSidebarCollapsed && userEmail && (
-            <div className="flex items-center space-x-2 px-3 py-2 text-xs text-muted-foreground bg-secondary/50 rounded-lg">
+            <div className="flex items-center space-x-2 px-3 py-2 text-xs text-muted-foreground bg-white/5 rounded-lg border border-white/5">
               <User className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">{userEmail}</span>
             </div>
@@ -220,9 +239,8 @@ export default function AdminNavigation() {
             size="sm"
             onClick={handleLogout}
             disabled={isLoading}
-            className={`w-full transition-all duration-200 ${
-              isSidebarCollapsed ? 'px-2' : 'justify-start'
-            }`}
+            className={`w-full transition-all duration-200 hover:bg-red-500/10 hover:text-red-400 ${isSidebarCollapsed ? 'px-2' : 'justify-start'
+              }`}
             title={isSidebarCollapsed ? 'Sign Out' : undefined}
           >
             <LogOut className="w-4 h-4 flex-shrink-0" />
@@ -236,12 +254,12 @@ export default function AdminNavigation() {
 
         {/* Collapse Button (when collapsed) */}
         {isSidebarCollapsed && (
-          <div className="p-2">
+          <div className="p-2 border-t border-white/10">
             <Button
               variant="ghost"
               size="sm"
               onClick={toggleSidebar}
-              className="w-full"
+              className="w-full hover:bg-white/5"
               aria-label="Expand sidebar"
             >
               <ChevronRight className="w-4 h-4" />
@@ -251,12 +269,12 @@ export default function AdminNavigation() {
       </aside>
 
       {/* Mobile Top Navigation */}
-      <nav className="admin-mobile-nav fixed top-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border md:hidden">
+      <nav className="admin-mobile-nav fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b border-white/10 md:hidden">
         <div className="flex items-center justify-between px-4 h-16">
           {/* Mobile Logo */}
           <Link href="/admin/dashboard" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">S</span>
+            <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
+              <span className="text-white font-bold text-sm">S</span>
             </div>
             <span className="font-bold text-lg text-foreground">SAAD Admin</span>
           </Link>
@@ -267,7 +285,7 @@ export default function AdminNavigation() {
             size="sm"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle mobile menu"
-            className="admin-touch-target"
+            className="admin-touch-target hover:bg-white/5"
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
@@ -275,19 +293,18 @@ export default function AdminNavigation() {
 
         {/* Mobile Navigation Menu */}
         {isMobileMenuOpen && (
-          <div className="border-t border-border bg-card/95 backdrop-blur-sm">
-            <div className="px-4 py-3 space-y-1">
+          <div className="border-t border-white/10 bg-background/95 backdrop-blur-xl animate-in slide-in-from-top-2">
+            <div className="px-4 py-3 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto">
               {navigationItems.map((item) => {
                 const Icon = item.icon
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`nav-item-glass admin-touch-target flex items-center space-x-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      item.current
-                        ? 'active bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
+                    className={`nav-item-glass admin-touch-target flex items-center space-x-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${item.current
+                      ? 'active bg-primary/20 text-primary border-primary/20'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+                      }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Icon className="w-4 h-4" />
@@ -297,9 +314,9 @@ export default function AdminNavigation() {
               })}
 
               {/* Mobile Actions */}
-              <div className="pt-3 mt-3 border-t border-border space-y-1">
+              <div className="pt-3 mt-3 border-t border-white/10 space-y-1">
                 <Link href="/">
-                  <Button variant="ghost" size="sm" className="w-full justify-start admin-touch-target">
+                  <Button variant="ghost" size="sm" className="w-full justify-start admin-touch-target hover:bg-white/5">
                     <Home className="w-4 h-4 mr-3" />
                     Portfolio
                   </Button>
@@ -310,14 +327,14 @@ export default function AdminNavigation() {
                   size="sm"
                   onClick={handleLogout}
                   disabled={isLoading}
-                  className="w-full justify-start admin-touch-target"
+                  className="w-full justify-start admin-touch-target hover:bg-red-500/10 hover:text-red-400"
                 >
                   <LogOut className="w-4 h-4 mr-3" />
                   {isLoading ? 'Signing Out...' : 'Sign Out'}
                 </Button>
 
                 {userEmail && (
-                  <div className="flex items-center space-x-2 px-3 py-2 text-xs text-muted-foreground bg-secondary/30 rounded-lg">
+                  <div className="flex items-center space-x-2 px-3 py-2 text-xs text-muted-foreground bg-white/5 rounded-lg border border-white/5 mt-2">
                     <User className="w-3 h-3" />
                     <span className="truncate">{userEmail}</span>
                   </div>
