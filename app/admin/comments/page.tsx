@@ -89,18 +89,26 @@ export default function CommentsManagementPage() {
 
         setActionLoading(comment.id)
         try {
+            // Get the current user session
+            const supabase = createClient()
+            const { data: { session } } = await supabase.auth.getSession()
+
+            if (!session) {
+                setMessage({ type: 'error', text: 'Please log in to reply' })
+                return
+            }
+
             const response = await fetch('/api/comments', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
                 },
                 body: JSON.stringify({
                     postId: comment.post_id,
                     parentId: comment.id,
                     content: replyContent,
-                    authorName: 'Admin',
-                    authorEmail: 'admin@saad.com', // You might want to get this from the session
-                    isAdmin: true
+                    userId: session.user.id
                 }),
             })
 
@@ -110,7 +118,8 @@ export default function CommentsManagementPage() {
                 setReplyingTo(null)
                 fetchComments()
             } else {
-                setMessage({ type: 'error', text: 'Failed to post reply' })
+                const error = await response.json()
+                setMessage({ type: 'error', text: error.message || 'Failed to post reply' })
             }
         } catch (error) {
             console.error('Error posting reply:', error)
