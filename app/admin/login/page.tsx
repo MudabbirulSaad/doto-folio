@@ -7,7 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { loginAdmin, isAuthenticated } from '@/lib/auth/admin'
 import { useReCaptcha, ReCaptchaProvider } from 'next-recaptcha-v3'
-import { Eye, EyeOff, Lock, Mail, AlertCircle, Shield } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, AlertCircle, Shield, ArrowLeft } from 'lucide-react'
+import { SectionNebula } from '@/components/section-nebula'
+import { motion } from 'framer-motion'
 
 function AdminLoginForm() {
   const [email, setEmail] = useState('')
@@ -78,34 +80,66 @@ function AdminLoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-black">
+      {/* Cosmic Background */}
+      <SectionNebula className="fixed inset-0 z-0 opacity-80 h-full w-full" />
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md relative z-10"
+      >
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-            <Lock className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Admin Login</h1>
-          <p className="text-muted-foreground">Access the SAAD Portfolio admin dashboard</p>
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-2xl mb-6 border border-primary/20 backdrop-blur-md shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)]"
+          >
+            <Lock className="w-10 h-10 text-primary" />
+          </motion.div>
+          <motion.h1
+            initial={{ y: -10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-4xl font-bold text-white mb-2 tracking-tight"
+          >
+            Admin Access
+          </motion.h1>
+          <motion.p
+            initial={{ y: -10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="text-white/60"
+          >
+            Authenticate to manage your portfolio
+          </motion.p>
         </div>
 
         {/* Login Form */}
-        <div className="bg-card border border-border rounded-2xl p-8 shadow-lg">
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="bg-black/40 border border-white/10 rounded-2xl p-8 shadow-2xl backdrop-blur-xl"
+        >
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-foreground">
+              <Label htmlFor="email" className="text-sm font-medium text-white/80">
                 Email Address
               </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <div className="relative group">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-primary transition-colors" />
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@example.com"
-                  className="pl-10 h-12"
+                  className="pl-10 h-12 bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-primary/50 focus:bg-white/10 transition-all"
                   required
                   disabled={isLoading}
                 />
@@ -114,25 +148,25 @@ function AdminLoginForm() {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-foreground">
+              <Label htmlFor="password" className="text-sm font-medium text-white/80">
                 Password
               </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <div className="relative group">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-primary transition-colors" />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="pl-10 pr-10 h-12"
+                  className="pl-10 pr-10 h-12 bg-white/5 border-white/10 text-white placeholder:text-white/20 focus:border-primary/50 focus:bg-white/10 transition-all"
                   required
                   disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/40 hover:text-white transition-colors"
                   disabled={isLoading}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -142,22 +176,29 @@ function AdminLoginForm() {
 
             {/* Error Message */}
             {error && (
-              <div className="flex items-center gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
-                <p className="text-sm text-destructive">{error}</p>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg"
+              >
+                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                <p className="text-sm text-red-400">{error}</p>
+              </motion.div>
             )}
 
             {/* reCAPTCHA v3 Status */}
             <div className="space-y-2">
-              <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+              <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
                 <Shield className="w-4 h-4 text-primary flex-shrink-0" />
                 <div className="flex-1">
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-white/60">
                     {loaded ? (
-                      <span className="text-green-600">🔒 Security verification ready</span>
+                      <span className="text-green-400 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                        Security verification active
+                      </span>
                     ) : (
-                      <span>Loading security verification...</span>
+                      <span className="animate-pulse">Initializing security...</span>
                     )}
                   </div>
                 </div>
@@ -167,39 +208,38 @@ function AdminLoginForm() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-12 text-base font-medium"
+              className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
               disabled={isLoading || !email || !password || !loaded}
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  Verifying & Signing In...
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Verifying...
                 </div>
               ) : (
                 'Sign In'
               )}
             </Button>
           </form>
-
-          {/* Footer */}
-          <div className="mt-6 pt-6 border-t border-border">
-            <p className="text-center text-sm text-muted-foreground">
-              Secure admin access for SAAD Portfolio
-            </p>
-          </div>
-        </div>
+        </motion.div>
 
         {/* Back to Portfolio */}
-        <div className="text-center mt-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="text-center mt-8"
+        >
           <Button
             variant="ghost"
             onClick={() => router.push('/')}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-white/40 hover:text-white hover:bg-white/5 gap-2 group"
           >
-            ← Back to Portfolio
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            Back to Portfolio
           </Button>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }
