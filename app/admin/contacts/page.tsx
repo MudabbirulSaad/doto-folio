@@ -9,7 +9,7 @@ import { Mail } from 'lucide-react'
 async function getContactSubmissions() {
   try {
     const supabase = await createClient()
-    
+
     const { data: submissions, error } = await supabase
       .from('contact_submissions')
       .select('*')
@@ -59,7 +59,7 @@ export default async function ContactSubmissionsPage() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-card border border-border rounded-xl p-6">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
@@ -71,14 +71,14 @@ export default async function ContactSubmissionsPage() {
                 {submissions.filter(s => {
                   const submissionDate = new Date(s.created_at)
                   const now = new Date()
-                  return submissionDate.getMonth() === now.getMonth() && 
-                         submissionDate.getFullYear() === now.getFullYear()
+                  return submissionDate.getMonth() === now.getMonth() &&
+                    submissionDate.getFullYear() === now.getFullYear()
                 }).length}
               </p>
             </div>
           </div>
         </div>
-        
+
         <div className="bg-card border border-border rounded-xl p-6">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">

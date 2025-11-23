@@ -5,20 +5,22 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { 
-  ArrowLeft, 
-  Plus, 
-  Edit, 
-  Trash2, 
+import {
+  ArrowLeft,
+  Plus,
+  Edit,
+  Trash2,
   Save,
   X,
   Loader2,
   AlertCircle,
   CheckCircle,
   Eye,
-  FolderOpen
+  FolderOpen,
+  Briefcase
 } from 'lucide-react'
 import Link from 'next/link'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Project {
   id: string
@@ -45,10 +47,10 @@ interface ProjectFormData {
 }
 
 const statusOptions = [
-  { value: 'Planning', label: 'Planning', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' },
-  { value: 'In Development', label: 'In Development', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' },
-  { value: 'Completed', label: 'Completed', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' },
-  { value: 'On Hold', label: 'On Hold', color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' }
+  { value: 'Planning', label: 'Planning', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' },
+  { value: 'In Development', label: 'In Development', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+  { value: 'Completed', label: 'Completed', color: 'bg-green-500/10 text-green-500 border-green-500/20' },
+  { value: 'On Hold', label: 'On Hold', color: 'bg-gray-500/10 text-gray-400 border-gray-500/20' }
 ]
 
 export default function ProjectsManagementPage() {
@@ -58,7 +60,7 @@ export default function ProjectsManagementPage() {
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-  
+
   const [formData, setFormData] = useState<ProjectFormData>({
     title: '',
     description: '',
@@ -136,7 +138,7 @@ export default function ProjectsManagementPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.title.trim() || !formData.description.trim()) {
       setMessage({ type: 'error', text: 'Title and description are required' })
       return
@@ -146,10 +148,10 @@ export default function ProjectsManagementPage() {
     setMessage(null)
 
     try {
-      const url = editingProject 
+      const url = editingProject
         ? `/api/admin/content/projects/${editingProject.id}`
         : '/api/admin/content/projects'
-      
+
       const method = editingProject ? 'PUT' : 'POST'
 
       const response = await fetch(url, {
@@ -163,8 +165,8 @@ export default function ProjectsManagementPage() {
       const result = await response.json()
 
       if (response.ok) {
-        setMessage({ 
-          type: 'success', 
+        setMessage({
+          type: 'success',
           text: editingProject ? 'Project updated successfully!' : 'Project created successfully!'
         })
         resetForm()
@@ -219,27 +221,30 @@ export default function ProjectsManagementPage() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
           <Link href="/admin/content">
-            <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+            <Button variant="ghost" size="sm" className="flex items-center space-x-2 hover:bg-white/5">
               <ArrowLeft className="w-4 h-4" />
               <span>Back to Content</span>
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Projects Management</h1>
-            <p className="text-muted-foreground">Add, edit, and manage your portfolio projects</p>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+              <Briefcase className="w-8 h-8 text-primary" />
+              Projects Management
+            </h1>
+            <p className="text-muted-foreground mt-1">Add, edit, and manage your portfolio projects</p>
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-3">
           <Link href="/" target="_blank">
-            <Button variant="outline" size="sm" className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" className="flex items-center space-x-2 bg-white/5 border-white/10 hover:bg-white/10">
               <Eye className="w-4 h-4" />
               <span>Preview</span>
             </Button>
           </Link>
-          <Button 
+          <Button
             onClick={() => setShowForm(true)}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 shadow-lg shadow-primary/20"
           >
             <Plus className="w-4 h-4" />
             <span>Add Project</span>
@@ -248,236 +253,264 @@ export default function ProjectsManagementPage() {
       </div>
 
       {/* Status Message */}
-      {message && (
-        <div className={`mb-6 p-4 rounded-lg border ${
-          message.type === 'success' 
-            ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400' 
-            : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400'
-        }`}>
-          <div className="flex items-center space-x-2">
-            {message.type === 'success' ? (
-              <CheckCircle className="w-5 h-5" />
-            ) : (
-              <AlertCircle className="w-5 h-5" />
-            )}
-            <span>{message.text}</span>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`mb-6 p-4 rounded-xl border backdrop-blur-md ${message.type === 'success'
+                ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                : 'bg-red-500/10 border-red-500/20 text-red-400'
+              }`}
+          >
+            <div className="flex items-center space-x-2">
+              {message.type === 'success' ? (
+                <CheckCircle className="w-5 h-5" />
+              ) : (
+                <AlertCircle className="w-5 h-5" />
+              )}
+              <span>{message.text}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Project Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-foreground">
-                {editingProject ? 'Edit Project' : 'Add New Project'}
-              </h2>
-              <Button variant="ghost" size="sm" onClick={resetForm}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="title">Project Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Enter project title..."
-                  className="mt-1"
-                  required
-                />
+      <AnimatePresence>
+        {showForm && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#18181b]/90 border border-white/10 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
+                <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                  {editingProject ? <Edit className="w-5 h-5 text-primary" /> : <Plus className="w-5 h-5 text-primary" />}
+                  {editingProject ? 'Edit Project' : 'Add New Project'}
+                </h2>
+                <Button variant="ghost" size="sm" onClick={resetForm} className="hover:bg-white/5 rounded-full p-2 h-auto">
+                  <X className="w-5 h-5" />
+                </Button>
               </div>
 
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Enter project description..."
-                  className="mt-1"
-                  rows={4}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <select
-                  id="status"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as 'Planning' | 'In Development' | 'Completed' | 'On Hold' })}
-                  className="mt-1 w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
-                >
-                  {statusOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <Label>Technologies</Label>
-                <div className="mt-1 space-y-2">
-                  <div className="flex space-x-2">
-                    <Input
-                      value={newTechnology}
-                      onChange={(e) => setNewTechnology(e.target.value)}
-                      placeholder="Add technology..."
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTechnology())}
-                    />
-                    <Button type="button" onClick={addTechnology} size="sm">
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  
-                  {formData.technologies.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {formData.technologies.map((tech, index) => (
-                        <span
-                          key={index}
-                          className="inline-flex items-center space-x-1 px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-sm"
-                        >
-                          <span>{tech}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeTechnology(tech)}
-                            className="text-muted-foreground hover:text-foreground"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Project Title</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Enter project title..."
+                    className="bg-white/5 border-white/10 focus:border-primary/50"
+                    required
+                  />
                 </div>
-              </div>
 
-              <div className="flex items-center space-x-4">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_featured}
-                    onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
-                    className="rounded border-input"
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Enter project description..."
+                    className="bg-white/5 border-white/10 focus:border-primary/50 min-h-[100px]"
+                    required
                   />
-                  <span className="text-sm">Featured Project</span>
-                </label>
+                </div>
 
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_published}
-                    onChange={(e) => setFormData({ ...formData, is_published: e.target.checked })}
-                    className="rounded border-input"
-                  />
-                  <span className="text-sm">Published</span>
-                </label>
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="status">Status</Label>
+                    <select
+                      id="status"
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-md text-sm focus:outline-none focus:border-primary/50 text-foreground"
+                    >
+                      {statusOptions.map(option => (
+                        <option key={option.value} value={option.value} className="bg-[#18181b]">
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={saving}>
-                  {saving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      {editingProject ? 'Update Project' : 'Create Project'}
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                  <div className="space-y-2">
+                    <Label>Visibility</Label>
+                    <div className="flex flex-col gap-3 p-3 bg-white/5 rounded-lg border border-white/10">
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.is_featured}
+                          onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
+                          className="rounded border-white/20 bg-white/5 text-primary focus:ring-primary/50"
+                        />
+                        <span className="text-sm">Featured Project</span>
+                      </label>
 
-      {/* Projects List */}
-      <div className="space-y-4">
-        {projects.length === 0 ? (
-          <div className="text-center py-12 bg-card border border-border rounded-xl">
-            <FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No Projects Yet</h3>
-            <p className="text-muted-foreground mb-4">Start by adding your first project to showcase your work.</p>
-            <Button onClick={() => setShowForm(true)} className="flex items-center space-x-2">
-              <Plus className="w-4 h-4" />
-              <span>Add Your First Project</span>
-            </Button>
-          </div>
-        ) : (
-          projects.map((project) => {
-            const statusOption = statusOptions.find(s => s.value === project.status)
-            return (
-              <div key={project.id} className="bg-card border border-border rounded-xl p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold text-foreground">{project.title}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusOption?.color}`}>
-                        {project.status}
-                      </span>
-                      {project.is_featured && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                          Featured
-                        </span>
-                      )}
-                      {!project.is_published && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
-                          Draft
-                        </span>
-                      )}
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.is_published}
+                          onChange={(e) => setFormData({ ...formData, is_published: e.target.checked })}
+                          className="rounded border-white/20 bg-white/5 text-primary focus:ring-primary/50"
+                        />
+                        <span className="text-sm">Published</span>
+                      </label>
                     </div>
-                    
-                    <p className="text-muted-foreground mb-3">{project.description}</p>
-                    
-                    {project.project_technologies.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {project.project_technologies.map((tech) => (
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Technologies</Label>
+                  <div className="space-y-3">
+                    <div className="flex space-x-2">
+                      <Input
+                        value={newTechnology}
+                        onChange={(e) => setNewTechnology(e.target.value)}
+                        placeholder="Add technology (e.g., React, Node.js)..."
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTechnology())}
+                        className="bg-white/5 border-white/10 focus:border-primary/50"
+                      />
+                      <Button type="button" onClick={addTechnology} size="sm" className="bg-white/10 hover:bg-white/20 text-foreground">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    {formData.technologies.length > 0 && (
+                      <div className="flex flex-wrap gap-2 p-3 bg-white/5 rounded-lg border border-white/10 min-h-[60px]">
+                        {formData.technologies.map((tech, index) => (
                           <span
-                            key={tech.id}
-                            className="px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-xs"
+                            key={index}
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-sm"
                           >
-                            {tech.technology_name}
+                            <span>{tech}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeTechnology(tech)}
+                              className="text-primary/60 hover:text-primary ml-1"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
                           </span>
                         ))}
                       </div>
                     )}
                   </div>
-                  
-                  <div className="flex items-center space-x-2 ml-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(project)}
-                      className="flex items-center space-x-1"
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span>Edit</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(project)}
-                      className="flex items-center space-x-1 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span>Delete</span>
-                    </Button>
-                  </div>
                 </div>
-              </div>
-            )
-          })
+
+                <div className="flex justify-end space-x-3 pt-6 border-t border-white/10">
+                  <Button type="button" variant="ghost" onClick={resetForm} className="hover:bg-white/5">
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={saving} className="shadow-lg shadow-primary/20">
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        {editingProject ? 'Update Project' : 'Create Project'}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Projects List */}
+      <div className="space-y-4">
+        {projects.length === 0 ? (
+          <div className="text-center py-16 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm">
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FolderOpen className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">No Projects Yet</h3>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">Start by adding your first project to showcase your work to the world.</p>
+            <Button onClick={() => setShowForm(true)} className="flex items-center space-x-2 shadow-lg shadow-primary/20">
+              <Plus className="w-4 h-4" />
+              <span>Add Your First Project</span>
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            {projects.map((project) => {
+              const statusOption = statusOptions.find(s => s.value === project.status)
+              return (
+                <motion.div
+                  key={project.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/[0.07] transition-all duration-300 backdrop-blur-sm group"
+                >
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-3 mb-3">
+                        <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">{project.title}</h3>
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusOption?.color}`}>
+                          {project.status}
+                        </span>
+                        {project.is_featured && (
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                            Featured
+                          </span>
+                        )}
+                        {!project.is_published && (
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-500/10 text-gray-400 border border-gray-500/20">
+                            Draft
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-muted-foreground mb-4 line-clamp-2">{project.description}</p>
+
+                      {project.project_technologies.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {project.project_technologies.map((tech) => (
+                            <span
+                              key={tech.id}
+                              className="px-2 py-1 bg-white/5 text-muted-foreground border border-white/10 rounded-md text-xs"
+                            >
+                              {tech.technology_name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 md:self-start pt-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(project)}
+                        className="flex items-center space-x-1 hover:bg-white/10 hover:text-primary"
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span className="hidden sm:inline">Edit</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(project)}
+                        className="flex items-center space-x-1 hover:bg-red-500/10 text-red-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span className="hidden sm:inline">Delete</span>
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
         )}
       </div>
     </div>
