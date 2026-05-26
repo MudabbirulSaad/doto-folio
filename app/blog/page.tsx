@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { Metadata } from 'next'
 
 // Force dynamic rendering to prevent build-time API calls
@@ -9,9 +8,8 @@ import { BlogHero } from '@/components/blog/blog-hero'
 import { BlogFilters } from '@/components/blog/blog-filters'
 import { BlogGrid } from '@/components/blog/blog-grid'
 import { BlogPagination } from '@/components/blog/blog-pagination'
-import { BlogSkeleton } from '@/components/blog/blog-skeleton'
 import { BlogServerData } from '@/lib/data/blog-server'
-import type { BlogPost, BlogCategory, BlogTag } from '@/lib/types/blog'
+import type { BlogSearchParams } from '@/lib/types/blog'
 
 export const metadata: Metadata = {
   title: 'Blog & Insights | SAAD Portfolio',
@@ -34,8 +32,11 @@ interface BlogPageProps {
     query?: string
     category?: string
     tag?: string
+    featured?: string
     page?: string
     limit?: string
+    sortBy?: string
+    sortOrder?: string
   }>
 }
 
@@ -125,8 +126,11 @@ async function BlogGridSection({ searchParams }: { searchParams: BlogPageProps['
       search: resolvedSearchParams.query,
       category: resolvedSearchParams.category,
       tag: resolvedSearchParams.tag,
+      featured: resolvedSearchParams.featured === 'true' ? true : undefined,
       page: resolvedSearchParams.page ? parseInt(resolvedSearchParams.page) : 1,
-      limit: resolvedSearchParams.limit ? parseInt(resolvedSearchParams.limit) : 10
+      limit: resolvedSearchParams.limit ? parseInt(resolvedSearchParams.limit) : 12,
+      sortBy: resolvedSearchParams.sortBy as BlogSearchParams['sortBy'] | undefined,
+      sortOrder: resolvedSearchParams.sortOrder as BlogSearchParams['sortOrder'] | undefined
     }
 
     const result = await BlogServerData.getBlogPosts(options)

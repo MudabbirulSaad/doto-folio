@@ -1,5 +1,19 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import type { BlogPost, BlogCategory, BlogTag } from '@/lib/types/blog'
+import {
+  createSupabasePublicBlogListingRepository,
+  getPublicBlogListing
+} from '@/lib/data/public-blog-listing'
+import type { BlogPostWithRelations, BlogSearchParams } from '@/lib/types/blog'
+
+interface BlogPostListingResponse {
+  posts: BlogPostWithRelations[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
 
 // Create a server-side Supabase client with service role key
 function createServerClient() {
@@ -102,7 +116,9 @@ export class BlogServerData {
     page?: number
     limit?: number
     featured?: boolean
-  } = {}) {
+    sortBy?: BlogSearchParams['sortBy']
+    sortOrder?: BlogSearchParams['sortOrder']
+  } = {}): Promise<BlogPostListingResponse> {
     try {
       const supabase = createServerClient()
       const {
@@ -110,74 +126,34 @@ export class BlogServerData {
         category,
         tag,
         page = 1,
-        limit = 10,
-        featured
+        limit = 12,
+        featured,
+        sortBy,
+        sortOrder
       } = options
 
-      let query = supabase
-        .from('blog_posts')
-        .select(`
-          *,
-          blog_categories!inner(id, name, slug, color),
-          blog_post_tags!inner(
-            blog_tags!inner(id, name, slug)
-          )
-        `)
-        .eq('status', 'published')
-
-      // Apply filters
-      if (featured) {
-        query = query.eq('featured', true)
-      }
-
-      if (category) {
-        query = query.eq('blog_categories.slug', category)
-      }
-
-      if (tag) {
-        query = query.eq('blog_tags.slug', tag)
-      }
-
-      if (search) {
-        query = query.or(`title.ilike.%${search}%,excerpt.ilike.%${search}%,content.ilike.%${search}%`)
-      }
-
-      // Get total count for pagination
-      const { count } = await supabase
-        .from('blog_posts')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'published')
-
-      // Apply pagination and ordering
-      const offset = (page - 1) * limit
-      query = query
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1)
-
-      const { data: posts, error } = await query
-
-      if (error) {
-        console.error('Error fetching blog posts:', error)
-        return {
-          posts: [],
-          pagination: {
-            page,
-            limit,
-            total: 0,
-            totalPages: 0
-          }
-        }
-      }
-
-      const totalPages = Math.ceil((count || 0) / limit)
-
-      return {
-        posts: posts || [],
-        pagination: {
+      const result = await getPublicBlogListing(
+        createSupabasePublicBlogListingRepository(supabase),
+        {
+          query: search,
+          category,
+          tag,
+          featured,
           page,
           limit,
-          total: count || 0,
-          totalPages
+          sortBy,
+          sortOrder
+        },
+        { defaultLimit: 12, maxLimit: 50 }
+      )
+
+      return {
+        posts: result.posts,
+        pagination: {
+          page: result.page,
+          limit: result.limit,
+          total: result.total,
+          totalPages: result.totalPages
         }
       }
     } catch (error) {
@@ -186,7 +162,7 @@ export class BlogServerData {
         posts: [],
         pagination: {
           page: 1,
-          limit: 10,
+          limit: 12,
           total: 0,
           totalPages: 0
         }

@@ -93,7 +93,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     }
 
     // For now, get related posts by category (we can implement AI recommendations later)
-    let relatedPosts = []
+    let relatedPosts: BlogPostWithRelations[] = []
     try {
       const categoryPosts = await BlogServerData.getBlogPosts({
         category: post.blog_categories?.slug,
