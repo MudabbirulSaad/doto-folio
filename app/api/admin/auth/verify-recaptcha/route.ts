@@ -18,7 +18,7 @@ import {
 const RecaptchaVerificationSchema = z.object({
   token: z.string()
     .min(1, 'reCAPTCHA token is required')
-    .max(2000, 'Invalid reCAPTCHA token format')
+    .max(8192, 'Invalid reCAPTCHA token format')
 })
 
 // =============================================
