@@ -3,6 +3,25 @@ import { createClient } from '@/lib/supabase/server'
 import { withAuth } from '@/lib/api/middleware'
 import { createSuccessResponse, createErrorResponse, createValidationErrorResponse } from '@/lib/api/response'
 import type { CreateBlogPostData } from '@/lib/types/blog'
+import {
+  BlogPostWorkflowError,
+  createBlogPost,
+  createSupabaseBlogPostWorkflowRepository
+} from '@/lib/data/blog-post-workflow'
+
+function createWorkflowErrorResponse(error: unknown) {
+  if (error instanceof BlogPostWorkflowError) {
+    if (error.code === 'VALIDATION_ERROR') {
+      return createValidationErrorResponse(error.details)
+    }
+    if (error.code === 'NOT_FOUND') {
+      return createErrorResponse('NOT_FOUND', error.message, 404, error.details)
+    }
+    return createErrorResponse('INTERNAL_ERROR', error.message, 500, error.details)
+  }
+
+  return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
+}
 
 // GET - Get all blog posts for admin
 async function getPostsHandler({ request }: { request: NextRequest }) {
@@ -85,119 +104,15 @@ async function getPostsHandler({ request }: { request: NextRequest }) {
 // POST - Create new blog post
 async function createPostHandler({ request }: { request: NextRequest }) {
   try {
-    const body = await request.json()
-    const {
-      title,
-      slug,
-      excerpt,
-      content,
-      category_id,
-      tag_ids = [],
-      status = 'draft',
-      featured = false,
-      meta_title,
-      meta_description
-    }: CreateBlogPostData = body
-
-    // Validation
-    if (!title?.trim()) {
-      return createValidationErrorResponse(['Title is required'])
-    }
-
-    if (!slug?.trim()) {
-      return createValidationErrorResponse(['Slug is required'])
-    }
-
-    if (!content?.trim()) {
-      return createValidationErrorResponse(['Content is required'])
-    }
-
+    const body: CreateBlogPostData = await request.json()
     const supabase = await createClient()
-
-    // Check if slug already exists
-    const { data: existingPost } = await supabase
-      .from('blog_posts')
-      .select('id')
-      .eq('slug', slug.trim())
-      .single()
-
-    if (existingPost) {
-      return createValidationErrorResponse(['A post with this slug already exists'])
-    }
-
-    // Calculate reading time (rough estimate: 200 words per minute)
-    let readingTime = 5 // default
-    try {
-      const contentData = JSON.parse(content)
-      if (contentData.blocks) {
-        const wordCount = contentData.blocks
-          .filter((block: any) => block.type === 'paragraph' || block.type === 'header')
-          .reduce((count: number, block: any) => {
-            const text = block.data?.text || ''
-            return count + text.split(/\s+/).length
-          }, 0)
-        readingTime = Math.max(1, Math.ceil(wordCount / 200))
-      }
-    } catch (e) {
-      // Use default reading time if content parsing fails
-    }
-
-    // Create the post
-    const { data: post, error: postError } = await supabase
-      .from('blog_posts')
-      .insert({
-        title: title.trim(),
-        slug: slug.trim(),
-        excerpt: excerpt?.trim() || '',
-        content: content.trim(),
-        category_id: category_id || null,
-        status,
-        featured,
-        meta_title: meta_title?.trim() || null,
-        meta_description: meta_description?.trim() || null,
-        reading_time: readingTime,
-        published_at: status === 'published' ? new Date().toISOString() : null
-      })
-      .select()
-      .single()
-
-    if (postError) {
-      console.error('Error creating post:', postError)
-      return createErrorResponse('INTERNAL_ERROR', 'Failed to create post', 500)
-    }
-
-    // Add tags if provided
-    if (tag_ids.length > 0 && post) {
-      const tagRelations = tag_ids.map(tag_id => ({
-        post_id: post.id,
-        tag_id
-      }))
-
-      const { error: tagError } = await supabase
-        .from('blog_post_tags')
-        .insert(tagRelations)
-
-      if (tagError) {
-        console.error('Error adding tags:', tagError)
-        // Don't fail the entire operation, just log the error
-      }
-
-      // Update tag usage counts
-      for (const tag_id of tag_ids) {
-        await supabase.rpc('increment_tag_usage', { tag_id })
-      }
-    }
-
-    // Update category post count if category is assigned
-    if (category_id) {
-      await supabase.rpc('update_category_post_count', { category_id })
-    }
+    const post = await createBlogPost(createSupabaseBlogPostWorkflowRepository(supabase), body)
 
     return createSuccessResponse(post, 'Post created successfully')
 
   } catch (error) {
     console.error('Error in createPostHandler:', error)
-    return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
+    return createWorkflowErrorResponse(error)
   }
 }
 
