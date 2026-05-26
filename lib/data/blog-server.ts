@@ -41,9 +41,9 @@ export class BlogServerData {
         .from('blog_posts')
         .select(`
           *,
-          blog_categories!inner(id, name, slug, color),
-          blog_post_tags!inner(
-            blog_tags!inner(id, name, slug)
+          category:blog_categories(id, name, slug, color),
+          tags:blog_post_tags(
+            tag:blog_tags(id, name, slug)
           )
         `)
         .eq('status', 'published')
@@ -179,17 +179,21 @@ export class BlogServerData {
         .from('blog_posts')
         .select(`
           *,
-          blog_categories!inner(id, name, slug, color),
-          blog_post_tags!inner(
-            blog_tags!inner(id, name, slug)
+          category:blog_categories(id, name, slug, color),
+          tags:blog_post_tags(
+            tag:blog_tags(id, name, slug)
           )
         `)
         .eq('slug', slug)
         .eq('status', 'published')
-        .single()
+        .maybeSingle()
 
       if (error) {
         console.error('Error fetching blog post:', error)
+        return null
+      }
+
+      if (!post) {
         return null
       }
 
@@ -199,7 +203,10 @@ export class BlogServerData {
         .update({ view_count: (post.view_count || 0) + 1 })
         .eq('id', post.id)
 
-      return post
+      return {
+        ...post,
+        tags: post.tags?.map((tagRelation: any) => tagRelation.tag).filter(Boolean) || []
+      }
     } catch (error) {
       console.error('Error in getBlogPost:', error)
       return null

@@ -63,6 +63,37 @@ function trimRequired(value: string) {
   return value.trim()
 }
 
+function stripHtml(value: string) {
+  return value.replace(/<[^>]*>/g, ' ')
+}
+
+function normalizeWhitespace(value: string) {
+  return value.replace(/\s+/g, ' ').trim()
+}
+
+function truncateExcerpt(value: string, maxLength = 180) {
+  const normalized = normalizeWhitespace(value)
+  if (normalized.length <= maxLength) return normalized
+
+  const truncated = normalized.slice(0, maxLength).replace(/\s+\S*$/, '').trim()
+  return truncated || normalized.slice(0, maxLength).trim()
+}
+
+function excerptFromContent(content: string) {
+  try {
+    const contentData = JSON.parse(content)
+    if (!Array.isArray(contentData.blocks)) return null
+
+    const text = contentData.blocks
+      .map((block: any) => stripHtml(String(block.data?.text || block.data?.caption || '')))
+      .join(' ')
+
+    return truncateExcerpt(text) || null
+  } catch {
+    return truncateExcerpt(stripHtml(content)) || null
+  }
+}
+
 function uniqueValues(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.filter((value): value is string => Boolean(value))))
 }
@@ -100,8 +131,12 @@ export async function createBlogPost(
 ) {
   requireNonBlank(input.title, 'Title is required')
   requireNonBlank(input.slug, 'Slug is required')
-  requireNonBlank(input.excerpt, 'Excerpt is required')
   requireNonBlank(input.content, 'Content is required')
+
+  const excerpt = trimNullable(input.excerpt) || excerptFromContent(input.content)
+  if (!excerpt) {
+    throw new BlogPostWorkflowError('VALIDATION_ERROR', 'Excerpt is required')
+  }
 
   const slug = trimRequired(input.slug)
   await assertSlugIsUnique(repository, slug)
@@ -114,7 +149,7 @@ export async function createBlogPost(
   const post = await repository.createPost({
     title: trimRequired(input.title),
     slug,
-    excerpt: trimRequired(input.excerpt),
+    excerpt: trimRequired(excerpt),
     content: trimRequired(input.content),
     category_id: categoryId,
     status,

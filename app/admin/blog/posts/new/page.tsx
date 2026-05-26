@@ -53,6 +53,17 @@ const NotionEditor = dynamic(() => import('@/components/admin/blog/notion-editor
 import type { BlogCategory, BlogTag } from '@/lib/types/blog'
 import type { OutputData } from '@editorjs/editorjs'
 
+function generateSlug(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
+
+function getApiErrorMessage(error: any) {
+  return error?.error?.details?.[0] || error?.error?.message || error?.message || 'Failed to save post'
+}
+
 export default function NewPostPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -91,14 +102,8 @@ export default function NewPostPage() {
 
   // Auto-generate slug from title
   useEffect(() => {
-    if (title && !slug) {
-      const generatedSlug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-      setSlug(generatedSlug)
-    }
-  }, [title, slug])
+    setSlug(generateSlug(title))
+  }, [title])
 
   const fetchCategories = async () => {
     try {
@@ -129,10 +134,7 @@ export default function NewPostPage() {
 
     try {
       // Generate slug from name
-      const slug = newCategoryName.trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
+      const slug = generateSlug(newCategoryName.trim())
 
       const response = await fetch('/api/admin/blog/categories', {
         method: 'POST',
@@ -161,10 +163,7 @@ export default function NewPostPage() {
 
     try {
       // Generate slug from name
-      const slug = newTagName.trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
+      const slug = generateSlug(newTagName.trim())
 
       const response = await fetch('/api/admin/blog/tags', {
         method: 'POST',
@@ -239,7 +238,7 @@ export default function NewPostPage() {
         router.push('/admin/blog/posts')
       } else {
         const error = await response.json()
-        alert(error.message || 'Failed to save post')
+        alert(getApiErrorMessage(error))
       }
     } catch (error) {
       console.error('Error saving post:', error)

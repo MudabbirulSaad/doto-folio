@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ slu
       `)
       .eq('slug', params.slug)
       .eq('status', 'published')
-      .single()
+      .maybeSingle()
 
     if (postError || !post) {
       return createNotFoundErrorResponse('Blog post not found')
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ sl
       .select('id, view_count')
       .eq('slug', params.slug)
       .eq('status', 'published')
-      .single()
+      .maybeSingle()
 
     if (postError || !post) {
       return createNotFoundErrorResponse('Blog post not found')
@@ -215,5 +215,4 @@ export async function POST(request: NextRequest, context: { params: Promise<{ sl
     )
   }
 }
-
 

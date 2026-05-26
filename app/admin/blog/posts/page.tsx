@@ -314,12 +314,19 @@ export default function BlogPostsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/blog/${post.slug}`} target="_blank">
+                        {post.status === 'published' ? (
+                          <DropdownMenuItem asChild>
+                            <Link href={`/blog/${post.slug}`} target="_blank">
+                              <Eye className="w-4 h-4 mr-2" />
+                              View
+                            </Link>
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem disabled>
                             <Eye className="w-4 h-4 mr-2" />
-                            View
-                          </Link>
-                        </DropdownMenuItem>
+                            Draft not public
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/blog/posts/${post.id}/edit`}>
                             <Edit className="w-4 h-4 mr-2" />

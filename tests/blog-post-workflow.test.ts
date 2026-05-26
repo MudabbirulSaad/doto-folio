@@ -117,6 +117,31 @@ test('createBlogPost validates, enforces slug uniqueness, publishes once, create
   assert.deepEqual(repository.calls, ['refreshTags', 'refreshCategories:cat-1'])
 })
 
+test('createBlogPost derives an excerpt from editor content when one is not provided', async () => {
+  const repository = createRepository()
+
+  const post = await createBlogPost(repository, {
+    title: 'Draft Post',
+    slug: 'draft-post',
+    excerpt: ' ',
+    content: JSON.stringify({
+      blocks: [
+        {
+          type: 'paragraph',
+          data: {
+            text: 'What is my name? This first paragraph becomes the generated excerpt.'
+          }
+        }
+      ]
+    }),
+    tag_ids: [],
+    status: 'draft',
+    featured: false
+  })
+
+  assert.equal(post.excerpt, 'What is my name? This first paragraph becomes the generated excerpt.')
+})
+
 test('updateBlogPost handles slug/category/tag replacement, reading time, and first publish timestamp', async () => {
   const repository = createRepository()
   repository.posts['post-1'] = {

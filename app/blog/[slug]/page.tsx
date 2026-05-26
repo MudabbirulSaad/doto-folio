@@ -84,19 +84,19 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const resolvedParams = await params
+  const post = await BlogServerData.getBlogPost(resolvedParams.slug)
+
+  if (!post) {
+    notFound()
+  }
+
   try {
-    const resolvedParams = await params
-    const post = await BlogServerData.getBlogPost(resolvedParams.slug)
-
-    if (!post) {
-      notFound()
-    }
-
     // For now, get related posts by category (we can implement AI recommendations later)
     let relatedPosts: BlogPostWithRelations[] = []
     try {
       const categoryPosts = await BlogServerData.getBlogPosts({
-        category: post.blog_categories?.slug,
+        category: post.category?.slug,
         limit: 4
       })
       relatedPosts = categoryPosts.posts.filter(p => p.id !== post.id).slice(0, 3)
