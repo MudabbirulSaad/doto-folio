@@ -13,7 +13,11 @@ import { BlogRelatedPosts } from '@/components/blog/blog-related-posts'
 import { BlogSkeleton } from '@/components/blog/blog-skeleton'
 import { TableOfContents } from '@/components/blog/table-of-contents'
 import { CommentSection } from '@/components/blog/comments/comment-section'
-import { BlogServerData } from '@/lib/data/blog-server'
+import {
+  createBlogPostDetailService,
+  createSupabaseBlogPostDetailRepository
+} from '@/lib/data/blog-post-detail'
+import { createClient } from '@/lib/supabase/server'
 
 import type { BlogPostWithRelations, BlogTag } from '@/lib/types/blog'
 
@@ -23,11 +27,17 @@ interface BlogPostPageProps {
   }>
 }
 
+async function createBlogPostDetailServiceForPage() {
+  const supabase = await createClient()
+  return createBlogPostDetailService(createSupabaseBlogPostDetailRepository(supabase))
+}
+
 // Generate metadata for SEO
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   try {
     const resolvedParams = await params
-    const post = await BlogServerData.getBlogPost(resolvedParams.slug)
+    const service = await createBlogPostDetailServiceForPage()
+    const post = await service.readMetadata(resolvedParams.slug)
 
     if (!post) {
       return {
@@ -85,26 +95,19 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const resolvedParams = await params
-  const post = await BlogServerData.getBlogPost(resolvedParams.slug)
+  const service = await createBlogPostDetailServiceForPage()
+  const { post, relatedPosts } = await service.readDetail(resolvedParams.slug, 3)
 
   if (!post) {
     notFound()
   }
 
-  try {
-    // For now, get related posts by category (we can implement AI recommendations later)
-    let relatedPosts: BlogPostWithRelations[] = []
-    try {
-      const categoryPosts = await BlogServerData.getBlogPosts({
-        category: post.category?.slug,
-        limit: 4
-      })
-      relatedPosts = categoryPosts.posts.filter(p => p.id !== post.id).slice(0, 3)
-    } catch (error) {
-      console.error('Failed to fetch related posts:', error)
-      // Fallback to empty array - component will handle gracefully
-    }
+  void service.trackView(post.slug, {}).catch(error => {
+    console.error('Failed to track blog post view:', error)
+  })
 
+  try {
+    const allowComments = (post as BlogPostWithRelations & { allow_comments?: boolean }).allow_comments ?? true
     return (
       <div className="min-h-screen bg-background relative overflow-hidden z-0">
         <SectionNebula />
@@ -132,7 +135,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 {/* Comments Section */}
                 <CommentSection
                   postId={post.id}
-                  allowComments={post.allow_comments ?? true}
+                  allowComments={allowComments}
                 />
               </div>
 

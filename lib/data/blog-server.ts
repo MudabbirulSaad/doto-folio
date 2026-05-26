@@ -3,6 +3,7 @@ import {
   createSupabasePublicBlogListingRepository,
   getPublicBlogListing
 } from '@/lib/data/public-blog-listing'
+import { createBlogPostDetailService, createSupabaseBlogPostDetailRepository } from '@/lib/data/blog-post-detail'
 import type { BlogPostWithRelations, BlogSearchParams } from '@/lib/types/blog'
 
 interface BlogPostListingResponse {
@@ -174,39 +175,8 @@ export class BlogServerData {
   static async getBlogPost(slug: string) {
     try {
       const supabase = createServerClient()
-      
-      const { data: post, error } = await supabase
-        .from('blog_posts')
-        .select(`
-          *,
-          category:blog_categories(id, name, slug, color),
-          tags:blog_post_tags(
-            tag:blog_tags(id, name, slug)
-          )
-        `)
-        .eq('slug', slug)
-        .eq('status', 'published')
-        .maybeSingle()
-
-      if (error) {
-        console.error('Error fetching blog post:', error)
-        return null
-      }
-
-      if (!post) {
-        return null
-      }
-
-      // Increment view count
-      await supabase
-        .from('blog_posts')
-        .update({ view_count: (post.view_count || 0) + 1 })
-        .eq('id', post.id)
-
-      return {
-        ...post,
-        tags: post.tags?.map((tagRelation: any) => tagRelation.tag).filter(Boolean) || []
-      }
+      const service = createBlogPostDetailService(createSupabaseBlogPostDetailRepository(supabase))
+      return await service.readMetadata(slug)
     } catch (error) {
       console.error('Error in getBlogPost:', error)
       return null

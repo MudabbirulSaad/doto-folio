@@ -25,36 +25,10 @@ function validateSkillPayload(body: any) {
   return null
 }
 
-// GET - Fetch all skills
-export async function GET() {
-  try {
-    const supabase = await createClient()
-
-    const { data: skills, error } = await supabase
-      .from('skills')
-      .select('id, name, category, proficiency, icon_name, display_order, created_at, updated_at')
-      .order('display_order', { ascending: true })
-
-    if (error) {
-      console.error('Error fetching skills:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch skills' },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({ data: skills || [] })
-  } catch (error) {
-    console.error('Error in GET /api/admin/content/skills:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
-  }
-}
-
-// POST - Create new skill
-export async function POST(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ categoryId: string }> }
+) {
   try {
     const user = await getCurrentAdminUser()
     if (!user) {
@@ -64,6 +38,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const { categoryId: skillId } = await params
     const body = await request.json()
     const validationError = validateSkillPayload(body)
     if (validationError) {
@@ -74,41 +49,70 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient()
-    const { data: lastSkill } = await supabase
+    const { data: skill, error } = await supabase
       .from('skills')
-      .select('display_order')
-      .order('display_order', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    const nextDisplayOrder = (lastSkill?.display_order || 0) + 1
-
-    const { data: skill, error: skillError } = await supabase
-      .from('skills')
-      .insert({
+      .update({
         name: body.name.trim(),
         category: body.category,
         proficiency: Number(body.proficiency),
-        icon_name: body.icon_name.trim(),
-        display_order: body.display_order || nextDisplayOrder
+        icon_name: body.icon_name.trim()
       })
+      .eq('id', skillId)
       .select()
       .single()
 
-    if (skillError) {
-      console.error('Error creating skill:', skillError)
+    if (error) {
+      console.error('Error updating skill:', error)
       return NextResponse.json(
-        { error: 'Failed to create skill' },
+        { error: 'Failed to update skill' },
         { status: 500 }
       )
     }
 
     return NextResponse.json({
       data: skill,
-      message: 'Skill created successfully'
+      message: 'Skill updated successfully'
     })
   } catch (error) {
-    console.error('Error in POST /api/admin/content/skills:', error)
+    console.error('Error in PUT /api/admin/content/skills/[id]:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ categoryId: string }> }
+) {
+  try {
+    const user = await getCurrentAdminUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const { categoryId: skillId } = await params
+    const supabase = await createClient()
+    const { error } = await supabase
+      .from('skills')
+      .delete()
+      .eq('id', skillId)
+
+    if (error) {
+      console.error('Error deleting skill:', error)
+      return NextResponse.json(
+        { error: 'Failed to delete skill' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ message: 'Skill deleted successfully' })
+  } catch (error) {
+    console.error('Error in DELETE /api/admin/content/skills/[id]:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
