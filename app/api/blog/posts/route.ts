@@ -36,7 +36,7 @@ async function getFilterConditions(params: BlogSearchParams, supabase: any) {
         .eq('tag_id', tagData.id)
 
       if (postIds && postIds.length > 0) {
-        conditions.postIds = postIds.map(p => p.post_id)
+        conditions.postIds = postIds.map((p: { post_id: string }) => p.post_id)
       } else {
         conditions.postIds = ['no-posts-found'] // Empty result
       }

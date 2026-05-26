@@ -8,7 +8,11 @@ import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 import { Calendar, Clock, Eye, User, Tag } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import type { BlogCardProps } from '@/lib/types/blog'
+import type { BlogCardProps, BlogTag } from '@/lib/types/blog'
+
+function getCardTag(tag: BlogTag | { tag: BlogTag }): BlogTag {
+  return 'tag' in tag ? tag.tag : tag
+}
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -152,7 +156,7 @@ export function BlogCard({
             )}
 
             {/* Featured Badge */}
-            {post.is_featured && (
+            {post.featured && (
               <div className="absolute top-4 right-4">
                 <Badge className="bg-primary text-primary-foreground">
                   Featured
@@ -210,15 +214,18 @@ export function BlogCard({
           {showTags && post.tags && post.tags.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <Tag className="w-3 h-3 text-muted-foreground" />
-              {post.tags.slice(0, 3).map((tag) => (
+              {post.tags.slice(0, 3).map((tag) => {
+                const displayTag = getCardTag(tag)
+                return (
                 <Badge
-                  key={tag.id}
+                  key={displayTag.id}
                   variant="outline"
                   className="text-xs border-border/50 hover:border-primary/50 transition-colors"
                 >
-                  {tag.name}
+                  {displayTag.name}
                 </Badge>
-              ))}
+                )
+              })}
               {post.tags.length > 3 && (
                 <Badge variant="outline" className="text-xs border-border/50">
                   +{post.tags.length - 3}

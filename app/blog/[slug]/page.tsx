@@ -15,7 +15,7 @@ import { TableOfContents } from '@/components/blog/table-of-contents'
 import { CommentSection } from '@/components/blog/comments/comment-section'
 import { BlogServerData } from '@/lib/data/blog-server'
 
-import type { BlogPostWithRelations } from '@/lib/types/blog'
+import type { BlogPostWithRelations, BlogTag } from '@/lib/types/blog'
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
         modifiedTime,
         authors: [post.author_name],
         section: post.category?.name,
-        tags: post.tags?.map(tag => tag.name),
+        tags: post.tags?.map((tag: BlogTag) => tag.name),
         images: post.featured_image ? [
           {
             url: post.featured_image,

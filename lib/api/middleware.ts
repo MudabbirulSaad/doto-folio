@@ -25,7 +25,21 @@ export interface ApiContext {
   origin?: string
 }
 
-export type ApiHandler = (context: ApiContext) => Promise<NextResponse>
+export interface ApiRouteContext<TParams = Record<string, string>> {
+  params: TParams
+}
+
+export interface NextApiRouteContext<TParams = Record<string, string>> {
+  params: Promise<TParams>
+}
+
+export type ApiHandler<
+  TParams = Record<string, string>,
+  TRouteContext extends ApiRouteContext<TParams> = ApiRouteContext<TParams>
+> = (
+  context: ApiContext,
+  routeContext: TRouteContext
+) => Promise<NextResponse>
 
 export interface MiddlewareOptions {
   requireAuth?: boolean
@@ -37,11 +51,14 @@ export interface MiddlewareOptions {
 // MIDDLEWARE WRAPPER
 // =============================================
 
-export function withMiddleware(
-  handler: ApiHandler,
+export function withMiddleware<
+  TParams = Record<string, string>,
+  TRouteContext extends ApiRouteContext<TParams> = ApiRouteContext<TParams>
+>(
+  handler: ApiHandler<TParams, TRouteContext>,
   options: MiddlewareOptions = {}
 ) {
-  return async (request: NextRequest): Promise<NextResponse> => {
+  return async (request: NextRequest, routeContext: NextApiRouteContext<TParams>): Promise<NextResponse> => {
     const startTime = Date.now()
     const origin = request.headers.get('origin') || undefined
     const method = request.method
@@ -97,7 +114,10 @@ export function withMiddleware(
       }
 
       // Execute handler
-      const response = await handler(context)
+      const resolvedRouteContext = routeContext
+        ? { ...routeContext, params: await routeContext.params } as TRouteContext
+        : routeContext as unknown as TRouteContext
+      const response = await handler(context, resolvedRouteContext)
 
       // Log successful request
       if (!options.skipLogging) {
@@ -127,25 +147,37 @@ export function withMiddleware(
 // SPECIALIZED MIDDLEWARE
 // =============================================
 
-export function withAuth(handler: ApiHandler) {
+export function withAuth<
+  TParams = Record<string, string>,
+  TRouteContext extends ApiRouteContext<TParams> = ApiRouteContext<TParams>
+>(handler: ApiHandler<TParams, TRouteContext>) {
   return withMiddleware(handler, { 
     requireAuth: true, 
     rateLimit: 'admin' 
   })
 }
 
-export function withRateLimit(
-  handler: ApiHandler,
+export function withRateLimit<
+  TParams = Record<string, string>,
+  TRouteContext extends ApiRouteContext<TParams> = ApiRouteContext<TParams>
+>(
+  handler: ApiHandler<TParams, TRouteContext>,
   rateLimitKey: 'contact' | 'admin' | 'public'
 ) {
   return withMiddleware(handler, { rateLimit: rateLimitKey })
 }
 
-export function withPublicApi(handler: ApiHandler) {
+export function withPublicApi<
+  TParams = Record<string, string>,
+  TRouteContext extends ApiRouteContext<TParams> = ApiRouteContext<TParams>
+>(handler: ApiHandler<TParams, TRouteContext>) {
   return withMiddleware(handler, { rateLimit: 'public' })
 }
 
-export function withContactApi(handler: ApiHandler) {
+export function withContactApi<
+  TParams = Record<string, string>,
+  TRouteContext extends ApiRouteContext<TParams> = ApiRouteContext<TParams>
+>(handler: ApiHandler<TParams, TRouteContext>) {
   return withMiddleware(handler, { rateLimit: 'contact' })
 }
 

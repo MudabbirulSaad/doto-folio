@@ -6,6 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
+    "test": "node --import tsx --test tests/**/*.test.ts",
     "lint": "next lint",
     "api:docs": "node -e \"const { generateOpenApiSpec, generateMarkdownDocs } = require('./lib/api/documentation.ts'); console.log(JSON.stringify(generateOpenApiSpec(), null, 2))\"",
     "api:health": "curl http://localhost:3000/api/health",

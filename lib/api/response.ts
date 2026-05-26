@@ -29,6 +29,7 @@ export interface ApiErrorResponse {
 }
 
 export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse
+export type ApiErrorCode = keyof typeof ERROR_CODES
 
 // =============================================
 // ERROR CODES
@@ -62,12 +63,49 @@ interface ResponseOptions {
   compress?: boolean
 }
 
+type SuccessMessageOrStatus = string | number
+
+function statusToErrorCode(status: number): ApiErrorCode {
+  switch (status) {
+    case 400:
+      return 'VALIDATION_ERROR'
+    case 401:
+      return 'UNAUTHORIZED'
+    case 403:
+      return 'FORBIDDEN'
+    case 404:
+      return 'NOT_FOUND'
+    case 429:
+      return 'RATE_LIMITED'
+    default:
+      return status >= 500 ? 'INTERNAL_ERROR' : 'VALIDATION_ERROR'
+  }
+}
+
+function normalizeErrors(errors: string | string[]): string[] {
+  return Array.isArray(errors) ? errors : [errors]
+}
+
 export function createSuccessResponse<T>(
   data: T,
   message?: string,
   meta?: ApiSuccessResponse<T>['meta'],
+  options?: ResponseOptions
+): NextResponse
+export function createSuccessResponse<T>(
+  data: T,
+  status: number,
+  meta?: ApiSuccessResponse<T>['meta'],
+  options?: ResponseOptions
+): NextResponse
+export function createSuccessResponse<T>(
+  data: T,
+  messageOrStatus?: SuccessMessageOrStatus,
+  meta?: ApiSuccessResponse<T>['meta'],
   options: ResponseOptions = {}
 ): NextResponse {
+  const status = typeof messageOrStatus === 'number' ? messageOrStatus : 200
+  const message = typeof messageOrStatus === 'string' ? messageOrStatus : undefined
   const response: ApiSuccessResponse<T> = {
     success: true,
     data,
@@ -89,25 +127,54 @@ export function createSuccessResponse<T>(
   }
 
   return NextResponse.json(response, {
-    status: 200,
+    status,
     headers
   })
 }
 
 export function createErrorResponse(
-  code: keyof typeof ERROR_CODES,
+  code: ApiErrorCode,
   message: string,
   status: number,
   details?: string[],
   field?: string,
-  options: ResponseOptions = {}
+  options?: ResponseOptions
+): NextResponse
+export function createErrorResponse(
+  message: string,
+  status: number,
+  details?: string[],
+  field?: string,
+  options?: ResponseOptions
+): NextResponse
+export function createErrorResponse(
+  codeOrMessage: ApiErrorCode | string,
+  messageOrStatus: string | number,
+  statusOrDetails?: number | string[],
+  details?: string[] | string,
+  fieldOrOptions?: string | ResponseOptions,
+  maybeOptions: ResponseOptions = {}
 ): NextResponse {
+  const isLegacySignature = typeof messageOrStatus === 'number'
+  const status = isLegacySignature ? messageOrStatus : statusOrDetails as number
+  const code = isLegacySignature
+    ? statusToErrorCode(status)
+    : codeOrMessage as ApiErrorCode
+  const message = isLegacySignature ? codeOrMessage : messageOrStatus
+  const responseDetails = isLegacySignature
+    ? Array.isArray(statusOrDetails) ? statusOrDetails : undefined
+    : details as string[] | undefined
+  const field = isLegacySignature
+    ? typeof details === 'string' ? details : undefined
+    : typeof fieldOrOptions === 'string' ? fieldOrOptions : undefined
+  const options = (typeof fieldOrOptions === 'object' ? fieldOrOptions : maybeOptions) || {}
+
   const response: ApiErrorResponse = {
     success: false,
     error: {
       code,
       message,
-      details,
+      details: responseDetails,
       field
     },
     requestId: generateRequestId()
@@ -132,7 +199,7 @@ export function createErrorResponse(
 // =============================================
 
 export function createValidationErrorResponse(
-  errors: string[],
+  errors: string | string[],
   field?: string,
   options: ResponseOptions = {}
 ): NextResponse {
@@ -140,7 +207,7 @@ export function createValidationErrorResponse(
     'VALIDATION_ERROR',
     'Validation failed',
     400,
-    errors,
+    normalizeErrors(errors),
     field,
     options
   )

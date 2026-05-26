@@ -44,17 +44,19 @@ function renderEditorJSBlock(block: any, index: number) {
       )
 
     case 'header':
-      const HeaderTag = `h${data.level}` as keyof JSX.IntrinsicElements
-      return (
-        <HeaderTag key={index} className={`font-bold mb-4 text-foreground ${data.level === 1 ? 'text-3xl' :
-          data.level === 2 ? 'text-2xl' :
-            data.level === 3 ? 'text-xl' :
-              data.level === 4 ? 'text-lg' :
-                'text-base'
-          }`}>
-          {data.text}
-        </HeaderTag>
-      )
+      const headerClassName = `font-bold mb-4 text-foreground ${data.level === 1 ? 'text-3xl' :
+        data.level === 2 ? 'text-2xl' :
+          data.level === 3 ? 'text-xl' :
+            data.level === 4 ? 'text-lg' :
+              'text-base'
+        }`
+
+      if (data.level === 1) return <h1 key={index} className={headerClassName}>{data.text}</h1>
+      if (data.level === 2) return <h2 key={index} className={headerClassName}>{data.text}</h2>
+      if (data.level === 3) return <h3 key={index} className={headerClassName}>{data.text}</h3>
+      if (data.level === 4) return <h4 key={index} className={headerClassName}>{data.text}</h4>
+      if (data.level === 5) return <h5 key={index} className={headerClassName}>{data.text}</h5>
+      return <h6 key={index} className={headerClassName}>{data.text}</h6>
 
     case 'list':
       const ListTag = data.style === 'ordered' ? 'ol' : 'ul'

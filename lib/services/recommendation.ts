@@ -1,4 +1,11 @@
 import type { BlogPost } from '@/lib/types/blog'
+import type { BlogTag } from '@/lib/types/blog'
+
+type BlogPostTag = BlogTag | { tag: BlogTag }
+
+function getTag(tag: BlogPostTag): BlogTag {
+  return 'tag' in tag ? tag.tag : tag
+}
 
 // Text preprocessing utilities
 function tokenize(text: string): string[] {
@@ -100,7 +107,7 @@ function extractPostContent(post: BlogPost): string {
     post.excerpt || '',
     post.content || '',
     post.category?.name || '',
-    ...(post.tags?.map(tag => tag.tag?.name || '') || [])
+    ...(post.tags?.map(tag => getTag(tag).name || '') || [])
   ].join(' ')
   
   return content
@@ -148,8 +155,8 @@ export function getRecommendedPosts(
     }
     
     // Boost similarity for shared tags
-    const currentTags = new Set(currentPost.tags?.map(t => t.tag?.id) || [])
-    const postTags = new Set(post.tags?.map(t => t.tag?.id) || [])
+    const currentTags = new Set(currentPost.tags?.map(t => getTag(t).id) || [])
+    const postTags = new Set(post.tags?.map(t => getTag(t).id) || [])
     const sharedTags = [...currentTags].filter(tag => postTags.has(tag))
     boostedSimilarity += sharedTags.length * 0.05
     
@@ -188,8 +195,8 @@ export function getCategoryBasedRecommendations(
     }
     
     // Shared tags get points
-    const currentTags = new Set(currentPost.tags?.map(t => t.tag?.id) || [])
-    const postTags = new Set(post.tags?.map(t => t.tag?.id) || [])
+    const currentTags = new Set(currentPost.tags?.map(t => getTag(t).id) || [])
+    const postTags = new Set(post.tags?.map(t => getTag(t).id) || [])
     const sharedTags = [...currentTags].filter(tag => postTags.has(tag))
     score += sharedTags.length * 3
     

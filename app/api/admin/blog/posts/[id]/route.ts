@@ -88,7 +88,7 @@ async function updatePostHandler(context: any) {
     // Check if post exists
     const { data: existingPost } = await supabase
       .from('blog_posts')
-      .select('id, slug, category_id')
+      .select('id, slug, category_id, published_at')
       .eq('id', id)
       .single()
 

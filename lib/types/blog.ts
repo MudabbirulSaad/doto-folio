@@ -58,8 +58,8 @@ export interface BlogPost {
   
   // Relationships
   category_id?: string
-  category?: BlogCategory
-  tags?: BlogTag[]
+  category?: BlogCategory | null
+  tags?: Array<BlogTag | { tag: BlogTag }>
 }
 
 export interface BlogPostWithRelations extends BlogPost {

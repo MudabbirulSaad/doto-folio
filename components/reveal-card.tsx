@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useEffect, ReactNode, ElementType } from "react"
+import { createElement, useRef, useEffect, ReactNode, ElementType } from "react"
 import { cn } from "@/lib/utils"
 
 interface RevealCardProps {
@@ -90,13 +90,13 @@ export function RevealCard({
     }
   }, [])
 
-  return (
-    <Component
-      ref={cardRef}
-      className={cn("reveal-card", className)}
-    >
-      {children}
-    </Component>
+  return createElement(
+    Component,
+    {
+      ref: cardRef,
+      className: cn("reveal-card", className)
+    } as any,
+    children
   )
 }
 

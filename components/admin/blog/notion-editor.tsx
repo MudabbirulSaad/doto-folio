@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 
 // Global registry to track active editors and prevent duplicates
 const editorRegistry = new Map<string, boolean>()
-import EditorJS, { OutputData } from '@editorjs/editorjs'
+import EditorJS, { OutputData, type ToolConstructable } from '@editorjs/editorjs'
 import Header from '@editorjs/header'
 import List from '@editorjs/list'
 import Paragraph from '@editorjs/paragraph'
@@ -72,7 +72,7 @@ export default function NotionEditor({
       },
       tools: {
         header: {
-          class: Header,
+          class: Header as unknown as ToolConstructable,
           config: {
             placeholder: 'Enter a header',
             levels: [1, 2, 3, 4, 5, 6],
@@ -81,14 +81,14 @@ export default function NotionEditor({
           shortcut: 'CMD+SHIFT+H'
         },
         paragraph: {
-          class: Paragraph,
+          class: Paragraph as unknown as ToolConstructable,
           inlineToolbar: true,
           config: {
             placeholder: 'Start writing or press "/" for commands...'
           }
         },
         list: {
-          class: List,
+          class: List as unknown as ToolConstructable,
           inlineToolbar: true,
           config: {
             defaultStyle: 'unordered'
@@ -116,7 +116,7 @@ export default function NotionEditor({
           shortcut: 'CMD+SHIFT+D'
         },
         table: {
-          class: Table,
+          class: Table as unknown as ToolConstructable,
           inlineToolbar: true,
           config: {
             rows: 2,
@@ -169,7 +169,7 @@ export default function NotionEditor({
         }
       },
       autofocus: !readOnly,
-      logLevel: 'ERROR' as const
+      logLevel: 'ERROR' as any
     })
 
     editorRef.current = editor
@@ -214,6 +214,7 @@ export default function NotionEditor({
       if (!block) return
 
       const savedData = await block.save()
+      if (!savedData) return
       const text = savedData.data.text || ''
 
       // Check patterns
