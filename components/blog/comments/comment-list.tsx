@@ -8,19 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { CommentForm } from './comment-form'
 import { cn } from '@/lib/utils'
-
-interface Comment {
-    id: string
-    content: string
-    created_at: string
-    parent_id: string | null
-    author: {
-        name: string
-        email?: string
-        avatar?: string
-    }
-    replies?: Comment[]
-}
+import {
+    countComments,
+    loadCommentTree
+} from '@/lib/client/application/comments/comments'
+import { createCommentApiGateway } from '@/lib/client/adapters/http/comments-api'
+import type { ClientComment } from '@/lib/client/domain/comments'
 
 interface CommentListProps {
     postId: string
@@ -28,7 +21,7 @@ interface CommentListProps {
 }
 
 export function CommentList({ postId, refreshTrigger }: CommentListProps) {
-    const [comments, setComments] = useState<Comment[]>([])
+    const [comments, setComments] = useState<ClientComment[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState('')
     const [replyingTo, setReplyingTo] = useState<string | null>(null)
@@ -36,13 +29,7 @@ export function CommentList({ postId, refreshTrigger }: CommentListProps) {
     const fetchComments = async () => {
         setIsLoading(true)
         try {
-            const res = await fetch(`/api/comments?postId=${postId}`)
-            if (!res.ok) throw new Error('Failed to load comments')
-
-            const data = await res.json()
-            const flatComments: Comment[] = data.data || []
-            const tree = buildCommentTree(flatComments)
-            setComments(tree)
+            setComments(await loadCommentTree(createCommentApiGateway(), postId))
         } catch (err) {
             setError('Failed to load comments')
         } finally {
@@ -117,7 +104,7 @@ function CommentItem({
     onReplySuccess,
     depth
 }: {
-    comment: Comment
+    comment: ClientComment
     postId: string
     replyingTo: string | null
     onReply: (id: string) => void
@@ -215,35 +202,3 @@ function CommentItem({
     )
 }
 
-// Helper to build tree from flat list
-function buildCommentTree(comments: Comment[]): Comment[] {
-    const map = new Map<string, Comment>()
-    const roots: Comment[] = []
-
-    // Initialize map
-    comments.forEach(c => {
-        map.set(c.id, { ...c, replies: [] })
-    })
-
-    // Build tree
-    comments.forEach(c => {
-        const node = map.get(c.id)!
-        if (c.parent_id && map.has(c.parent_id)) {
-            map.get(c.parent_id)!.replies!.push(node)
-        } else {
-            roots.push(node)
-        }
-    })
-
-    return roots
-}
-
-function countComments(comments: Comment[]): number {
-    let count = comments.length
-    comments.forEach(c => {
-        if (c.replies) {
-            count += countComments(c.replies)
-        }
-    })
-    return count
-}

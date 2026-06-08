@@ -15,6 +15,10 @@ import {
     setCurrentSession,
     signOutCurrentBrowserSession
 } from '@/lib/auth/admin'
+import { requestCommentOtp, verifyCommentOtp } from '@/lib/client/application/auth/otp'
+import { postComment } from '@/lib/client/application/comments/comments'
+import { createCommentApiGateway } from '@/lib/client/adapters/http/comments-api'
+import { createOtpApiGateway } from '@/lib/client/adapters/http/otp-api'
 
 interface CommentFormProps {
     postId: string
@@ -73,16 +77,8 @@ export function CommentForm({ postId, onCommentPosted, parentId, onCancelReply }
         setIsLoading(true)
         try {
             const token = await executeRecaptcha('otp_request')
-
-            const res = await fetch('/api/auth/otp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, name, captchaToken: token })
-            })
-
-            const data = await res.json()
-
-            if (!res.ok) throw new Error(data.error || 'Failed to send code')
+            const result = await requestCommentOtp(createOtpApiGateway(), { email, name, captchaToken: token })
+            if (!result.success) throw new Error(result.error)
 
             toast.success('Verification code sent to your email')
             setAuthState('awaiting_code')
@@ -100,20 +96,12 @@ export function CommentForm({ postId, onCommentPosted, parentId, onCancelReply }
         setIsLoading(true)
         try {
             const token = await executeRecaptcha('otp_verify')
-
-            const res = await fetch('/api/auth/otp', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, token: otp, captchaToken: token })
-            })
-
-            const data = await res.json()
-
-            if (!res.ok) throw new Error(data.error || 'Invalid code')
+            const result = await verifyCommentOtp(createOtpApiGateway(), { email, token: otp, captchaToken: token })
+            if (!result.success) throw new Error(result.error)
 
             toast.success('Verified successfully!')
             // Session is handled by onAuthStateChange, but we can force update
-            await setCurrentSession(data.data.session)
+            await setCurrentSession(result.session as any)
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Verification failed')
         } finally {
@@ -128,24 +116,13 @@ export function CommentForm({ postId, onCommentPosted, parentId, onCancelReply }
         setIsLoading(true)
         try {
             const session = await getCurrentSession()
-            if (!session) throw new Error('No active session')
-
-            const res = await fetch('/api/comments', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({
+            const result = await postComment(createCommentApiGateway(), session?.access_token, {
                     postId,
                     content,
                     userId: user.id,
                     parentId
                 })
-            })
-
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to post comment')
+            if (!result.success) throw new Error(result.error)
 
             toast.success('Comment posted!')
             setContent('')
