@@ -38,6 +38,20 @@ test('subscribeToNewsletter creates, rejects duplicate active, and reactivates i
   assert.deepEqual(inactiveRepo.reactivated, ['sub-2'])
 })
 
+test('subscribeToNewsletter validates required email format before persistence', async () => {
+  const repo = subscribers()
+
+  await assert.rejects(
+    () => subscribeToNewsletter(repo, null, { email: '' }),
+    (error: unknown) => error instanceof ApplicationError && error.code === 'VALIDATION_ERROR'
+  )
+  await assert.rejects(
+    () => subscribeToNewsletter(repo, null, { email: 'not-an-email' }),
+    (error: unknown) => error instanceof ApplicationError && error.code === 'VALIDATION_ERROR'
+  )
+  assert.deepEqual(repo.created, [])
+})
+
 test('auth flows verify humans before delegating to auth delivery ports', async () => {
   const calls: string[] = []
   const verifier = { async verify() { calls.push('verify'); return true } }

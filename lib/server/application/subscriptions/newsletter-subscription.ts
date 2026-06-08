@@ -17,8 +17,17 @@ export async function subscribeToNewsletter(
   input: { name?: string; email: string },
   options: { now?: () => Date } = {}
 ) {
-  const email = input.email.toLowerCase()
-  const name = input.name || null
+  const email = input.email.trim().toLowerCase()
+  const name = input.name?.trim() || null
+
+  if (!email) {
+    throw new ApplicationError('VALIDATION_ERROR', 'Email is required')
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new ApplicationError('VALIDATION_ERROR', 'Please enter a valid email address')
+  }
+
   const existingSubscriber = await repository.findByEmail(email)
 
   if (existingSubscriber?.status === 'active') {

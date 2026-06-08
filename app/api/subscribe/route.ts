@@ -6,23 +6,6 @@ export async function POST(request: NextRequest) {
   try {
     const { name, email } = await request.json()
 
-    // Validate input
-    if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      )
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Please enter a valid email address' },
-        { status: 400 }
-      )
-    }
-
     const result = await createNewsletterSubscriptionUseCase()({ name, email })
 
     if (result.status === 'reactivated') {
@@ -44,7 +27,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     if (isApplicationError(error)) {
-      const status = error.code === 'FORBIDDEN' ? 409 : 500
+      const status = error.code === 'FORBIDDEN' ? 409 : error.code === 'VALIDATION_ERROR' ? 400 : 500
       return NextResponse.json({ error: error.message }, { status })
     }
 
