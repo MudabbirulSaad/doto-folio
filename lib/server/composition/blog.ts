@@ -42,6 +42,19 @@ import type {
   UpdateBlogTagData
 } from '@/lib/types/blog'
 
+function createServiceRoleSupabaseClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  )
+}
+
 export async function createPublicBlogListingUseCase() {
   const supabase = await createClient()
   const repository = createSupabasePublicBlogListingRepository(supabase)
@@ -109,33 +122,27 @@ export async function createAdminBlogTaxonomyUseCases() {
 }
 
 export function createServiceRoleBlogDetailUseCase() {
-  const supabase = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  )
+  const supabase = createServiceRoleSupabaseClient()
 
   return createBlogPostDetailService(createSupabaseBlogPostDetailRepository(supabase))
 }
 
 export function createServiceRolePublicBlogListingUseCase() {
-  const supabase = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  )
+  const supabase = createServiceRoleSupabaseClient()
   const repository = createSupabasePublicBlogListingRepository(supabase)
 
   return (params: BlogSearchParams, options?: { defaultLimit?: number; maxLimit?: number; tagLimit?: number }) =>
     getPublicBlogListing(repository, params, options)
+}
+
+export function createServiceRolePublicBlogTaxonomyUseCases() {
+  const repository = createSupabaseBlogTaxonomyRepository(createServiceRoleSupabaseClient())
+
+  return {
+    categoriesWithCounts: () => getBlogCategoriesWithCounts(repository),
+    postsByCategory: (slug: string, params?: { page?: number; limit?: number }) =>
+      getBlogPostsByCategory(repository, slug, params),
+    postsByTag: (slug: string, params?: { page?: number; limit?: number }) =>
+      getBlogPostsByTag(repository, slug, params)
+  }
 }

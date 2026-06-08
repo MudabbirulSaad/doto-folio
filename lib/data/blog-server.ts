@@ -1,7 +1,7 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import {
   createServiceRoleBlogDetailUseCase,
-  createServiceRolePublicBlogListingUseCase
+  createServiceRolePublicBlogListingUseCase,
+  createServiceRolePublicBlogTaxonomyUseCases
 } from '@/lib/server/composition/blog'
 import type { BlogPostWithRelations, BlogSearchParams } from '@/lib/types/blog'
 
@@ -15,20 +15,6 @@ interface BlogPostListingResponse {
   }
 }
 
-// Create a server-side Supabase client with service role key
-function createServerClient() {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
-  )
-}
-
 // Server-side data fetching for blog (no HTTP calls needed)
 export class BlogServerData {
   
@@ -36,27 +22,16 @@ export class BlogServerData {
   static async getFeaturedPosts(limit: number = 3) {
     try {
       const getBlogListing = createServiceRolePublicBlogListingUseCase()
-      
-      const { data: posts, error } = await supabase
-        .from('blog_posts')
-        .select(`
-          *,
-          category:blog_categories(id, name, slug, color),
-          tags:blog_post_tags(
-            tag:blog_tags(id, name, slug)
-          )
-        `)
-        .eq('status', 'published')
-        .eq('featured', true)
-        .order('created_at', { ascending: false })
-        .limit(limit)
 
-      if (error) {
-        console.error('Error fetching featured posts:', error)
-        return []
-      }
+      const result = await getBlogListing({
+        featured: true,
+        page: 1,
+        limit,
+        sortBy: 'created_at',
+        sortOrder: 'desc'
+      }, { defaultLimit: limit, maxLimit: limit })
 
-      return posts || []
+      return result.posts
     } catch (error) {
       console.error('Error in getFeaturedPosts:', error)
       return []
@@ -66,19 +41,8 @@ export class BlogServerData {
   // Get all categories
   static async getCategories() {
     try {
-      const supabase = createServerClient()
-      
-      const { data: categories, error } = await supabase
-        .from('blog_categories')
-        .select('*')
-        .order('display_order', { ascending: true })
-
-      if (error) {
-        console.error('Error fetching categories:', error)
-        return []
-      }
-
-      return categories || []
+      const taxonomy = createServiceRolePublicBlogTaxonomyUseCases()
+      return await taxonomy.categoriesWithCounts()
     } catch (error) {
       console.error('Error in getCategories:', error)
       return []
@@ -88,20 +52,9 @@ export class BlogServerData {
   // Get popular tags
   static async getPopularTags(limit: number = 10) {
     try {
-      const supabase = createServerClient()
-      
-      const { data: tags, error } = await supabase
-        .from('blog_tags')
-        .select('*')
-        .order('usage_count', { ascending: false })
-        .limit(limit)
-
-      if (error) {
-        console.error('Error fetching tags:', error)
-        return []
-      }
-
-      return tags || []
+      const getBlogListing = createServiceRolePublicBlogListingUseCase()
+      const result = await getBlogListing({}, { tagLimit: limit })
+      return result.tags
     } catch (error) {
       console.error('Error in getPopularTags:', error)
       return []
@@ -120,7 +73,7 @@ export class BlogServerData {
     sortOrder?: BlogSearchParams['sortOrder']
   } = {}): Promise<BlogPostListingResponse> {
     try {
-      const supabase = createServerClient()
+      const getBlogListing = createServiceRolePublicBlogListingUseCase()
       const {
         search,
         category,
@@ -180,29 +133,18 @@ export class BlogServerData {
   // Get posts by category
   static async getPostsByCategory(categorySlug: string, page: number = 1, limit: number = 10) {
     try {
-      const supabase = createServerClient()
-      
-      // Get category info
-      const { data: category, error: categoryError } = await supabase
-        .from('blog_categories')
-        .select('*')
-        .eq('slug', categorySlug)
-        .single()
-
-      if (categoryError || !category) {
-        return null
-      }
-
-      // Get posts in this category
-      const result = await this.getBlogPosts({
-        category: categorySlug,
-        page,
-        limit
-      })
+      const taxonomy = createServiceRolePublicBlogTaxonomyUseCases()
+      const result = await taxonomy.postsByCategory(categorySlug, { page, limit })
 
       return {
-        category,
-        ...result
+        category: result.category,
+        posts: result.posts,
+        pagination: {
+          page: result.page,
+          limit: result.limit,
+          total: result.total,
+          totalPages: result.total === 0 ? 0 : Math.ceil(result.total / result.limit)
+        }
       }
     } catch (error) {
       console.error('Error in getPostsByCategory:', error)
