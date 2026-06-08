@@ -2,7 +2,6 @@ import { requireAdminAuth } from '@/lib/auth/server'
 
 // Force dynamic rendering for admin pages that use authentication
 export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase/server'
 import {
   MessageSquare,
   Clock,
@@ -15,141 +14,11 @@ import { Button } from '@/components/ui/button'
 import { DashboardStats } from './components/dashboard-stats'
 import { ActivityChart } from './components/activity-chart'
 import { formatDistanceToNow } from 'date-fns'
-
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createAdminDashboardUseCase } from '@/lib/server/composition/admin'
 
 async function getDashboardData() {
-  const supabase = await createClient()
-  const adminClient = createAdminClient()
-
-  // 1. Get Counts
-  const { count: totalComments } = await supabase.from('blog_comments').select('*', { count: 'exact', head: true })
-  const { count: totalSubmissions } = await supabase.from('contact_submissions').select('*', { count: 'exact', head: true })
-  const { count: totalProjects } = await supabase.from('projects').select('*', { count: 'exact', head: true })
-
-  // Get total views from blog_posts sum
-  const { data: posts } = await supabase.from('blog_posts').select('view_count')
-  const totalViews = posts?.reduce((acc, post) => acc + (post.view_count || 0), 0) || 0
-
-  // 2. Get Recent Activity
-  const { data: recentComments } = await supabase
-    .from('blog_comments')
-    .select('*, post:blog_posts(title, slug)')
-    .order('created_at', { ascending: false })
-    .limit(5)
-
-  const { data: recentSubmissions } = await supabase
-    .from('contact_submissions')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(5)
-
-  // 3. Get User Details for Enrichment (Recent Comments & Top Commenters)
-  const { data: { users }, error: usersError } = await adminClient.auth.admin.listUsers({
-    perPage: 1000
-  })
-
-  const userMap = new Map()
-  if (users) {
-    users.forEach(u => {
-      userMap.set(u.id, {
-        name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'Anonymous',
-        email: u.email,
-        avatar: u.user_metadata?.avatar_url
-      })
-    })
-  }
-
-  // Enrich Recent Comments
-  const enrichedRecentComments = (recentComments || []).map(comment => ({
-    ...comment,
-    author_name: userMap.get(comment.user_id)?.name || 'Anonymous',
-    author_email: userMap.get(comment.user_id)?.email || 'No Email',
-    author_avatar: userMap.get(comment.user_id)?.avatar
-  }))
-
-  // Calculate Top Commenters from ALL comments
-  const { data: allComments } = await supabase
-    .from('blog_comments')
-    .select('user_id')
-
-  const commenterMap = new Map()
-  allComments?.forEach(c => {
-    const userId = c.user_id
-    if (!commenterMap.has(userId)) {
-      const user = userMap.get(userId)
-      commenterMap.set(userId, {
-        name: user?.name || 'Anonymous',
-        email: user?.email || 'No Email',
-        count: 0
-      })
-    }
-    commenterMap.get(userId).count++
-  })
-
-  const topCommenters = Array.from(commenterMap.values())
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
-
-  // 4. Get Activity Data (Last 30 Days)
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
-  const { data: viewsData } = await supabase
-    .from('blog_views')
-    .select('created_at')
-    .gte('created_at', thirtyDaysAgo.toISOString())
-
-  const { data: commentsData } = await supabase
-    .from('blog_comments')
-    .select('created_at')
-    .gte('created_at', thirtyDaysAgo.toISOString())
-
-  // Aggregate by date
-  const activityMap = new Map()
-
-  // Initialize last 30 days
-  for (let i = 0; i < 30; i++) {
-    const d = new Date()
-    d.setDate(d.getDate() - i)
-    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    activityMap.set(dateStr, { date: dateStr, views: 0, comments: 0, rawDate: d })
-  }
-
-  viewsData?.forEach(v => {
-    const d = new Date(v.created_at)
-    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    if (activityMap.has(dateStr)) {
-      activityMap.get(dateStr).views++
-    }
-  })
-
-  commentsData?.forEach(c => {
-    const d = new Date(c.created_at)
-    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    if (activityMap.has(dateStr)) {
-      activityMap.get(dateStr).comments++
-    }
-  })
-
-  const activityChartData = Array.from(activityMap.values())
-    .sort((a, b) => a.rawDate - b.rawDate)
-    .map(({ date, views, comments }) => ({ date, views, comments }))
-
-  return {
-    stats: {
-      totalViews,
-      totalComments: totalComments || 0,
-      totalSubmissions: totalSubmissions || 0,
-      totalProjects: totalProjects || 0,
-      viewsGrowth: 12, // Placeholder for now
-      commentsGrowth: 5 // Placeholder for now
-    },
-    recentComments: enrichedRecentComments,
-    recentSubmissions: recentSubmissions || [],
-    topCommenters,
-    activityChartData
-  }
+  const getDashboard = await createAdminDashboardUseCase()
+  return getDashboard()
 }
 
 export default async function AdminDashboardPage() {
