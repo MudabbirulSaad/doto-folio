@@ -11,8 +11,13 @@ import {
   getPublishedSiteContent,
   saveSiteContent
 } from '@/lib/server/application/content/site-content'
+import {
+  createContactContentItem,
+  getContactContent
+} from '@/lib/server/application/content/contact-content'
 import { createSupabaseProjectRepository } from '@/lib/server/adapters/supabase/content/projects-repository'
 import { createSupabaseSiteContentRepository } from '@/lib/server/adapters/supabase/content/site-content-repository'
+import { createSupabaseContactContentRepository } from '@/lib/server/adapters/supabase/content/contact-content-repository'
 import type { ProjectInput } from '@/lib/server/application/content/projects'
 
 export async function createProjectUseCases() {
@@ -34,5 +39,14 @@ export async function createSiteContentUseCases() {
     getPublished: () => getPublishedSiteContent(repository),
     getAdmin: () => getAdminSiteContent(repository),
     save: (input: Record<string, any>) => saveSiteContent(repository, input)
+  }
+}
+
+export async function createContactContentUseCases() {
+  const repository = createSupabaseContactContentRepository(await createClient())
+
+  return {
+    get: () => getContactContent(repository),
+    create: (input: Record<string, any>) => createContactContentItem(repository, input)
   }
 }
