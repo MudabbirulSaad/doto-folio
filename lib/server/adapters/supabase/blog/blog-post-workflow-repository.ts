@@ -1,3 +1,4 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import {
   BlogPostWorkflowError,
   uniqueValues,
@@ -12,7 +13,7 @@ function throwDatabaseError(action: string, error: { message?: string } | null |
   )
 }
 
-export function createSupabaseBlogPostWorkflowRepository(supabase: any): BlogPostWorkflowRepository {
+export function createSupabaseBlogPostWorkflowRepository(supabase: SupabaseDataClient): BlogPostWorkflowRepository {
   return {
     async findPostBySlug(slug, excludeId) {
       let query = supabase

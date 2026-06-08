@@ -1,3 +1,4 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type { AdminBlogPostRepository } from '@/lib/server/application/blog/admin-blog-posts'
 
@@ -18,7 +19,7 @@ const ADMIN_POST_SELECT = `
   )
 `
 
-export function createSupabaseAdminBlogPostRepository(supabase: any): AdminBlogPostRepository {
+export function createSupabaseAdminBlogPostRepository(supabase: SupabaseDataClient): AdminBlogPostRepository {
   return {
     async listPosts(params) {
       const offset = (params.page - 1) * params.limit

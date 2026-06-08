@@ -1,7 +1,8 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type { AuthDelivery } from '@/lib/server/application/auth/auth-flows'
 
-export function createSupabaseAuthDelivery(supabase: any): AuthDelivery {
+export function createSupabaseAuthDelivery(supabase: SupabaseDataClient): AuthDelivery {
   return {
     async sendOtp(email, options) {
       const otpOptions: any = { shouldCreateUser: true }

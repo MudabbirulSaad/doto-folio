@@ -1,15 +1,16 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import type {
   AdminDashboardRepository,
   DashboardAuthor
 } from '@/lib/server/application/admin/dashboard'
 
-async function countTable(supabase: any, table: string) {
+async function countTable(supabase: SupabaseDataClient, table: string) {
   const { count } = await supabase.from(table).select('*', { count: 'exact', head: true })
   return count || 0
 }
 
 export function createSupabaseAdminDashboardRepository(
-  supabase: any,
+  supabase: SupabaseDataClient,
   adminClient: any
 ): AdminDashboardRepository {
   return {

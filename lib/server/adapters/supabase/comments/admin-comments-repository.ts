@@ -1,6 +1,7 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import type { AdminCommentAuthor, AdminCommentRepository } from '@/lib/server/application/comments/admin-comments'
 
-export function createSupabaseAdminCommentRepository(supabaseAdmin: any): AdminCommentRepository {
+export function createSupabaseAdminCommentRepository(supabaseAdmin: SupabaseDataClient): AdminCommentRepository {
   return {
     async listCommentsWithPosts() {
       const { data: comments, error } = await supabaseAdmin

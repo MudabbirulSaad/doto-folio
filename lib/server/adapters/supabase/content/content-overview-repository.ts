@@ -1,9 +1,10 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import type {
   AdminContentOverviewRepository
 } from '@/lib/server/application/content/content-overview'
 
 async function countTable(
-  supabase: any,
+  supabase: SupabaseDataClient,
   table: string,
   options: { publishedOnly?: boolean } = {}
 ) {
@@ -17,7 +18,7 @@ async function countTable(
   return count || 0
 }
 
-export function createSupabaseAdminContentOverviewRepository(supabase: any): AdminContentOverviewRepository {
+export function createSupabaseAdminContentOverviewRepository(supabase: SupabaseDataClient): AdminContentOverviewRepository {
   return {
     async getPublishedCounts() {
       const [

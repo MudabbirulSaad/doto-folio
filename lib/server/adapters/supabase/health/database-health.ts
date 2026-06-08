@@ -1,4 +1,5 @@
-export function createSupabaseDatabaseHealthCheck(supabase: any) {
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
+export function createSupabaseDatabaseHealthCheck(supabase: SupabaseDataClient) {
   return {
     async isDatabaseHealthy() {
       try {

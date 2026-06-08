@@ -1,3 +1,4 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type { BlogTaxonomyRepository } from '@/lib/server/application/blog/public-blog-taxonomy'
 
@@ -22,7 +23,7 @@ function offsetFor(page: number, limit: number) {
   return (page - 1) * limit
 }
 
-export function createSupabaseBlogTaxonomyRepository(supabase: any): BlogTaxonomyRepository {
+export function createSupabaseBlogTaxonomyRepository(supabase: SupabaseDataClient): BlogTaxonomyRepository {
   return {
     async getCategoriesWithPostCounts() {
       const { data, error } = await supabase

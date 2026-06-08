@@ -1,7 +1,8 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type { ProjectRepository } from '@/lib/server/application/content/projects'
 
-export function createSupabaseProjectRepository(supabase: any): ProjectRepository {
+export function createSupabaseProjectRepository(supabase: SupabaseDataClient): ProjectRepository {
   return {
     async listProjects() {
       const { data, error } = await supabase

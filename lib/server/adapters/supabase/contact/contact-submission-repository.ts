@@ -1,8 +1,9 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type { ContactSubmissionRepository } from '@/lib/server/application/contact/contact-submission'
 import type { ContactSubmissionInsert } from '@/lib/types/database'
 
-export function createSupabaseContactSubmissionRepository(supabase: any): ContactSubmissionRepository {
+export function createSupabaseContactSubmissionRepository(supabase: SupabaseDataClient): ContactSubmissionRepository {
   return {
     async saveSubmission(formData) {
       const submissionData: ContactSubmissionInsert = {

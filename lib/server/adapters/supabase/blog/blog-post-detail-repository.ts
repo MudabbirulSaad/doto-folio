@@ -1,3 +1,4 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import type { BlogPost } from '@/lib/types/blog'
 import {
   normalizeBlogPost,
@@ -28,7 +29,7 @@ const RELATED_POST_SELECT = `
   category:blog_categories(id, name, slug, color)
 `
 
-export function createSupabaseBlogPostDetailRepository(supabase: any): BlogPostDetailRepository {
+export function createSupabaseBlogPostDetailRepository(supabase: SupabaseDataClient): BlogPostDetailRepository {
   return {
     async findPublishedPostBySlug(slug: string): Promise<BlogPostRaw | null> {
       const { data, error } = await supabase

@@ -1,3 +1,4 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type { SkillContentRepository } from '@/lib/server/application/content/skills'
 
@@ -5,7 +6,7 @@ function databaseError(message: string, error: { message?: string }): never {
   throw new ApplicationError('DATABASE_ERROR', message, error.message ? [error.message] : [message])
 }
 
-export function createSupabaseSkillContentRepository(supabase: any): SkillContentRepository {
+export function createSupabaseSkillContentRepository(supabase: SupabaseDataClient): SkillContentRepository {
   return {
     async listFlatSkills() {
       const { data, error } = await supabase

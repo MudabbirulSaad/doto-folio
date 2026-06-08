@@ -1,3 +1,4 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type {
   ContactSubmissionAdminRepository,
@@ -33,7 +34,7 @@ function applySubmissionFilters(query: any, filters: ContactSubmissionFilters & 
   return filteredQuery
 }
 
-export function createSupabaseContactSubmissionAdminRepository(supabase: any): ContactSubmissionAdminRepository {
+export function createSupabaseContactSubmissionAdminRepository(supabase: SupabaseDataClient): ContactSubmissionAdminRepository {
   return {
     async listSubmissions(filters) {
       const query = applySubmissionFilters(

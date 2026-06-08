@@ -1,3 +1,4 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type { AdminBlogTaxonomyRepository } from '@/lib/server/application/blog/admin-blog-taxonomy'
 
@@ -5,7 +6,7 @@ function databaseError(message: string, error: { message?: string }): never {
   throw new ApplicationError('DATABASE_ERROR', message, error.message ? [error.message] : [message])
 }
 
-export function createSupabaseAdminBlogTaxonomyRepository(supabase: any): AdminBlogTaxonomyRepository {
+export function createSupabaseAdminBlogTaxonomyRepository(supabase: SupabaseDataClient): AdminBlogTaxonomyRepository {
   return {
     async listCategories() {
       const { data, error } = await supabase

@@ -1,3 +1,4 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import {
   PUBLIC_SITE_CONTENT_SELECT,
@@ -8,7 +9,7 @@ function databaseError(message: string, error: { message?: string }): never {
   throw new ApplicationError('DATABASE_ERROR', message, error.message ? [error.message] : [message])
 }
 
-export function createSupabaseSiteContentRepository(supabase: any): SiteContentRepository {
+export function createSupabaseSiteContentRepository(supabase: SupabaseDataClient): SiteContentRepository {
   return {
     async getPublishedSiteContent() {
       const { data, error } = await supabase

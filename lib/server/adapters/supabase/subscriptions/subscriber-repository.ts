@@ -1,7 +1,8 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type { SubscriberRepository } from '@/lib/server/application/subscriptions/newsletter-subscription'
 
-export function createSupabaseSubscriberRepository(supabase: any): SubscriberRepository {
+export function createSupabaseSubscriberRepository(supabase: SupabaseDataClient): SubscriberRepository {
   return {
     async findByEmail(email) {
       const { data, error } = await supabase

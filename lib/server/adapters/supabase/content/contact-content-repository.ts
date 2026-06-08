@@ -1,3 +1,4 @@
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type { ContactContentRepository } from '@/lib/server/application/content/contact-content'
 
@@ -5,7 +6,7 @@ function databaseError(message: string, error: { message?: string }): never {
   throw new ApplicationError('DATABASE_ERROR', message, error.message ? [error.message] : [message])
 }
 
-export function createSupabaseContactContentRepository(supabase: any): ContactContentRepository {
+export function createSupabaseContactContentRepository(supabase: SupabaseDataClient): ContactContentRepository {
   return {
     async listContactMethods() {
       const { data, error } = await supabase
