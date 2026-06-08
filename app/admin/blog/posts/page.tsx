@@ -36,15 +36,17 @@ import {
   Trash2,
   Plus
 } from 'lucide-react'
-import type { BlogPost, BlogCategory, BlogTag } from '@/lib/types/blog'
-
-interface BlogPostWithRelations extends BlogPost {
-  category: BlogCategory | null
-  tags: { tag: BlogTag }[]
-}
+import type { BlogCategory } from '@/lib/types/blog'
+import {
+  deleteAdminBlogPost,
+  filterAdminBlogPosts,
+  summarizeAdminBlogPosts
+} from '@/lib/client/application/admin/blog-posts'
+import { createAdminBlogPostApiGateway } from '@/lib/client/adapters/http/admin-blog-api'
+import type { AdminBlogPostWithRelations } from '@/lib/client/domain/admin-blog'
 
 export default function BlogPostsPage() {
-  const [posts, setPosts] = useState<BlogPostWithRelations[]>([])
+  const [posts, setPosts] = useState<AdminBlogPostWithRelations[]>([])
   const [categories, setCategories] = useState<BlogCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -58,11 +60,8 @@ export default function BlogPostsPage() {
 
   const fetchPosts = async () => {
     try {
-      const response = await fetch('/api/admin/blog/posts')
-      if (response.ok) {
-        const data = await response.json()
-        setPosts(data.data.posts || [])
-      }
+      const data = await createAdminBlogPostApiGateway().listPosts()
+      setPosts(data.posts || [])
     } catch (error) {
       console.error('Error fetching posts:', error)
     } finally {
@@ -72,11 +71,7 @@ export default function BlogPostsPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/admin/blog/categories')
-      if (response.ok) {
-        const data = await response.json()
-        setCategories(data.data || [])
-      }
+      setCategories(await createAdminBlogPostApiGateway().listCategories())
     } catch (error) {
       console.error('Error fetching categories:', error)
     }
@@ -86,11 +81,9 @@ export default function BlogPostsPage() {
     if (!confirm('Are you sure you want to delete this post?')) return
 
     try {
-      const response = await fetch(`/api/admin/blog/posts/${postId}`, {
-        method: 'DELETE',
-      })
-      
-      if (response.ok) {
+      const result = await deleteAdminBlogPost(createAdminBlogPostApiGateway(), postId)
+
+      if (result.success) {
         setPosts(posts.filter(post => post.id !== postId))
       }
     } catch (error) {
@@ -98,14 +91,12 @@ export default function BlogPostsPage() {
     }
   }
 
-  const filteredPosts = posts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         post.excerpt.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === 'all' || post.status === statusFilter
-    const matchesCategory = categoryFilter === 'all' || post.category?.id === categoryFilter
-    
-    return matchesSearch && matchesStatus && matchesCategory
+  const filteredPosts = filterAdminBlogPosts(posts, {
+    searchQuery,
+    statusFilter,
+    categoryFilter
   })
+  const postSummary = summarizeAdminBlogPosts(posts)
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -158,7 +149,7 @@ export default function BlogPostsPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Posts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{posts.length}</div>
+            <div className="text-2xl font-bold">{postSummary.total}</div>
           </CardContent>
         </Card>
         <Card>
@@ -167,7 +158,7 @@ export default function BlogPostsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {posts.filter(p => p.status === 'published').length}
+              {postSummary.published}
             </div>
           </CardContent>
         </Card>
@@ -177,7 +168,7 @@ export default function BlogPostsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
-              {posts.filter(p => p.status === 'draft').length}
+              {postSummary.drafts}
             </div>
           </CardContent>
         </Card>
@@ -187,7 +178,7 @@ export default function BlogPostsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {posts.reduce((sum, post) => sum + post.view_count, 0)}
+              {postSummary.views}
             </div>
           </CardContent>
         </Card>
