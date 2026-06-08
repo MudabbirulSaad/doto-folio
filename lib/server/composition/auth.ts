@@ -1,7 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { requestMagicLink, requestOtp, verifyOtp } from '@/lib/server/application/auth/auth-flows'
+import { signOutCurrentSession } from '@/lib/server/application/auth/logout'
 import { createRecaptchaHumanVerifier } from '@/lib/server/adapters/http/recaptcha-human-verifier'
 import { createSupabaseAuthDelivery } from '@/lib/server/adapters/supabase/auth/auth-delivery'
+import { createSupabaseSessionAuth } from '@/lib/server/adapters/supabase/auth/session-auth'
 
 function createSupabaseAdminClient() {
   return createClient(
@@ -34,4 +37,9 @@ export function createMagicLinkUseCase() {
   const { verifier, auth } = createAuthDependencies()
   return (input: { email: string; captchaToken: string; ipAddress: string; redirectTo: string }) =>
     requestMagicLink(verifier, auth, input)
+}
+
+export async function createLogoutUseCase() {
+  const auth = createSupabaseSessionAuth(await createServerClient())
+  return () => signOutCurrentSession(auth)
 }

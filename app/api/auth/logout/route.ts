@@ -1,15 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { createLogoutUseCase } from '@/lib/server/composition/auth'
 
 export async function POST(request: Request) {
-    const supabase = await createClient()
-
-    // Sign out from Supabase (clears session on server side)
-    const { error } = await supabase.auth.signOut()
-
-    if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true })
+  try {
+    return NextResponse.json(await (await createLogoutUseCase())())
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+  }
 }
