@@ -10,7 +10,10 @@ import {
   createErrorResponse
 } from '../lib/api/response'
 import { ApplicationError } from '../lib/server/domain/errors'
-import { createApplicationErrorResponse } from '../lib/server/adapters/http/errors'
+import {
+  createApplicationErrorResponse,
+  createApplicationOrInternalErrorResponse
+} from '../lib/server/adapters/http/errors'
 
 async function readJson<T = Record<string, unknown>>(response: Response) {
   return response.json() as Promise<T>
@@ -110,5 +113,23 @@ test('createApplicationErrorResponse maps application errors to the shared envel
     code: 'VALIDATION_ERROR',
     message: 'Validation failed',
     details: ['Title is required']
+  })
+})
+
+test('createApplicationOrInternalErrorResponse falls back to named internal errors', async () => {
+  const validation = createApplicationOrInternalErrorResponse(
+    new ApplicationError('VALIDATION_ERROR', 'Validation failed', ['Title is required']),
+    'Failed to save'
+  )
+  assert.equal(validation.status, 400)
+
+  const internal = createApplicationOrInternalErrorResponse(new Error('Database unavailable'), 'Failed to save')
+  const body = await readJson<ErrorBody>(internal)
+
+  assert.equal(internal.status, 500)
+  assert.deepEqual(body.error, {
+    code: 'INTERNAL_ERROR',
+    message: 'Failed to save',
+    details: ['Database unavailable']
   })
 })

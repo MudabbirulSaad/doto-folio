@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentAdminUser } from '@/lib/auth/server'
 import { createProjectUseCases } from '@/lib/server/composition/content'
-import { isApplicationError } from '@/lib/server/domain/errors'
-
-function errorResponse(error: unknown) {
-  if (isApplicationError(error)) {
-    const status = error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' ? 400 : 500
-    return NextResponse.json({ error: error.message }, { status })
-  }
-
-  return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-}
+import { createLegacyJsonErrorResponse, createLegacyUnauthorizedResponse } from '@/lib/server/adapters/http/legacy-json-response'
 
 export async function GET(
   request: NextRequest,
@@ -22,7 +13,7 @@ export async function GET(
     return NextResponse.json({ data: project })
   } catch (error) {
     console.error('Error in GET /api/admin/content/projects/[id]:', error)
-    return errorResponse(error)
+    return createLegacyJsonErrorResponse(error)
   }
 }
 
@@ -34,7 +25,7 @@ export async function PUT(
     const { id } = await params
     const user = await getCurrentAdminUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return createLegacyUnauthorizedResponse()
     }
 
     const body = await request.json()
@@ -48,7 +39,7 @@ export async function PUT(
     })
   } catch (error) {
     console.error('Error in PUT /api/admin/content/projects/[id]:', error)
-    return errorResponse(error)
+    return createLegacyJsonErrorResponse(error)
   }
 }
 
@@ -60,7 +51,7 @@ export async function DELETE(
     const { id } = await params
     const user = await getCurrentAdminUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return createLegacyUnauthorizedResponse()
     }
 
     await (await createProjectUseCases()).delete(id)
@@ -70,6 +61,6 @@ export async function DELETE(
     })
   } catch (error) {
     console.error('Error in DELETE /api/admin/content/projects/[id]:', error)
-    return errorResponse(error)
+    return createLegacyJsonErrorResponse(error)
   }
 }

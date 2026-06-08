@@ -1,9 +1,8 @@
 import { NextRequest } from 'next/server'
 import { withAuth } from '@/lib/api/middleware'
 import { createSuccessResponse, createInternalErrorResponse } from '@/lib/api/response'
-import { createApplicationErrorResponse } from '@/lib/server/adapters/http/errors'
+import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 import { createSiteContentUseCases } from '@/lib/server/composition/content'
-import { isApplicationError } from '@/lib/server/domain/errors'
 
 async function getSiteContentHandler() {
   try {
@@ -26,14 +25,7 @@ async function updateSiteContentHandler(context: { request: NextRequest }) {
 
     return createSuccessResponse(siteContent, 'Site content updated successfully')
   } catch (error) {
-    if (isApplicationError(error)) {
-      return createApplicationErrorResponse(error)
-    }
-
-    return createInternalErrorResponse(
-      'Failed to update site content',
-      [(error as Error).message]
-    )
+    return createApplicationOrInternalErrorResponse(error, 'Failed to update site content')
   }
 }
 
