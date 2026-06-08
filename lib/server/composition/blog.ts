@@ -1,6 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { getPublicBlogListing } from '@/lib/server/application/blog/public-blog-listing'
+import {
+  getBlogCategoriesWithCounts,
+  getBlogPostsByCategory,
+  getBlogPostsByTag
+} from '@/lib/server/application/blog/public-blog-taxonomy'
 import { createBlogPostDetailService } from '@/lib/server/application/blog/blog-post-detail'
 import {
   createBlogPost,
@@ -8,6 +13,7 @@ import {
   updateBlogPost
 } from '@/lib/server/application/blog/blog-post-workflow'
 import { createSupabasePublicBlogListingRepository } from '@/lib/server/adapters/supabase/blog/public-blog-listing-repository'
+import { createSupabaseBlogTaxonomyRepository } from '@/lib/server/adapters/supabase/blog/public-blog-taxonomy-repository'
 import { createSupabaseBlogPostDetailRepository } from '@/lib/server/adapters/supabase/blog/blog-post-detail-repository'
 import { createSupabaseBlogPostWorkflowRepository } from '@/lib/server/adapters/supabase/blog/blog-post-workflow-repository'
 import type { BlogSearchParams, CreateBlogPostData, UpdateBlogPostData } from '@/lib/types/blog'
@@ -18,6 +24,19 @@ export async function createPublicBlogListingUseCase() {
 
   return (params: BlogSearchParams, options?: { defaultLimit?: number; maxLimit?: number; tagLimit?: number }) =>
     getPublicBlogListing(repository, params, options)
+}
+
+export async function createPublicBlogTaxonomyUseCases() {
+  const supabase = await createClient()
+  const repository = createSupabaseBlogTaxonomyRepository(supabase)
+
+  return {
+    categoriesWithCounts: () => getBlogCategoriesWithCounts(repository),
+    postsByCategory: (slug: string, params?: { page?: number; limit?: number }) =>
+      getBlogPostsByCategory(repository, slug, params),
+    postsByTag: (slug: string, params?: { page?: number; limit?: number }) =>
+      getBlogPostsByTag(repository, slug, params)
+  }
 }
 
 export async function createBlogPostDetailUseCase() {
