@@ -12,11 +12,30 @@ import {
   deleteBlogPost,
   updateBlogPost
 } from '@/lib/server/application/blog/blog-post-workflow'
+import {
+  createAdminBlogCategory,
+  createAdminBlogTag,
+  deleteAdminBlogCategory,
+  deleteAdminBlogTag,
+  getAdminBlogCategory,
+  getAdminBlogTag,
+  listAdminBlogCategories,
+  listAdminBlogTags,
+  updateAdminBlogCategory,
+  updateAdminBlogTag
+} from '@/lib/server/application/blog/admin-blog-taxonomy'
 import { createSupabasePublicBlogListingRepository } from '@/lib/server/adapters/supabase/blog/public-blog-listing-repository'
 import { createSupabaseBlogTaxonomyRepository } from '@/lib/server/adapters/supabase/blog/public-blog-taxonomy-repository'
 import { createSupabaseBlogPostDetailRepository } from '@/lib/server/adapters/supabase/blog/blog-post-detail-repository'
 import { createSupabaseBlogPostWorkflowRepository } from '@/lib/server/adapters/supabase/blog/blog-post-workflow-repository'
+import { createSupabaseAdminBlogTaxonomyRepository } from '@/lib/server/adapters/supabase/blog/admin-blog-taxonomy-repository'
 import type { BlogSearchParams, CreateBlogPostData, UpdateBlogPostData } from '@/lib/types/blog'
+import type {
+  CreateBlogCategoryData,
+  CreateBlogTagData,
+  UpdateBlogCategoryData,
+  UpdateBlogTagData
+} from '@/lib/types/blog'
 
 export async function createPublicBlogListingUseCase() {
   const supabase = await createClient()
@@ -52,6 +71,24 @@ export async function createAdminBlogWorkflowUseCases() {
     createPost: (input: CreateBlogPostData) => createBlogPost(repository, input),
     updatePost: (id: string, input: UpdateBlogPostData) => updateBlogPost(repository, id, input),
     deletePost: (id: string) => deleteBlogPost(repository, id)
+  }
+}
+
+export async function createAdminBlogTaxonomyUseCases() {
+  const supabase = await createClient()
+  const repository = createSupabaseAdminBlogTaxonomyRepository(supabase)
+
+  return {
+    listCategories: () => listAdminBlogCategories(repository),
+    getCategory: (id: string) => getAdminBlogCategory(repository, id),
+    createCategory: (input: CreateBlogCategoryData) => createAdminBlogCategory(repository, input),
+    updateCategory: (id: string, input: UpdateBlogCategoryData) => updateAdminBlogCategory(repository, id, input),
+    deleteCategory: (id: string) => deleteAdminBlogCategory(repository, id),
+    listTags: () => listAdminBlogTags(repository),
+    getTag: (id: string) => getAdminBlogTag(repository, id),
+    createTag: (input: CreateBlogTagData) => createAdminBlogTag(repository, input),
+    updateTag: (id: string, input: UpdateBlogTagData) => updateAdminBlogTag(repository, id, input),
+    deleteTag: (id: string) => deleteAdminBlogTag(repository, id)
   }
 }
 
