@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { logoutAdmin } from '@/lib/auth/admin'
-import { createClient } from '@/lib/supabase/client'
+import { getCurrentSession, logoutAdmin } from '@/lib/auth/admin'
 import {
   LayoutDashboard,
   Mail,
@@ -51,8 +50,7 @@ export default function AdminNavigation() {
 
   useEffect(() => {
     const getUser = async () => {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
+      const session = await getCurrentSession()
       if (session?.user?.email) {
         setUserEmail(session.user.email)
       }

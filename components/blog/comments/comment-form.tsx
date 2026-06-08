@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
-import { createClient } from '@supabase/supabase-js'
 import { Send, Mail, Loader2, LogOut, User, KeyRound, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +9,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import {
+    getCurrentSession,
+    onCurrentSessionChange,
+    setCurrentSession,
+    signOutCurrentBrowserSession
+} from '@/lib/auth/admin'
 
 interface CommentFormProps {
     postId: string
@@ -33,16 +38,10 @@ export function CommentForm({ postId, onCommentPosted, parentId, onCancelReply }
 
     const { executeRecaptcha } = useGoogleReCaptcha()
 
-    // Initialize Supabase Client
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
     useEffect(() => {
         // Check active session
         const checkSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
+            const session = await getCurrentSession()
             if (session?.user) {
                 setUser(session.user)
                 setAuthState('authenticated')
@@ -51,7 +50,7 @@ export function CommentForm({ postId, onCommentPosted, parentId, onCancelReply }
 
         checkSession()
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const unsubscribe = onCurrentSessionChange((session) => {
             if (session?.user) {
                 setUser(session.user)
                 setAuthState('authenticated')
@@ -61,7 +60,7 @@ export function CommentForm({ postId, onCommentPosted, parentId, onCancelReply }
             }
         })
 
-        return () => subscription.unsubscribe()
+        return unsubscribe
     }, [])
 
     const handleSendCode = async (e: React.FormEvent) => {
@@ -114,7 +113,7 @@ export function CommentForm({ postId, onCommentPosted, parentId, onCancelReply }
 
             toast.success('Verified successfully!')
             // Session is handled by onAuthStateChange, but we can force update
-            await supabase.auth.setSession(data.data.session)
+            await setCurrentSession(data.data.session)
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Verification failed')
         } finally {
@@ -128,7 +127,7 @@ export function CommentForm({ postId, onCommentPosted, parentId, onCancelReply }
 
         setIsLoading(true)
         try {
-            const { data: { session } } = await supabase.auth.getSession()
+            const session = await getCurrentSession()
             if (!session) throw new Error('No active session')
 
             const res = await fetch('/api/comments', {
@@ -160,7 +159,7 @@ export function CommentForm({ postId, onCommentPosted, parentId, onCancelReply }
     }
 
     const handleLogout = async () => {
-        await supabase.auth.signOut()
+        await signOutCurrentBrowserSession()
         toast.success('Logged out')
         setAuthState('idle')
         setEmail('')

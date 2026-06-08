@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
+import type { Session, User } from '@supabase/supabase-js'
 
 export interface AdminLoginData {
   email: string
@@ -108,4 +108,23 @@ export async function getCurrentSession() {
   } catch {
     return null
   }
+}
+
+export function onCurrentSessionChange(callback: (session: Session | null) => void) {
+  const supabase = createClient()
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    callback(session)
+  })
+
+  return () => subscription.unsubscribe()
+}
+
+export async function setCurrentSession(session: Session) {
+  const supabase = createClient()
+  await supabase.auth.setSession(session)
+}
+
+export async function signOutCurrentBrowserSession() {
+  const supabase = createClient()
+  await supabase.auth.signOut()
 }
