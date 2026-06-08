@@ -5,7 +5,7 @@ import {
   deleteBlogPost,
   updateBlogPost,
   type BlogPostWorkflowRepository
-} from '../lib/data/blog-post-workflow'
+} from '../lib/server/application/blog/blog-post-workflow'
 
 function editorContent(words: number) {
   return JSON.stringify({
