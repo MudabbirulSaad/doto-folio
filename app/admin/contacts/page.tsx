@@ -2,25 +2,19 @@ import { requireAdminAuth } from '@/lib/auth/server'
 
 // Force dynamic rendering for admin pages that use authentication
 export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminContactSubmissionUseCases } from '@/lib/server/composition/contact'
 import ContactSubmissionsTable from '@/components/admin/contact-submissions-table'
 import { Mail } from 'lucide-react'
 
 async function getContactSubmissions() {
   try {
-    const supabase = await createClient()
+    const submissions = await createAdminContactSubmissionUseCases().list({
+      readStatus: 'all',
+      timeFilter: 'all',
+      search: ''
+    })
 
-    const { data: submissions, error } = await supabase
-      .from('contact_submissions')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Error fetching contact submissions:', error)
-      return []
-    }
-
-    return submissions || []
+    return submissions
   } catch (error) {
     console.error('Error fetching contact submissions:', error)
     return []
