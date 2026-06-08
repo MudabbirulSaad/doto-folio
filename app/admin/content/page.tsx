@@ -1,7 +1,5 @@
 'use client'
 
-import { requireAdminAuth } from '@/lib/auth/server'
-import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,52 +39,16 @@ export default function ContentManagementPage() {
 
     useEffect(() => {
         const fetchStats = async () => {
-            const supabase = createClient()
+            try {
+                const response = await fetch('/api/admin/content/overview')
+                const payload = await response.json()
 
-            // Get projects count
-            const { count: projectsCount } = await supabase
-                .from('projects')
-                .select('*', { count: 'exact', head: true })
-                .eq('is_published', true)
-
-            // Get skills count
-            const { count: skillsCount } = await supabase
-                .from('skills')
-                .select('*', { count: 'exact', head: true })
-                .eq('is_published', true)
-
-            // Get contact methods count
-            const { count: contactMethodsCount } = await supabase
-                .from('contact_methods')
-                .select('*', { count: 'exact', head: true })
-                .eq('is_published', true)
-
-            // Get social links count
-            const { count: socialLinksCount } = await supabase
-                .from('social_links')
-                .select('*', { count: 'exact', head: true })
-                .eq('is_published', true)
-
-            // Check if site content is published
-            const { data: siteContent } = await supabase
-                .from('site_content')
-                .select('is_published')
-                .single()
-
-            // Get comments count
-            const { count: commentsCount } = await supabase
-                .from('blog_comments')
-                .select('*', { count: 'exact', head: true })
-
-            setStats({
-                projectsCount: projectsCount || 0,
-                skillsCount: skillsCount || 0,
-                contactMethodsCount: contactMethodsCount || 0,
-                socialLinksCount: socialLinksCount || 0,
-                isContentPublished: siteContent?.is_published || false,
-                commentsCount: commentsCount || 0
-            })
-            setLoading(false)
+                if (response.ok && payload.success) {
+                    setStats(payload.data)
+                }
+            } finally {
+                setLoading(false)
+            }
         }
 
         fetchStats()

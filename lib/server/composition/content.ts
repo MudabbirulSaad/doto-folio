@@ -22,10 +22,12 @@ import {
   listFlatSkills,
   updateFlatSkill
 } from '@/lib/server/application/content/skills'
+import { getAdminContentOverview } from '@/lib/server/application/content/content-overview'
 import { createSupabaseProjectRepository } from '@/lib/server/adapters/supabase/content/projects-repository'
 import { createSupabaseSiteContentRepository } from '@/lib/server/adapters/supabase/content/site-content-repository'
 import { createSupabaseContactContentRepository } from '@/lib/server/adapters/supabase/content/contact-content-repository'
 import { createSupabaseSkillContentRepository } from '@/lib/server/adapters/supabase/content/skills-repository'
+import { createSupabaseAdminContentOverviewRepository } from '@/lib/server/adapters/supabase/content/content-overview-repository'
 import type { ProjectInput } from '@/lib/server/application/content/projects'
 
 export async function createProjectUseCases() {
@@ -69,4 +71,10 @@ export async function createSkillContentUseCases() {
     delete: (id: string) => deleteSkill(repository, id),
     createInCategory: (categoryId: string, input: Record<string, any>) => createSkillInCategory(repository, categoryId, input)
   }
+}
+
+export async function createAdminContentOverviewUseCase() {
+  const repository = createSupabaseAdminContentOverviewRepository(await createClient())
+
+  return () => getAdminContentOverview(repository)
 }
