@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { requireAdminAuth } from '@/lib/auth/server'
+import { createAdminContactSubmissionUseCases } from '@/lib/server/composition/contact'
 
 type ContactSubmission = {
   id: string
@@ -29,50 +29,13 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     
-    const supabase = await createClient()
-    
-    let query = supabase
-      .from('contact_submissions')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    // Apply same filters as the main submissions endpoint
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,subject.ilike.%${search}%,message.ilike.%${search}%`)
-    }
-    
-    if (readStatus === 'read') {
-      query = query.eq('is_read', true)
-    } else if (readStatus === 'unread') {
-      query = query.eq('is_read', false)
-    }
-    
-    const now = new Date()
-    if (timeFilter === 'last7days') {
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      query = query.gte('created_at', sevenDaysAgo.toISOString())
-    } else if (timeFilter === 'last30days') {
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-      query = query.gte('created_at', thirtyDaysAgo.toISOString())
-    } else if (timeFilter === 'last3months') {
-      const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
-      query = query.gte('created_at', threeMonthsAgo.toISOString())
-    } else if (timeFilter === 'lastyear') {
-      const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
-      query = query.gte('created_at', oneYearAgo.toISOString())
-    } else if (timeFilter === 'custom' && startDate && endDate) {
-      query = query.gte('created_at', startDate).lte('created_at', endDate)
-    }
-    
-    const { data: submissions, error } = await query
-    
-    if (error) {
-      console.error('Error fetching submissions for export:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch submissions' },
-        { status: 500 }
-      )
-    }
+    const submissions = await createAdminContactSubmissionUseCases().list({
+      search,
+      readStatus,
+      timeFilter,
+      startDate,
+      endDate
+    })
     
     const timestamp = new Date().toISOString().split('T')[0]
     
