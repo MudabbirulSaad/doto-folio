@@ -1,6 +1,4 @@
 import { NextRequest } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { sendContactEmails } from '@/lib/services/email'
 import { ContactFormSchema, parseAndValidateJSON } from '@/lib/api/validation'
 import { rateLimit } from '@/lib/api/rate-limit'
 import {
@@ -12,8 +10,10 @@ import {
   logApiRequest,
   logApiError
 } from '@/lib/api/response'
-import type { ContactSubmissionInsert } from '@/lib/types/database'
 import type { ContactFormData } from '@/lib/services/contact'
+import { createContactSubmissionUseCase } from '@/lib/server/composition/contact'
+import { isApplicationError } from '@/lib/server/domain/errors'
+import { createApplicationErrorResponse } from '@/lib/server/adapters/http/errors'
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
@@ -47,76 +47,13 @@ export async function POST(request: NextRequest) {
       message,
     }
 
-    // Create admin Supabase client (bypasses RLS)
-    const supabase = createAdminClient()
-
-    // Prepare data for insertion
-    const submissionData: ContactSubmissionInsert = {
-      name: formData.name,
-      email: formData.email,
-      subject: formData.subject,
-      message: formData.message,
-    }
-
-    // Insert into Supabase with error handling
-    const { data, error } = await supabase
-      .from('contact_submissions')
-      .insert(submissionData)
-      .select()
-      .single()
-
-    if (error) {
-      logApiError(new Error(`Database error: ${error.message}`), {
-        method: 'POST',
-        path: '/api/contact'
-      })
-      logApiRequest('POST', '/api/contact', 500, Date.now() - startTime)
-      return createInternalErrorResponse(
-        'Failed to submit your message. Please try again later.',
-        undefined,
-        { origin, rateLimitResult }
-      )
-    }
-
-    // Send email notifications (don't fail the request if emails fail)
-    let emailStatus = 'Email notifications disabled'
-    const gmailUser = process.env.GMAIL_USER
-    const gmailPass = process.env.GMAIL_PASS
-    const adminEmail = process.env.ADMIN_EMAIL
-
-    if (gmailUser && gmailPass && adminEmail) {
-      try {
-        const emailResult = await sendContactEmails(formData, {
-          gmailUser,
-          gmailPass,
-          adminEmail,
-        })
-
-        if (emailResult.success) {
-          const emailParts = []
-          if (emailResult.adminEmailSent) emailParts.push('admin notification sent')
-          if (emailResult.userEmailSent) emailParts.push('confirmation email sent')
-          emailStatus = `Email notifications: ${emailParts.join(', ')}`
-        } else {
-          emailStatus = `Email notifications failed: ${emailResult.error}`
-          logApiError(new Error(`Email error: ${emailResult.error}`), {
-            method: 'POST',
-            path: '/api/contact'
-          })
-        }
-      } catch (emailError) {
-        emailStatus = 'Email notifications failed: service error'
-        logApiError(emailError as Error, {
-          method: 'POST',
-          path: '/api/contact'
-        })
-      }
-    }
+    const submitContact = createContactSubmissionUseCase()
+    const { submission, emailStatus } = await submitContact(formData)
 
     logApiRequest('POST', '/api/contact', 200, Date.now() - startTime)
 
     return createSuccessResponse(
-      data,
+      submission,
       "Your message has been sent successfully! I'll get back to you soon.",
       undefined,
       {
@@ -127,6 +64,15 @@ export async function POST(request: NextRequest) {
     )
 
   } catch (error) {
+    if (isApplicationError(error)) {
+      logApiError(error, {
+        method: 'POST',
+        path: '/api/contact'
+      })
+      logApiRequest('POST', '/api/contact', 500, Date.now() - startTime)
+      return createApplicationErrorResponse(error)
+    }
+
     logApiError(error as Error, {
       method: 'POST',
       path: '/api/contact'
