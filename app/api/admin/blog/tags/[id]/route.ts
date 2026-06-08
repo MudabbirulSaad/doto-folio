@@ -1,14 +1,8 @@
 import { NextRequest } from 'next/server'
 import { withAuth } from '@/lib/api/middleware'
-import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
+import { createSuccessResponse } from '@/lib/api/response'
 import { createAdminBlogTaxonomyUseCases } from '@/lib/server/composition/blog'
-import { createApplicationErrorResponse } from '@/lib/server/adapters/http/errors'
-import { isApplicationError } from '@/lib/server/domain/errors'
-
-function taxonomyErrorResponse(error: unknown) {
-  if (isApplicationError(error)) return createApplicationErrorResponse(error)
-  return createErrorResponse('Internal server error', 500)
-}
+import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 
 async function getTagHandler(_: { request: NextRequest }, { params }: { params: { id: string } }) {
   try {
@@ -16,7 +10,7 @@ async function getTagHandler(_: { request: NextRequest }, { params }: { params: 
     return createSuccessResponse(tag)
   } catch (error) {
     console.error('Error in getTagHandler:', error)
-    return taxonomyErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -26,7 +20,7 @@ async function updateTagHandler({ request }: { request: NextRequest }, { params 
     return createSuccessResponse(tag)
   } catch (error) {
     console.error('Error in updateTagHandler:', error)
-    return taxonomyErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -36,7 +30,7 @@ async function deleteTagHandler(_: { request: NextRequest }, { params }: { param
     return createSuccessResponse(result)
   } catch (error) {
     console.error('Error in deleteTagHandler:', error)
-    return taxonomyErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 

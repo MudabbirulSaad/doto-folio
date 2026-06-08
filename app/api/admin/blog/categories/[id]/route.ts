@@ -1,14 +1,8 @@
 import { NextRequest } from 'next/server'
 import { withAuth } from '@/lib/api/middleware'
-import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
+import { createSuccessResponse } from '@/lib/api/response'
 import { createAdminBlogTaxonomyUseCases } from '@/lib/server/composition/blog'
-import { createApplicationErrorResponse } from '@/lib/server/adapters/http/errors'
-import { isApplicationError } from '@/lib/server/domain/errors'
-
-function taxonomyErrorResponse(error: unknown) {
-  if (isApplicationError(error)) return createApplicationErrorResponse(error)
-  return createErrorResponse('Internal server error', 500)
-}
+import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 
 async function getCategoryHandler(_: { request: NextRequest }, { params }: { params: { id: string } }) {
   try {
@@ -16,7 +10,7 @@ async function getCategoryHandler(_: { request: NextRequest }, { params }: { par
     return createSuccessResponse(category)
   } catch (error) {
     console.error('Error in getCategoryHandler:', error)
-    return taxonomyErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -26,7 +20,7 @@ async function updateCategoryHandler({ request }: { request: NextRequest }, { pa
     return createSuccessResponse(category)
   } catch (error) {
     console.error('Error in updateCategoryHandler:', error)
-    return taxonomyErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -36,7 +30,7 @@ async function deleteCategoryHandler(_: { request: NextRequest }, { params }: { 
     return createSuccessResponse(result)
   } catch (error) {
     console.error('Error in deleteCategoryHandler:', error)
-    return taxonomyErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 

@@ -1,23 +1,14 @@
 // import { NextRequest } from 'next/server' // Not needed with middleware approach
 import { withAuth } from '@/lib/api/middleware'
-import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
+import { createSuccessResponse } from '@/lib/api/response'
 import type { UpdateBlogPostData } from '@/lib/types/blog'
 import { createAdminBlogPostReadUseCases, createAdminBlogWorkflowUseCases } from '@/lib/server/composition/blog'
-import { isApplicationError } from '@/lib/server/domain/errors'
-import { createApplicationErrorResponse } from '@/lib/server/adapters/http/errors'
+import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 
 function getPostIdFromRequestUrl(requestUrl: string) {
   const url = new URL(requestUrl)
   const pathSegments = url.pathname.split('/')
   return pathSegments[pathSegments.length - 1]
-}
-
-function createWorkflowErrorResponse(error: unknown) {
-  if (isApplicationError(error)) {
-    return createApplicationErrorResponse(error)
-  }
-
-  return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
 }
 
 // GET - Get single post for editing
@@ -30,12 +21,8 @@ async function getPostHandler(context: any) {
     return createSuccessResponse(post)
 
   } catch (error) {
-    if (isApplicationError(error)) {
-      return createApplicationErrorResponse(error)
-    }
-
     console.error('Error in getPostHandler:', error)
-    return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -52,7 +39,7 @@ async function updatePostHandler(context: any) {
 
   } catch (error) {
     console.error('Error in updatePostHandler:', error)
-    return createWorkflowErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -68,7 +55,7 @@ async function deletePostHandler(context: any) {
 
   } catch (error) {
     console.error('Error in deletePostHandler:', error)
-    return createWorkflowErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 

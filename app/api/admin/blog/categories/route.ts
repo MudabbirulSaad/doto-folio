@@ -1,14 +1,8 @@
 import { NextRequest } from 'next/server'
 import { withAuth } from '@/lib/api/middleware'
-import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
+import { createSuccessResponse } from '@/lib/api/response'
 import { createAdminBlogTaxonomyUseCases } from '@/lib/server/composition/blog'
-import { createApplicationErrorResponse } from '@/lib/server/adapters/http/errors'
-import { isApplicationError } from '@/lib/server/domain/errors'
-
-function taxonomyErrorResponse(error: unknown) {
-  if (isApplicationError(error)) return createApplicationErrorResponse(error)
-  return createErrorResponse('Internal server error', 500)
-}
+import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 
 async function getCategoriesHandler() {
   try {
@@ -16,7 +10,7 @@ async function getCategoriesHandler() {
     return createSuccessResponse(categories)
   } catch (error) {
     console.error('Error in getCategoriesHandler:', error)
-    return taxonomyErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -26,7 +20,7 @@ async function createCategoryHandler({ request }: { request: NextRequest }) {
     return createSuccessResponse(category, 201)
   } catch (error) {
     console.error('Error in createCategoryHandler:', error)
-    return taxonomyErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 

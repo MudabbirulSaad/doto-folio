@@ -3,16 +3,7 @@ import { withAuth } from '@/lib/api/middleware'
 import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
 import type { CreateBlogPostData } from '@/lib/types/blog'
 import { createAdminBlogPostReadUseCases, createAdminBlogWorkflowUseCases } from '@/lib/server/composition/blog'
-import { isApplicationError } from '@/lib/server/domain/errors'
-import { createApplicationErrorResponse } from '@/lib/server/adapters/http/errors'
-
-function createWorkflowErrorResponse(error: unknown) {
-  if (isApplicationError(error)) {
-    return createApplicationErrorResponse(error)
-  }
-
-  return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
-}
+import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 
 // GET - Get all blog posts for admin
 async function getPostsHandler({ request }: { request: NextRequest }) {
@@ -52,7 +43,7 @@ async function createPostHandler({ request }: { request: NextRequest }) {
 
   } catch (error) {
     console.error('Error in createPostHandler:', error)
-    return createWorkflowErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
