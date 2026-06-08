@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { requestMagicLink, requestOtp, verifyOtp } from '@/lib/server/application/auth/auth-flows'
+import { getCurrentAdminUser } from '@/lib/server/application/auth/current-admin-user'
 import { signOutCurrentSession } from '@/lib/server/application/auth/logout'
 import { createRecaptchaHumanVerifier } from '@/lib/server/adapters/http/recaptcha-human-verifier'
 import { createSupabaseAuthDelivery } from '@/lib/server/adapters/supabase/auth/auth-delivery'
+import { createSupabaseCurrentAdminUser } from '@/lib/server/adapters/supabase/auth/current-admin-user'
 import { createSupabaseSessionAuth } from '@/lib/server/adapters/supabase/auth/session-auth'
 
 function createSupabaseAdminClient() {
@@ -42,4 +44,9 @@ export function createMagicLinkUseCase() {
 export async function createLogoutUseCase() {
   const auth = createSupabaseSessionAuth(await createServerClient())
   return () => signOutCurrentSession(auth)
+}
+
+export async function createCurrentAdminUserUseCase() {
+  const auth = createSupabaseCurrentAdminUser(await createServerClient())
+  return () => getCurrentAdminUser(auth)
 }

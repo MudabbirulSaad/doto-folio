@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createCurrentAdminUserUseCase } from '@/lib/server/composition/auth'
 import { redirect } from 'next/navigation'
 
 /**
@@ -6,15 +6,8 @@ import { redirect } from 'next/navigation'
  */
 export async function getCurrentAdminUser() {
   try {
-    const supabase = await createClient()
-    
-    const { data: { user }, error } = await supabase.auth.getUser()
-
-    if (error || !user) {
-      return null
-    }
-
-    return user
+    const getUser = await createCurrentAdminUserUseCase()
+    return await getUser()
   } catch (error) {
     console.error('Error getting current admin user:', error)
     return null
