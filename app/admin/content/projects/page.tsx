@@ -21,30 +21,15 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-
-interface Project {
-  id: string
-  title: string
-  description: string
-  status: 'Planning' | 'In Development' | 'Completed' | 'On Hold'
-  display_order: number
-  is_featured: boolean
-  is_published: boolean
-  project_technologies: Array<{
-    id: string
-    technology_name: string
-    display_order: number
-  }>
-}
-
-interface ProjectFormData {
-  title: string
-  description: string
-  status: 'Planning' | 'In Development' | 'Completed' | 'On Hold'
-  technologies: string[]
-  is_featured: boolean
-  is_published: boolean
-}
+import {
+  addProjectTechnology,
+  emptyProjectForm,
+  projectToForm,
+  removeProjectTechnology,
+  saveProject
+} from '@/lib/client/application/admin/projects'
+import { createAdminProjectApiGateway } from '@/lib/client/adapters/http/admin-projects-api'
+import type { AdminProject, AdminProjectFormData } from '@/lib/client/domain/admin-content'
 
 const statusOptions = [
   { value: 'Planning', label: 'Planning', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' },
@@ -54,21 +39,14 @@ const statusOptions = [
 ]
 
 export default function ProjectsManagementPage() {
-  const [projects, setProjects] = useState<Project[]>([])
+  const [projects, setProjects] = useState<AdminProject[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [editingProject, setEditingProject] = useState<Project | null>(null)
+  const [editingProject, setEditingProject] = useState<AdminProject | null>(null)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-  const [formData, setFormData] = useState<ProjectFormData>({
-    title: '',
-    description: '',
-    status: 'Planning',
-    technologies: [],
-    is_featured: false,
-    is_published: true
-  })
+  const [formData, setFormData] = useState<AdminProjectFormData>(emptyProjectForm())
   const [newTechnology, setNewTechnology] = useState('')
 
   useEffect(() => {
@@ -77,13 +55,7 @@ export default function ProjectsManagementPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('/api/admin/content/projects')
-      if (response.ok) {
-        const result = await response.json()
-        setProjects(result.data)
-      } else {
-        setMessage({ type: 'error', text: 'Failed to load projects' })
-      }
+      setProjects(await createAdminProjectApiGateway().list())
     } catch (error) {
       console.error('Error fetching projects:', error)
       setMessage({ type: 'error', text: 'Failed to load projects' })
@@ -93,78 +65,38 @@ export default function ProjectsManagementPage() {
   }
 
   const resetForm = () => {
-    setFormData({
-      title: '',
-      description: '',
-      status: 'Planning',
-      technologies: [],
-      is_featured: false,
-      is_published: true
-    })
+    setFormData(emptyProjectForm())
     setNewTechnology('')
     setEditingProject(null)
     setShowForm(false)
   }
 
-  const handleEdit = (project: Project) => {
+  const handleEdit = (project: AdminProject) => {
     setEditingProject(project)
-    setFormData({
-      title: project.title,
-      description: project.description,
-      status: project.status,
-      technologies: project.project_technologies.map(t => t.technology_name),
-      is_featured: project.is_featured,
-      is_published: project.is_published
-    })
+    setFormData(projectToForm(project))
     setShowForm(true)
   }
 
   const addTechnology = () => {
-    if (newTechnology.trim() && !formData.technologies.includes(newTechnology.trim())) {
-      setFormData({
-        ...formData,
-        technologies: [...formData.technologies, newTechnology.trim()]
-      })
-      setNewTechnology('')
-    }
+    const nextFormData = addProjectTechnology(formData, newTechnology)
+    setFormData(nextFormData)
+    if (nextFormData !== formData) setNewTechnology('')
   }
 
   const removeTechnology = (tech: string) => {
-    setFormData({
-      ...formData,
-      technologies: formData.technologies.filter(t => t !== tech)
-    })
+    setFormData(removeProjectTechnology(formData, tech))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.title.trim() || !formData.description.trim()) {
-      setMessage({ type: 'error', text: 'Title and description are required' })
-      return
-    }
-
     setSaving(true)
     setMessage(null)
 
     try {
-      const url = editingProject
-        ? `/api/admin/content/projects/${editingProject.id}`
-        : '/api/admin/content/projects'
+      const result = await saveProject(createAdminProjectApiGateway(), formData, editingProject?.id)
 
-      const method = editingProject ? 'PUT' : 'POST'
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
-
-      const result = await response.json()
-
-      if (response.ok) {
+      if (result.success) {
         setMessage({
           type: 'success',
           text: editingProject ? 'Project updated successfully!' : 'Project created successfully!'
@@ -172,7 +104,7 @@ export default function ProjectsManagementPage() {
         resetForm()
         fetchProjects()
       } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to save project' })
+        setMessage({ type: 'error', text: result.error })
       }
     } catch (error) {
       console.error('Error saving project:', error)
@@ -182,23 +114,15 @@ export default function ProjectsManagementPage() {
     }
   }
 
-  const handleDelete = async (project: Project) => {
+  const handleDelete = async (project: AdminProject) => {
     if (!confirm(`Are you sure you want to delete "${project.title}"?`)) {
       return
     }
 
     try {
-      const response = await fetch(`/api/admin/content/projects/${project.id}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Project deleted successfully!' })
-        fetchProjects()
-      } else {
-        const result = await response.json()
-        setMessage({ type: 'error', text: result.error || 'Failed to delete project' })
-      }
+      await createAdminProjectApiGateway().delete(project.id)
+      setMessage({ type: 'success', text: 'Project deleted successfully!' })
+      fetchProjects()
     } catch (error) {
       console.error('Error deleting project:', error)
       setMessage({ type: 'error', text: 'Failed to delete project' })
