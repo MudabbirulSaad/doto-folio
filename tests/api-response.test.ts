@@ -9,6 +9,8 @@ import {
   createInternalErrorResponse,
   createErrorResponse
 } from '../lib/api/response'
+import { ApplicationError } from '../lib/server/domain/errors'
+import { createApplicationErrorResponse } from '../lib/server/adapters/http/errors'
 
 async function readJson<T = Record<string, unknown>>(response: Response) {
   return response.json() as Promise<T>
@@ -94,5 +96,19 @@ test('createErrorResponse keeps the legacy message/status call shape', async () 
   assert.deepEqual(body.error, {
     code: 'NOT_FOUND',
     message: 'Category not found'
+  })
+})
+
+test('createApplicationErrorResponse maps application errors to the shared envelope', async () => {
+  const response = createApplicationErrorResponse(
+    new ApplicationError('VALIDATION_ERROR', 'Validation failed', ['Title is required'])
+  )
+  const body = await readJson(response)
+
+  assert.equal(response.status, 400)
+  assert.deepEqual(body.error, {
+    code: 'VALIDATION_ERROR',
+    message: 'Validation failed',
+    details: ['Title is required']
   })
 })
