@@ -4,7 +4,7 @@ import {
   getPublicBlogListing,
   type PublicBlogListingRepository,
   type PublicBlogPostRecord
-} from '../lib/data/public-blog-listing'
+} from '../lib/server/application/blog/public-blog-listing'
 import type { BlogCategory, BlogTag } from '../lib/types/blog'
 
 const aiCategory = category('cat-ai', 'AI', 'ai', '#00aaff')
