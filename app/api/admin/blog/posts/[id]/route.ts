@@ -1,14 +1,11 @@
 // import { NextRequest } from 'next/server' // Not needed with middleware approach
 import { createClient } from '@/lib/supabase/server'
 import { withAuth } from '@/lib/api/middleware'
-import { createSuccessResponse, createErrorResponse, createValidationErrorResponse } from '@/lib/api/response'
+import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
 import type { UpdateBlogPostData } from '@/lib/types/blog'
-import {
-  BlogPostWorkflowError,
-  createSupabaseBlogPostWorkflowRepository,
-  deleteBlogPost,
-  updateBlogPost
-} from '@/lib/data/blog-post-workflow'
+import { createAdminBlogWorkflowUseCases } from '@/lib/server/composition/blog'
+import { isApplicationError } from '@/lib/server/domain/errors'
+import { createApplicationErrorResponse } from '@/lib/server/adapters/http/errors'
 
 function getPostIdFromRequestUrl(requestUrl: string) {
   const url = new URL(requestUrl)
@@ -17,14 +14,8 @@ function getPostIdFromRequestUrl(requestUrl: string) {
 }
 
 function createWorkflowErrorResponse(error: unknown) {
-  if (error instanceof BlogPostWorkflowError) {
-    if (error.code === 'VALIDATION_ERROR') {
-      return createValidationErrorResponse(error.details)
-    }
-    if (error.code === 'NOT_FOUND') {
-      return createErrorResponse('NOT_FOUND', error.message, 404, error.details)
-    }
-    return createErrorResponse('INTERNAL_ERROR', error.message, 500, error.details)
+  if (isApplicationError(error)) {
+    return createApplicationErrorResponse(error)
   }
 
   return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
@@ -77,12 +68,8 @@ async function updatePostHandler(context: any) {
     const id = getPostIdFromRequestUrl(context.request.url)
 
     const body = await context.request.json()
-    const supabase = await createClient()
-    const post = await updateBlogPost(
-      createSupabaseBlogPostWorkflowRepository(supabase),
-      id,
-      body as UpdateBlogPostData
-    )
+    const workflow = await createAdminBlogWorkflowUseCases()
+    const post = await workflow.updatePost(id, body as UpdateBlogPostData)
 
     return createSuccessResponse(post)
 
@@ -97,8 +84,8 @@ async function deletePostHandler(context: any) {
   try {
     const id = getPostIdFromRequestUrl(context.request.url)
 
-    const supabase = await createClient()
-    const result = await deleteBlogPost(createSupabaseBlogPostWorkflowRepository(supabase), id)
+    const workflow = await createAdminBlogWorkflowUseCases()
+    const result = await workflow.deletePost(id)
 
     return createSuccessResponse(result)
 

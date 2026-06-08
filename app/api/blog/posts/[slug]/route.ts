@@ -1,11 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
 import { withPublicApi } from '@/lib/api/middleware'
 import { createSuccessResponse, createNotFoundErrorResponse, createInternalErrorResponse } from '@/lib/api/response'
-import {
-  createBlogPostDetailService,
-  createSupabaseBlogPostDetailRepository
-} from '@/lib/data/blog-post-detail'
-import type { BlogPostViewContext } from '@/lib/data/blog-post-detail'
+import { createBlogPostDetailUseCase } from '@/lib/server/composition/blog'
+import type { BlogPostViewContext } from '@/lib/server/application/blog/blog-post-detail'
 import type { ApiContext } from '@/lib/api/middleware'
 
 type BlogPostRouteContext = { params: { slug: string } }
@@ -13,8 +9,7 @@ type BlogPostRouteContext = { params: { slug: string } }
 async function getBlogPostHandler(_: ApiContext, context: BlogPostRouteContext) {
   try {
     const { slug } = context.params
-    const supabase = await createClient()
-    const service = createBlogPostDetailService(createSupabaseBlogPostDetailRepository(supabase))
+    const service = await createBlogPostDetailUseCase()
 
     const { post, relatedPosts } = await service.readDetail(slug, 3)
 
@@ -38,8 +33,7 @@ async function trackBlogPostViewHandler(context: ApiContext, routeContext: BlogP
   try {
     const { request } = context
     const { slug } = routeContext.params
-    const supabase = await createClient()
-    const service = createBlogPostDetailService(createSupabaseBlogPostDetailRepository(supabase))
+    const service = await createBlogPostDetailUseCase()
 
     const post = await service.readMetadata(slug)
     if (!post) {

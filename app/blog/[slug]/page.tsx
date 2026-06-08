@@ -13,11 +13,7 @@ import { BlogRelatedPosts } from '@/components/blog/blog-related-posts'
 import { BlogSkeleton } from '@/components/blog/blog-skeleton'
 import { TableOfContents } from '@/components/blog/table-of-contents'
 import { CommentSection } from '@/components/blog/comments/comment-section'
-import {
-  createBlogPostDetailService,
-  createSupabaseBlogPostDetailRepository
-} from '@/lib/data/blog-post-detail'
-import { createClient } from '@/lib/supabase/server'
+import { createBlogPostDetailUseCase } from '@/lib/server/composition/blog'
 
 import type { BlogPostWithRelations, BlogTag } from '@/lib/types/blog'
 
@@ -28,8 +24,7 @@ interface BlogPostPageProps {
 }
 
 async function createBlogPostDetailServiceForPage() {
-  const supabase = await createClient()
-  return createBlogPostDetailService(createSupabaseBlogPostDetailRepository(supabase))
+  return createBlogPostDetailUseCase()
 }
 
 // Generate metadata for SEO

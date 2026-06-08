@@ -1,11 +1,7 @@
 import { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { withPublicApi } from '@/lib/api/middleware'
 import { createSuccessResponse, createInternalErrorResponse } from '@/lib/api/response'
-import {
-  createSupabasePublicBlogListingRepository,
-  getPublicBlogListing
-} from '@/lib/data/public-blog-listing'
+import { createPublicBlogListingUseCase } from '@/lib/server/composition/blog'
 import type { BlogSearchParams } from '@/lib/types/blog'
 
 // GET - Fetch blog posts with filtering, search, and pagination
@@ -26,12 +22,8 @@ async function getBlogPostsHandler(context: { request: NextRequest }) {
       sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc'
     }
 
-    const supabase = await createClient()
-    const result = await getPublicBlogListing(
-      createSupabasePublicBlogListingRepository(supabase),
-      params,
-      { defaultLimit: 12, maxLimit: 50, tagLimit: 20 }
-    )
+    const getBlogListing = await createPublicBlogListingUseCase()
+    const result = await getBlogListing(params, { defaultLimit: 12, maxLimit: 50, tagLimit: 20 })
 
     return createSuccessResponse({
       posts: result.posts,

@@ -1,10 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
 import { withPublicApi } from '@/lib/api/middleware'
 import { createSuccessResponse, createNotFoundResponse, createInternalErrorResponse } from '@/lib/api/response'
-import {
-  createBlogPostDetailService,
-  createSupabaseBlogPostDetailRepository
-} from '@/lib/data/blog-post-detail'
+import { createBlogPostDetailUseCase } from '@/lib/server/composition/blog'
 import type { ApiContext } from '@/lib/api/middleware'
 
 type RecommendationRouteContext = { params: { slug: string } }
@@ -16,8 +12,7 @@ async function getRecommendationsHandler(_: ApiContext, context: RecommendationR
       return createNotFoundResponse('Blog post slug not provided')
     }
 
-    const supabase = await createClient()
-    const service = createBlogPostDetailService(createSupabaseBlogPostDetailRepository(supabase))
+    const service = await createBlogPostDetailUseCase()
 
     const post = await service.readMetadata(slug)
     if (!post) {

@@ -1,9 +1,8 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import {
-  createSupabasePublicBlogListingRepository,
-  getPublicBlogListing
-} from '@/lib/data/public-blog-listing'
-import { createBlogPostDetailService, createSupabaseBlogPostDetailRepository } from '@/lib/data/blog-post-detail'
+  createServiceRoleBlogDetailUseCase,
+  createServiceRolePublicBlogListingUseCase
+} from '@/lib/server/composition/blog'
 import type { BlogPostWithRelations, BlogSearchParams } from '@/lib/types/blog'
 
 interface BlogPostListingResponse {
@@ -36,7 +35,7 @@ export class BlogServerData {
   // Get featured posts
   static async getFeaturedPosts(limit: number = 3) {
     try {
-      const supabase = createServerClient()
+      const getBlogListing = createServiceRolePublicBlogListingUseCase()
       
       const { data: posts, error } = await supabase
         .from('blog_posts')
@@ -133,20 +132,16 @@ export class BlogServerData {
         sortOrder
       } = options
 
-      const result = await getPublicBlogListing(
-        createSupabasePublicBlogListingRepository(supabase),
-        {
-          query: search,
-          category,
-          tag,
-          featured,
-          page,
-          limit,
-          sortBy,
-          sortOrder
-        },
-        { defaultLimit: 12, maxLimit: 50 }
-      )
+      const result = await getBlogListing({
+        query: search,
+        category,
+        tag,
+        featured,
+        page,
+        limit,
+        sortBy,
+        sortOrder
+      }, { defaultLimit: 12, maxLimit: 50 })
 
       return {
         posts: result.posts,
@@ -174,8 +169,7 @@ export class BlogServerData {
   // Get single blog post by slug
   static async getBlogPost(slug: string) {
     try {
-      const supabase = createServerClient()
-      const service = createBlogPostDetailService(createSupabaseBlogPostDetailRepository(supabase))
+      const service = createServiceRoleBlogDetailUseCase()
       return await service.readMetadata(slug)
     } catch (error) {
       console.error('Error in getBlogPost:', error)

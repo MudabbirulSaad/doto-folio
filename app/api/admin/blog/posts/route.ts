@@ -1,23 +1,15 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { withAuth } from '@/lib/api/middleware'
-import { createSuccessResponse, createErrorResponse, createValidationErrorResponse } from '@/lib/api/response'
+import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
 import type { CreateBlogPostData } from '@/lib/types/blog'
-import {
-  BlogPostWorkflowError,
-  createBlogPost,
-  createSupabaseBlogPostWorkflowRepository
-} from '@/lib/data/blog-post-workflow'
+import { createAdminBlogWorkflowUseCases } from '@/lib/server/composition/blog'
+import { isApplicationError } from '@/lib/server/domain/errors'
+import { createApplicationErrorResponse } from '@/lib/server/adapters/http/errors'
 
 function createWorkflowErrorResponse(error: unknown) {
-  if (error instanceof BlogPostWorkflowError) {
-    if (error.code === 'VALIDATION_ERROR') {
-      return createValidationErrorResponse(error.details)
-    }
-    if (error.code === 'NOT_FOUND') {
-      return createErrorResponse('NOT_FOUND', error.message, 404, error.details)
-    }
-    return createErrorResponse('INTERNAL_ERROR', error.message, 500, error.details)
+  if (isApplicationError(error)) {
+    return createApplicationErrorResponse(error)
   }
 
   return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
@@ -105,8 +97,8 @@ async function getPostsHandler({ request }: { request: NextRequest }) {
 async function createPostHandler({ request }: { request: NextRequest }) {
   try {
     const body: CreateBlogPostData = await request.json()
-    const supabase = await createClient()
-    const post = await createBlogPost(createSupabaseBlogPostWorkflowRepository(supabase), body)
+    const workflow = await createAdminBlogWorkflowUseCases()
+    const post = await workflow.createPost(body)
 
     return createSuccessResponse(post, 'Post created successfully')
 
