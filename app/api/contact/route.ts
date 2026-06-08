@@ -10,7 +10,7 @@ import {
   logApiRequest,
   logApiError
 } from '@/lib/api/response'
-import type { ContactFormData } from '@/lib/services/contact'
+import type { ContactFormData } from '@/lib/server/application/contact/contact-submission'
 import { createContactSubmissionUseCase } from '@/lib/server/composition/contact'
 import { isApplicationError } from '@/lib/server/domain/errors'
 import { createApplicationErrorResponse } from '@/lib/server/adapters/http/errors'

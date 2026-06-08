@@ -1,12 +1,23 @@
-import type { ContactFormData } from '@/lib/services/contact'
-import type { EmailResult } from '@/lib/services/email'
+export interface ContactFormData {
+  name: string
+  email: string
+  subject: string
+  message: string
+}
+
+export interface ContactEmailResult {
+  success: boolean
+  error?: string
+  adminEmailSent?: boolean
+  userEmailSent?: boolean
+}
 
 export interface ContactSubmissionRepository {
   saveSubmission(data: ContactFormData): Promise<Record<string, unknown>>
 }
 
 export interface ContactEmailNotifier {
-  sendContactNotifications(formData: ContactFormData): Promise<EmailResult>
+  sendContactNotifications(formData: ContactFormData): Promise<ContactEmailResult>
 }
 
 export interface ContactSubmissionResult {
@@ -14,7 +25,7 @@ export interface ContactSubmissionResult {
   emailStatus: string
 }
 
-function emailStatusFromResult(result: EmailResult) {
+function emailStatusFromResult(result: ContactEmailResult) {
   if (!result.success) {
     return `Email notifications failed: ${result.error}`
   }

@@ -7,7 +7,7 @@ import {
 import { createSupabaseContactSubmissionRepository } from '@/lib/server/adapters/supabase/contact/contact-submission-repository'
 import { createSupabaseContactSubmissionAdminRepository } from '@/lib/server/adapters/supabase/contact/admin-submissions-repository'
 import { createContactEmailNotifier } from '@/lib/server/adapters/email/contact-email-notifier'
-import type { ContactFormData } from '@/lib/services/contact'
+import type { ContactFormData } from '@/lib/server/application/contact/contact-submission'
 import type { ContactSubmissionFilters } from '@/lib/server/application/contact/admin-submissions'
 
 function createOptionalContactEmailNotifier() {

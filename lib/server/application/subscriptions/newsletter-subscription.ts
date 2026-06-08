@@ -1,10 +1,16 @@
 import { ApplicationError } from '@/lib/server/domain/errors'
-import type { SubscriptionEmailResult } from '@/lib/services/email'
+
+export interface SubscriptionEmailResult {
+  success: boolean
+  error?: string
+  welcomeEmailSent?: boolean
+  adminNotificationSent?: boolean
+}
 
 export interface SubscriberRepository {
   findByEmail(email: string): Promise<{ id: string; status: string } | null>
   createSubscriber(data: { email: string; name: string | null; status: 'active' }): Promise<Record<string, unknown>>
-  reactivateSubscriber(id: string, data: { name: string | null; subscribed_at: string; unsubscribed_at: null; updated_at: string }): Promise<void>
+  reactivateSubscriber(id: string, data: { status: 'active'; name: string | null; subscribed_at: string; unsubscribed_at: null; updated_at: string }): Promise<void>
 }
 
 export interface SubscriptionEmailNotifier {
@@ -42,7 +48,7 @@ export async function subscribeToNewsletter(
       subscribed_at: now,
       unsubscribed_at: null,
       updated_at: now
-    } as any)
+    })
     await notifier?.sendWelcomeEmail(name || '', email).catch(() => undefined)
     return { status: 'reactivated' as const }
   }
