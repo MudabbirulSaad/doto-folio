@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { BlogPostDetailService } from '../lib/data/blog-post-detail'
-import type { BlogPostDetailRepository, BlogPostViewContext } from '../lib/data/blog-post-detail'
+import { BlogPostDetailService } from '../lib/server/application/blog/blog-post-detail'
+import type { BlogPostDetailRepository, BlogPostViewContext } from '../lib/server/application/blog/blog-post-detail'
 import type { BlogCategory, BlogTag } from '../lib/types/blog'
 
 function category(id: string, name: string): BlogCategory {
