@@ -6,7 +6,13 @@ import {
   listProjects,
   updateProject
 } from '@/lib/server/application/content/projects'
+import {
+  getAdminSiteContent,
+  getPublishedSiteContent,
+  saveSiteContent
+} from '@/lib/server/application/content/site-content'
 import { createSupabaseProjectRepository } from '@/lib/server/adapters/supabase/content/projects-repository'
+import { createSupabaseSiteContentRepository } from '@/lib/server/adapters/supabase/content/site-content-repository'
 import type { ProjectInput } from '@/lib/server/application/content/projects'
 
 export async function createProjectUseCases() {
@@ -18,5 +24,15 @@ export async function createProjectUseCases() {
     create: (input: ProjectInput) => createProject(repository, input),
     update: (id: string, input: ProjectInput) => updateProject(repository, id, input),
     delete: (id: string) => deleteProject(repository, id)
+  }
+}
+
+export async function createSiteContentUseCases() {
+  const repository = createSupabaseSiteContentRepository(await createClient())
+
+  return {
+    getPublished: () => getPublishedSiteContent(repository),
+    getAdmin: () => getAdminSiteContent(repository),
+    save: (input: Record<string, any>) => saveSiteContent(repository, input)
   }
 }
