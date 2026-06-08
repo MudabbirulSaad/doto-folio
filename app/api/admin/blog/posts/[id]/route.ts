@@ -1,9 +1,8 @@
 // import { NextRequest } from 'next/server' // Not needed with middleware approach
-import { createClient } from '@/lib/supabase/server'
 import { withAuth } from '@/lib/api/middleware'
 import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
 import type { UpdateBlogPostData } from '@/lib/types/blog'
-import { createAdminBlogWorkflowUseCases } from '@/lib/server/composition/blog'
+import { createAdminBlogPostReadUseCases, createAdminBlogWorkflowUseCases } from '@/lib/server/composition/blog'
 import { isApplicationError } from '@/lib/server/domain/errors'
 import { createApplicationErrorResponse } from '@/lib/server/adapters/http/errors'
 
@@ -26,37 +25,15 @@ async function getPostHandler(context: any) {
   try {
     const id = getPostIdFromRequestUrl(context.request.url)
 
-    const supabase = await createClient()
-    
-    const { data: post, error } = await supabase
-      .from('blog_posts')
-      .select(`
-        *,
-        category:blog_categories(
-          id,
-          name,
-          slug,
-          color
-        ),
-        tags:blog_post_tags(
-          tag:blog_tags(
-            id,
-            name,
-            slug
-          )
-        )
-      `)
-      .eq('id', id)
-      .single()
-
-    if (error) {
-      console.error('Error fetching post:', error)
-      return createErrorResponse('NOT_FOUND', 'Post not found', 404)
-    }
+    const post = await (await createAdminBlogPostReadUseCases()).getPost(id)
 
     return createSuccessResponse(post)
 
   } catch (error) {
+    if (isApplicationError(error)) {
+      return createApplicationErrorResponse(error)
+    }
+
     console.error('Error in getPostHandler:', error)
     return createErrorResponse('INTERNAL_ERROR', 'Internal server error', 500)
   }

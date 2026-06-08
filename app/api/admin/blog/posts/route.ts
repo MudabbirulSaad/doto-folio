@@ -1,9 +1,8 @@
 import { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { withAuth } from '@/lib/api/middleware'
 import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
 import type { CreateBlogPostData } from '@/lib/types/blog'
-import { createAdminBlogWorkflowUseCases } from '@/lib/server/composition/blog'
+import { createAdminBlogPostReadUseCases, createAdminBlogWorkflowUseCases } from '@/lib/server/composition/blog'
 import { isApplicationError } from '@/lib/server/domain/errors'
 import { createApplicationErrorResponse } from '@/lib/server/adapters/http/errors'
 
@@ -18,7 +17,6 @@ function createWorkflowErrorResponse(error: unknown) {
 // GET - Get all blog posts for admin
 async function getPostsHandler({ request }: { request: NextRequest }) {
   try {
-    const supabase = await createClient()
     const { searchParams } = new URL(request.url)
     
     const page = parseInt(searchParams.get('page') || '1')
@@ -27,65 +25,15 @@ async function getPostsHandler({ request }: { request: NextRequest }) {
     const category = searchParams.get('category')
     const search = searchParams.get('search')
     
-    const offset = (page - 1) * limit
-
-    let query = supabase
-      .from('blog_posts')
-      .select(`
-        *,
-        category:blog_categories(
-          id,
-          name,
-          slug,
-          color
-        ),
-        tags:blog_post_tags(
-          tag:blog_tags(
-            id,
-            name,
-            slug
-          )
-        )
-      `)
-      .order('created_at', { ascending: false })
-
-    // Apply filters
-    if (status && status !== 'all') {
-      query = query.eq('status', status)
-    }
-
-    if (category && category !== 'all') {
-      query = query.eq('category_id', category)
-    }
-
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,excerpt.ilike.%${search}%`)
-    }
-
-    // Get total count
-    const { count } = await supabase
-      .from('blog_posts')
-      .select('*', { count: 'exact', head: true })
-
-    // Get paginated results
-    const { data: posts, error } = await query
-      .range(offset, offset + limit - 1)
-
-    if (error) {
-      console.error('Error fetching posts:', error)
-      return createErrorResponse('INTERNAL_ERROR', 'Failed to fetch posts', 500)
-    }
-
-    return createSuccessResponse({
-      posts: posts || [],
-      pagination: {
-        page,
-        limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit),
-        hasMore: (count || 0) > offset + limit
-      }
+    const result = await (await createAdminBlogPostReadUseCases()).listPosts({
+      page,
+      limit,
+      status,
+      category,
+      search
     })
+
+    return createSuccessResponse(result)
 
   } catch (error) {
     console.error('Error in getPostsHandler:', error)

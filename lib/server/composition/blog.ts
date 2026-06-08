@@ -24,11 +24,16 @@ import {
   updateAdminBlogCategory,
   updateAdminBlogTag
 } from '@/lib/server/application/blog/admin-blog-taxonomy'
+import {
+  getAdminBlogPost,
+  listAdminBlogPosts
+} from '@/lib/server/application/blog/admin-blog-posts'
 import { createSupabasePublicBlogListingRepository } from '@/lib/server/adapters/supabase/blog/public-blog-listing-repository'
 import { createSupabaseBlogTaxonomyRepository } from '@/lib/server/adapters/supabase/blog/public-blog-taxonomy-repository'
 import { createSupabaseBlogPostDetailRepository } from '@/lib/server/adapters/supabase/blog/blog-post-detail-repository'
 import { createSupabaseBlogPostWorkflowRepository } from '@/lib/server/adapters/supabase/blog/blog-post-workflow-repository'
 import { createSupabaseAdminBlogTaxonomyRepository } from '@/lib/server/adapters/supabase/blog/admin-blog-taxonomy-repository'
+import { createSupabaseAdminBlogPostRepository } from '@/lib/server/adapters/supabase/blog/admin-blog-posts-repository'
 import type { BlogSearchParams, CreateBlogPostData, UpdateBlogPostData } from '@/lib/types/blog'
 import type {
   CreateBlogCategoryData,
@@ -71,6 +76,17 @@ export async function createAdminBlogWorkflowUseCases() {
     createPost: (input: CreateBlogPostData) => createBlogPost(repository, input),
     updatePost: (id: string, input: UpdateBlogPostData) => updateBlogPost(repository, id, input),
     deletePost: (id: string) => deleteBlogPost(repository, id)
+  }
+}
+
+export async function createAdminBlogPostReadUseCases() {
+  const supabase = await createClient()
+  const repository = createSupabaseAdminBlogPostRepository(supabase)
+
+  return {
+    listPosts: (params: { page?: number; limit?: number; status?: string | null; category?: string | null; search?: string | null }) =>
+      listAdminBlogPosts(repository, params),
+    getPost: (id: string) => getAdminBlogPost(repository, id)
   }
 }
 
