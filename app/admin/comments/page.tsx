@@ -17,7 +17,7 @@ import {
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
-import { createClient } from '@/lib/supabase/client'
+import { getCurrentSession } from '@/lib/auth/admin'
 
 interface Comment {
     id: string
@@ -89,9 +89,7 @@ export default function CommentsManagementPage() {
 
         setActionLoading(comment.id)
         try {
-            // Get the current user session
-            const supabase = createClient()
-            const { data: { session } } = await supabase.auth.getSession()
+            const session = await getCurrentSession()
 
             if (!session) {
                 setMessage({ type: 'error', text: 'Please log in to reply' })
