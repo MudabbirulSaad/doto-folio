@@ -8,7 +8,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { submitContactForm, validateContactForm, type ContactFormData } from "@/lib/services/contact"
+import {
+  submitContactForm,
+  validateContactForm,
+  type ContactFormData
+} from "@/lib/client/application/contact/contact-form"
+import { createContactApiGateway } from "@/lib/client/adapters/http/contact-api"
 
 interface FormErrors {
   name?: string
@@ -54,7 +59,7 @@ export function ContactFormSection() {
 
     try {
       // Submit to Supabase
-      const result = await submitContactForm(formData)
+      const result = await submitContactForm(createContactApiGateway(), formData)
 
       if (result.success) {
         // Reset form on success

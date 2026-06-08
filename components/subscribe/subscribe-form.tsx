@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { subscribeToNewsletterForm } from '@/lib/client/application/subscriptions/newsletter-form'
+import { createNewsletterSubscriptionApiGateway } from '@/lib/client/adapters/http/subscription-api'
 
 interface SubscribeFormData {
   name: string
@@ -58,18 +60,10 @@ export function SubscribeForm() {
     setMessage(null)
 
     try {
-      const response = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      })
+      const result = await subscribeToNewsletterForm(createNewsletterSubscriptionApiGateway(), formData)
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to subscribe')
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to subscribe')
       }
 
       // Success
