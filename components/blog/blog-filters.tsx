@@ -30,6 +30,8 @@ export function BlogFilters({
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const currentQuery = searchParams.get('query') || ''
+  const searchParamsSnapshot = searchParams.toString()
   const containerRef = useRef<HTMLDivElement>(null)
   const filtersContentRef = useRef<HTMLDivElement>(null)
 
@@ -41,18 +43,17 @@ export function BlogFilters({
   }, [searchQuery])
 
   useEffect(() => {
-    // Sync with URL params
-    const query = searchParams.get('query') || ''
-    setSearchQuery(query)
-    setDebouncedQuery(query)
-  }, [searchParams])
+    // Sync with URL params only when the query value changes.
+    setSearchQuery((value) => value === currentQuery ? value : currentQuery)
+    setDebouncedQuery((value) => value === currentQuery ? value : currentQuery)
+  }, [currentQuery])
 
   useEffect(() => {
     // Effect for debounced search update
-    if (debouncedQuery !== (searchParams.get('query') || '')) {
+    if (debouncedQuery !== currentQuery) {
       updateURL({ query: debouncedQuery })
     }
-  }, [debouncedQuery])
+  }, [debouncedQuery, currentQuery])
 
   useEffect(() => {
     const container = containerRef.current
@@ -110,7 +111,7 @@ export function BlogFilters({
 
   const updateURL = (params: { query?: string; category?: string; tag?: string }) => {
     startTransition(() => {
-      const current = new URLSearchParams(searchParams.toString())
+      const current = new URLSearchParams(searchParamsSnapshot)
 
       Object.entries(params).forEach(([key, value]) => {
         if (value) {
@@ -126,8 +127,8 @@ export function BlogFilters({
       const search = current.toString()
       const query = search ? `?${search}` : ''
 
-      // Use scroll: false to prevent jumping to top
-      router.push(`/blog${query}`, { scroll: false })
+      // Keep query changes shareable without triggering navigation-style page transitions.
+      router.replace(`/blog${query}`, { scroll: false })
     })
   }
 
@@ -135,7 +136,7 @@ export function BlogFilters({
     setSearchQuery('')
     setDebouncedQuery('')
     startTransition(() => {
-      router.push('/blog', { scroll: false })
+      router.replace('/blog', { scroll: false })
     })
   }
 
