@@ -10,6 +10,7 @@ import {
   logApiRequest,
   logApiError
 } from '@/lib/api/response'
+import { createRecaptchaVerificationAdapter } from '@/lib/server/adapters/http/recaptcha-human-verifier'
 
 // =============================================
 // VALIDATION SCHEMA
@@ -67,20 +68,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const verificationResponse = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        secret: secretKey,
-        response: token,
-        remoteip: ip
-      }).toString(),
-    })
-
-    if (!verificationResponse.ok) {
-      logApiError(new Error(`reCAPTCHA API error: ${verificationResponse.status}`), {
+    let verificationResult
+    try {
+      verificationResult = await createRecaptchaVerificationAdapter(secretKey).verify(token, ip)
+    } catch (error) {
+      logApiError(error as Error, {
         method: 'POST',
         path: '/api/admin/auth/verify-recaptcha'
       })
@@ -92,11 +84,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const verificationResult = await verificationResponse.json()
-
     // Check verification result
-    if (!verificationResult.success) {
-      const errorCodes = verificationResult['error-codes'] || []
+    if (!verificationResult.verified && verificationResult.score === null) {
+      const errorCodes = verificationResult.errors
       logApiRequest('POST', '/api/admin/auth/verify-recaptcha', 400, Date.now() - startTime)
       
       return createValidationErrorResponse(
@@ -114,9 +104,8 @@ export async function POST(request: NextRequest) {
 
     // Check score for v3 reCAPTCHA (if available)
     const score = verificationResult.score
-    const minScore = 0.5 // Minimum acceptable score
     
-    if (score !== undefined && score < minScore) {
+    if (!verificationResult.verified && score !== null) {
       logApiRequest('POST', '/api/admin/auth/verify-recaptcha', 400, Date.now() - startTime)
       return createValidationErrorResponse(
         ['reCAPTCHA score too low - suspicious activity detected'],
@@ -136,7 +125,7 @@ export async function POST(request: NextRequest) {
     return createSuccessResponse(
       {
         verified: true,
-        score: score || null,
+        score,
         timestamp: new Date().toISOString()
       },
       'reCAPTCHA verification successful',
