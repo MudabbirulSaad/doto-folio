@@ -1,117 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { getCurrentAdminUser } from '@/lib/auth/server'
+import { createSkillContentUseCases } from '@/lib/server/composition/content'
+import { isApplicationError } from '@/lib/server/domain/errors'
 
-const VALID_CATEGORIES = ['Frontend', 'Backend', 'Database', 'DevOps', 'Tools', 'Other'] as const
-
-function validateSkillPayload(body: any) {
-  if (!body.name?.trim()) {
-    return 'Skill name is required'
+function errorResponse(error: unknown) {
+  if (isApplicationError(error)) {
+    const status = error.code === 'VALIDATION_ERROR' ? 400 : 500
+    return NextResponse.json({ error: error.message }, { status })
   }
-
-  if (!VALID_CATEGORIES.includes(body.category)) {
-    return 'Invalid skill category'
-  }
-
-  const proficiency = Number(body.proficiency)
-  if (!Number.isInteger(proficiency) || proficiency < 0 || proficiency > 100) {
-    return 'Proficiency must be between 0 and 100'
-  }
-
-  if (!body.icon_name?.trim()) {
-    return 'Icon name is required'
-  }
-
-  return null
+  return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
 }
 
-// GET - Fetch all skills
 export async function GET() {
   try {
-    const supabase = await createClient()
-
-    const { data: skills, error } = await supabase
-      .from('skills')
-      .select('id, name, category, proficiency, icon_name, display_order, created_at, updated_at')
-      .order('display_order', { ascending: true })
-
-    if (error) {
-      console.error('Error fetching skills:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch skills' },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({ data: skills || [] })
+    const skills = await (await createSkillContentUseCases()).listFlat()
+    return NextResponse.json({ data: skills })
   } catch (error) {
     console.error('Error in GET /api/admin/content/skills:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return errorResponse(error)
   }
 }
 
-// POST - Create new skill
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentAdminUser()
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await request.json()
-    const validationError = validateSkillPayload(body)
-    if (validationError) {
-      return NextResponse.json(
-        { error: validationError },
-        { status: 400 }
-      )
-    }
-
-    const supabase = await createClient()
-    const { data: lastSkill } = await supabase
-      .from('skills')
-      .select('display_order')
-      .order('display_order', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    const nextDisplayOrder = (lastSkill?.display_order || 0) + 1
-
-    const { data: skill, error: skillError } = await supabase
-      .from('skills')
-      .insert({
-        name: body.name.trim(),
-        category: body.category,
-        proficiency: Number(body.proficiency),
-        icon_name: body.icon_name.trim(),
-        display_order: body.display_order || nextDisplayOrder
-      })
-      .select()
-      .single()
-
-    if (skillError) {
-      console.error('Error creating skill:', skillError)
-      return NextResponse.json(
-        { error: 'Failed to create skill' },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({
-      data: skill,
-      message: 'Skill created successfully'
-    })
+    const skill = await (await createSkillContentUseCases()).createFlat(await request.json())
+    return NextResponse.json({ data: skill, message: 'Skill created successfully' })
   } catch (error) {
     console.error('Error in POST /api/admin/content/skills:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return errorResponse(error)
   }
 }

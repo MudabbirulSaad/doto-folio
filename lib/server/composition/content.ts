@@ -15,9 +15,17 @@ import {
   createContactContentItem,
   getContactContent
 } from '@/lib/server/application/content/contact-content'
+import {
+  createFlatSkill,
+  createSkillInCategory,
+  deleteSkill,
+  listFlatSkills,
+  updateFlatSkill
+} from '@/lib/server/application/content/skills'
 import { createSupabaseProjectRepository } from '@/lib/server/adapters/supabase/content/projects-repository'
 import { createSupabaseSiteContentRepository } from '@/lib/server/adapters/supabase/content/site-content-repository'
 import { createSupabaseContactContentRepository } from '@/lib/server/adapters/supabase/content/contact-content-repository'
+import { createSupabaseSkillContentRepository } from '@/lib/server/adapters/supabase/content/skills-repository'
 import type { ProjectInput } from '@/lib/server/application/content/projects'
 
 export async function createProjectUseCases() {
@@ -48,5 +56,17 @@ export async function createContactContentUseCases() {
   return {
     get: () => getContactContent(repository),
     create: (input: Record<string, any>) => createContactContentItem(repository, input)
+  }
+}
+
+export async function createSkillContentUseCases() {
+  const repository = createSupabaseSkillContentRepository(await createClient())
+
+  return {
+    listFlat: () => listFlatSkills(repository),
+    createFlat: (input: Record<string, any>) => createFlatSkill(repository, input),
+    updateFlat: (id: string, input: Record<string, any>) => updateFlatSkill(repository, id, input),
+    delete: (id: string) => deleteSkill(repository, id),
+    createInCategory: (categoryId: string, input: Record<string, any>) => createSkillInCategory(repository, categoryId, input)
   }
 }
