@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -37,18 +37,21 @@ import {
   Trash2,
   MoreHorizontal
 } from 'lucide-react'
-import type { BlogCategory } from '@/lib/types/blog'
-
-interface CategoryWithPostCount extends BlogCategory {
-  post_count: number
-}
+import { createAdminBlogTaxonomyApiGateway } from '@/lib/client/adapters/http/admin-blog-api'
+import {
+  deleteAdminBlogCategory,
+  loadAdminBlogCategories,
+  saveAdminBlogCategory
+} from '@/lib/client/application/admin/blog-taxonomy'
+import type { AdminBlogCategory } from '@/lib/client/domain/admin-blog'
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<CategoryWithPostCount[]>([])
+  const [categories, setCategories] = useState<AdminBlogCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<CategoryWithPostCount | null>(null)
+  const [editingCategory, setEditingCategory] = useState<AdminBlogCategory | null>(null)
   const [saving, setSaving] = useState(false)
+  const gateway = useMemo(() => createAdminBlogTaxonomyApiGateway(), [])
 
   // Form state
   const [name, setName] = useState('')
@@ -74,10 +77,11 @@ export default function CategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/admin/blog/categories')
-      if (response.ok) {
-        const data = await response.json()
-        setCategories(data.data || [])
+      const result = await loadAdminBlogCategories(gateway)
+      if (result.success) {
+        setCategories(result.categories)
+      } else {
+        alert(result.error)
       }
     } catch (error) {
       console.error('Error fetching categories:', error)
@@ -100,7 +104,7 @@ export default function CategoriesPage() {
     setDialogOpen(true)
   }
 
-  const openEditDialog = (category: CategoryWithPostCount) => {
+  const openEditDialog = (category: AdminBlogCategory) => {
     setName(category.name)
     setSlug(category.slug)
     setDescription(category.description || '')
@@ -111,43 +115,23 @@ export default function CategoriesPage() {
   }
 
   const handleSave = async () => {
-    if (!name.trim() || !slug.trim()) {
-      alert('Name and slug are required')
-      return
-    }
-
     setSaving(true)
 
     try {
-      const categoryData = {
+      const result = await saveAdminBlogCategory(gateway, {
         name: name.trim(),
         slug: slug.trim(),
-        description: description.trim() || null,
+        description: description.trim(),
         color,
         display_order: displayOrder
-      }
+      }, editingCategory?.id)
 
-      const url = editingCategory 
-        ? `/api/admin/blog/categories/${editingCategory.id}`
-        : '/api/admin/blog/categories'
-      
-      const method = editingCategory ? 'PUT' : 'POST'
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(categoryData),
-      })
-
-      if (response.ok) {
+      if (result.success) {
         await fetchCategories()
         setDialogOpen(false)
         resetForm()
       } else {
-        const error = await response.json()
-        alert(error.message || 'Failed to save category')
+        alert(result.error)
       }
     } catch (error) {
       console.error('Error saving category:', error)
@@ -163,15 +147,12 @@ export default function CategoriesPage() {
     }
 
     try {
-      const response = await fetch(`/api/admin/blog/categories/${categoryId}`, {
-        method: 'DELETE',
-      })
+      const result = await deleteAdminBlogCategory(gateway, categoryId)
 
-      if (response.ok) {
-        setCategories(categories.filter(cat => cat.id !== categoryId))
+      if (result.success) {
+        setCategories(categories.filter(cat => cat.id !== result.id))
       } else {
-        const error = await response.json()
-        alert(error.message || 'Failed to delete category')
+        alert(result.error)
       }
     } catch (error) {
       console.error('Error deleting category:', error)

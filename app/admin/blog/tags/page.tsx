@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -40,6 +40,12 @@ import {
   TrendingUp
 } from 'lucide-react'
 import type { BlogTag } from '@/lib/types/blog'
+import { createAdminBlogTaxonomyApiGateway } from '@/lib/client/adapters/http/admin-blog-api'
+import {
+  deleteAdminBlogTag,
+  loadAdminBlogTags,
+  saveAdminBlogTag
+} from '@/lib/client/application/admin/blog-taxonomy'
 
 export default function TagsPage() {
   const [tags, setTags] = useState<BlogTag[]>([])
@@ -47,6 +53,7 @@ export default function TagsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingTag, setEditingTag] = useState<BlogTag | null>(null)
   const [saving, setSaving] = useState(false)
+  const gateway = useMemo(() => createAdminBlogTaxonomyApiGateway(), [])
 
   // Form state
   const [name, setName] = useState('')
@@ -70,10 +77,11 @@ export default function TagsPage() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/admin/blog/tags')
-      if (response.ok) {
-        const data = await response.json()
-        setTags(data.data || [])
+      const result = await loadAdminBlogTags(gateway)
+      if (result.success) {
+        setTags(result.tags)
+      } else {
+        alert(result.error)
       }
     } catch (error) {
       console.error('Error fetching tags:', error)
@@ -103,41 +111,21 @@ export default function TagsPage() {
   }
 
   const handleSave = async () => {
-    if (!name.trim() || !slug.trim()) {
-      alert('Name and slug are required')
-      return
-    }
-
     setSaving(true)
 
     try {
-      const tagData = {
+      const result = await saveAdminBlogTag(gateway, {
         name: name.trim(),
         slug: slug.trim(),
-        description: description.trim() || null
-      }
+        description: description.trim()
+      }, editingTag?.id)
 
-      const url = editingTag 
-        ? `/api/admin/blog/tags/${editingTag.id}`
-        : '/api/admin/blog/tags'
-      
-      const method = editingTag ? 'PUT' : 'POST'
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(tagData),
-      })
-
-      if (response.ok) {
+      if (result.success) {
         await fetchTags()
         setDialogOpen(false)
         resetForm()
       } else {
-        const error = await response.json()
-        alert(error.message || 'Failed to save tag')
+        alert(result.error)
       }
     } catch (error) {
       console.error('Error saving tag:', error)
@@ -153,15 +141,12 @@ export default function TagsPage() {
     }
 
     try {
-      const response = await fetch(`/api/admin/blog/tags/${tagId}`, {
-        method: 'DELETE',
-      })
+      const result = await deleteAdminBlogTag(gateway, tagId)
 
-      if (response.ok) {
-        setTags(tags.filter(tag => tag.id !== tagId))
+      if (result.success) {
+        setTags(tags.filter(tag => tag.id !== result.id))
       } else {
-        const error = await response.json()
-        alert(error.message || 'Failed to delete tag')
+        alert(result.error)
       }
     } catch (error) {
       console.error('Error deleting tag:', error)
