@@ -94,6 +94,7 @@ Blog:
 Admin operations:
 
 - `comments:read`
+- `comments:create`
 - `comments:delete`
 - `contact-submissions:read`
 - `contact-submissions:update`

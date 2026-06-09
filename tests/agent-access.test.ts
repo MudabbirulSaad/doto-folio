@@ -7,6 +7,7 @@ import {
   createAgentAccessRequest,
   createAgentInvitation,
   getAgentInstructions,
+  normalizeAgentScopes,
   rejectAgentAccessRequest,
   revokeAgentToken,
   updateAgentTokenAccess,
@@ -337,6 +338,25 @@ test('getAgentInstructions returns invitation task markdown and scope-aware guid
   assert.match(instructions.instructionsMd, /Remove obvious spam/)
   assert.match(instructions.instructionsMd, /Comments/)
   assert.doesNotMatch(instructions.instructionsMd, /Blog Posts/)
+})
+
+test('comments:create is a valid agent scope with private reply guidance', async () => {
+  const testDeps = deps()
+
+  assert.deepEqual(normalizeAgentScopes(['comments:create']), ['comments:create'])
+
+  await createAgentInvitation(testDeps, {
+    agentLabel: 'Codex',
+    toolName: 'codex-cli',
+    scopes: ['comments:create'],
+    instructionsMd: 'Reply to the latest blog feedback.',
+    adminUserId: 'admin-1'
+  })
+  await claimAgentInvitation(testDeps, 'ABCD1234')
+
+  const instructions = await getAgentInstructions(testDeps, 'pa_test_token')
+  assert.match(instructions.instructionsMd, /Reply to the latest blog feedback/)
+  assert.match(instructions.instructionsMd, /Create comments and replies/)
 })
 
 test('updateAgentTokenAccess changes scopes and can make a token permanent', async () => {

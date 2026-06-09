@@ -27,6 +27,7 @@ export const CLIENT_AGENT_SCOPES = [
   'blog-tools:fetch-url',
   'blog-tools:convert-markdown',
   'comments:read',
+  'comments:create',
   'comments:delete',
   'contact-submissions:read',
   'contact-submissions:update',

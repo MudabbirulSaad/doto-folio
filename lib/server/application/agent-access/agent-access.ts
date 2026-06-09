@@ -29,6 +29,7 @@ export const AGENT_SCOPES = [
   'blog-tools:fetch-url',
   'blog-tools:convert-markdown',
   'comments:read',
+  'comments:create',
   'comments:delete',
   'contact-submissions:read',
   'contact-submissions:update',
@@ -672,8 +673,9 @@ function instructionSections(scopes: AgentScope[]) {
 - Manage skills only within granted skill scopes.
 - Keep names, categories, and publication state consistent with existing content.`)
   }
-  if (granted.has('comments:read') || granted.has('comments:delete')) {
+  if (granted.has('comments:read') || granted.has('comments:create') || granted.has('comments:delete')) {
     sections.push(`## Comments
+- Create comments and replies only when comments:create is granted.
 - Delete spam or abusive comments only.
 - Summarize deleted comments and reasons after moderation.`)
   }
