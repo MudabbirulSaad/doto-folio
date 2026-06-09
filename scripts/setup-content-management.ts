@@ -6,13 +6,14 @@
  *
  * Usage:
  * 1. Make sure your Supabase environment variables are set
- * 2. Run: npx tsx scripts/setup-content-management.ts
+ * 2. Run: npm run setup:content
  */
 
 import * as dotenv from 'dotenv'
-import { createAdminClient } from '@/lib/supabase/admin'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
+import { createAdminClient } from '../lib/supabase/admin.ts'
 
 // Load environment variables
 dotenv.config({ path: '.env.local' })
@@ -42,9 +43,9 @@ async function insertInitialData(supabase: any) {
       })
 
     if (siteError) {
-      console.log('⚠️  Site content may already exist:', siteError.message)
+      console.log('Site content may already exist:', siteError.message)
     } else {
-      console.log('✅ Site content inserted')
+      console.log('Site content inserted')
     }
 
     // Insert skill categories
@@ -60,9 +61,9 @@ async function insertInitialData(supabase: any) {
         .insert(category)
 
       if (error) {
-        console.log(`⚠️  Category "${category.title}" may already exist`)
+        console.log(`Category "${category.title}" may already exist`)
       } else {
-        console.log(`✅ Category "${category.title}" inserted`)
+        console.log(`Category "${category.title}" inserted`)
       }
     }
 
@@ -94,32 +95,31 @@ async function insertInitialData(supabase: any) {
         .insert(project)
 
       if (error) {
-        console.log(`⚠️  Project "${project.title}" may already exist`)
+        console.log(`Project "${project.title}" may already exist`)
       } else {
-        console.log(`✅ Project "${project.title}" inserted`)
+        console.log(`Project "${project.title}" inserted`)
       }
     }
 
-    console.log('✅ Initial data insertion completed')
-
+    console.log('Initial data insertion completed')
   } catch (error) {
     console.error('Error inserting initial data:', error)
   }
 }
 
 async function setupContentManagement() {
-  console.log('🚀 Setting up Content Management System for SAAD Portfolio...\n')
+  console.log('Setting up Content Management System for SAAD Portfolio...\n')
 
   try {
     const supabase = createAdminClient()
 
-    console.log('📊 Setting up database schema and initial data...')
+    console.log('Setting up database schema and initial data...')
 
     // Try to insert initial data directly using Supabase client
     await insertInitialData(supabase)
 
     // Verify the setup by checking if tables exist and have data
-    console.log('\n� Verifying setup...')
+    console.log('\nVerifying setup...')
 
     const tables = [
       'site_content',
@@ -136,20 +136,20 @@ async function setupContentManagement() {
           .select('*', { count: 'exact', head: true })
 
         if (error) {
-          console.error(`❌ Error checking ${table}:`, error.message)
+          console.error(`Error checking ${table}:`, error.message)
           tablesExist = false
         } else {
-          console.log(`✅ ${table}: ${count} records`)
+          console.log(`${table}: ${count} records`)
         }
       } catch (error) {
-        console.log(`⚠️  ${table}: Table doesn't exist yet`)
+        console.log(`${table}: Table doesn't exist yet`)
         tablesExist = false
       }
     }
 
     if (!tablesExist) {
-      console.log('\n⚠️  Some tables don\'t exist yet. Please run the SQL manually:')
-      console.log('\n📋 Manual Setup Instructions:')
+      console.log('\nSome tables don\'t exist yet. Please run the SQL manually:')
+      console.log('\nManual Setup Instructions:')
       console.log('1. Go to your Supabase dashboard')
       console.log('2. Navigate to SQL Editor')
       console.log('3. Copy and paste the contents of: database/schema/content-management.sql')
@@ -158,17 +158,16 @@ async function setupContentManagement() {
       console.log('6. Execute to insert initial data')
       console.log('\nAlternatively, you can create the tables manually and the data will be inserted automatically.')
     } else {
-      console.log('\n🎉 Content Management System setup completed successfully!')
+      console.log('\nContent Management System setup completed successfully!')
     }
 
     console.log('\nNext steps:')
     console.log('1. Access the admin dashboard at /admin/dashboard')
     console.log('2. Navigate to the new content management pages at /admin/content')
     console.log('3. Start customizing your portfolio content!')
-
   } catch (error) {
-    console.error('❌ Setup failed:', error)
-    console.log('\n📋 Manual Setup Required:')
+    console.error('Setup failed:', error)
+    console.log('\nManual Setup Required:')
     console.log('Please run the SQL files manually in your Supabase dashboard:')
     console.log('1. database/schema/content-management.sql (create tables)')
     console.log('2. database/migrations/001_initial_content_data.sql (insert data)')
@@ -177,7 +176,7 @@ async function setupContentManagement() {
 
 // Alternative method using direct SQL execution if rpc doesn't work
 async function setupContentManagementDirect() {
-  console.log('🚀 Setting up Content Management System (Direct SQL)...\n')
+  console.log('Setting up Content Management System (Direct SQL)...\n')
 
   try {
     const supabase = createAdminClient()
@@ -185,7 +184,7 @@ async function setupContentManagementDirect() {
     // Read and split SQL files into individual statements
     const schemaPath = join(process.cwd(), 'database', 'schema', 'content-management.sql')
     const dataPath = join(process.cwd(), 'database', 'migrations', '001_initial_content_data.sql')
-    
+
     const schemaSql = readFileSync(schemaPath, 'utf8')
     const dataSql = readFileSync(dataPath, 'utf8')
 
@@ -200,43 +199,42 @@ async function setupContentManagementDirect() {
       .map(stmt => stmt.trim())
       .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'))
 
-    console.log('📊 Executing schema statements...')
-    
+    console.log('Executing schema statements...')
+
     for (let i = 0; i < schemaStatements.length; i++) {
       const statement = schemaStatements[i]
       if (statement.trim()) {
         try {
           await supabase.rpc('exec_sql', { sql: statement })
-          console.log(`✅ Schema statement ${i + 1}/${schemaStatements.length} executed`)
+          console.log(`Schema statement ${i + 1}/${schemaStatements.length} executed`)
         } catch (error) {
-          console.error(`❌ Error in schema statement ${i + 1}:`, error)
+          console.error(`Error in schema statement ${i + 1}:`, error)
         }
       }
     }
 
-    console.log('📝 Executing data statements...')
-    
+    console.log('Executing data statements...')
+
     for (let i = 0; i < dataStatements.length; i++) {
       const statement = dataStatements[i]
       if (statement.trim()) {
         try {
           await supabase.rpc('exec_sql', { sql: statement })
-          console.log(`✅ Data statement ${i + 1}/${dataStatements.length} executed`)
+          console.log(`Data statement ${i + 1}/${dataStatements.length} executed`)
         } catch (error) {
-          console.error(`❌ Error in data statement ${i + 1}:`, error)
+          console.error(`Error in data statement ${i + 1}:`, error)
         }
       }
     }
 
-    console.log('\n🎉 Content Management System setup completed!')
-
+    console.log('\nContent Management System setup completed!')
   } catch (error) {
-    console.error('❌ Setup failed:', error)
+    console.error('Setup failed:', error)
   }
 }
 
 // Run the setup
-if (require.main === module) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   setupContentManagement().catch(console.error)
 }
 

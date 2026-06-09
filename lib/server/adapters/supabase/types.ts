@@ -36,6 +36,7 @@ export interface SupabaseAuthClient {
     getUserById(id: string): Promise<SupabaseResult>
     listUsers(input?: unknown): Promise<SupabaseResult<{ users: any[] }>>
     createUser(input: unknown): Promise<SupabaseResult>
+    updateUserById(id: string, input: unknown): Promise<SupabaseResult>
   }
 }
 
