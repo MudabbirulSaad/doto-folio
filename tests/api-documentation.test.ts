@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { API_DOCUMENTATION, generateOpenApiSpec } from '../lib/api/documentation.ts'
+import { API_DOCUMENTATION, generateMarkdownDocs, generateOpenApiSpec } from '../lib/api/documentation.ts'
 
 test('generated API docs include core public blog and comment endpoints', () => {
   const spec = generateOpenApiSpec()
@@ -46,6 +46,21 @@ test('generated API docs describe the comment rate limit accurately', () => {
 
   assert.equal(commentPost?.rateLimit?.requests, 10)
   assert.equal(commentPost?.rateLimit?.window, '1 minute')
+})
+
+test('generated Markdown docs summarize all configured rate limit families', () => {
+  const markdown = generateMarkdownDocs()
+
+  for (const expected of [
+    '- Contact form: 3 requests per 15 minutes',
+    '- Newsletter subscriptions: 5 requests per 15 minutes',
+    '- Comments: 10 requests per minute',
+    '- Auth endpoints: 5 requests per 15 minutes',
+    '- Admin endpoints: 60 requests per minute',
+    '- Public endpoints: 100 requests per minute'
+  ]) {
+    assert.match(markdown, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+  }
 })
 
 test('generated API docs include the agent access request polling endpoint', () => {
