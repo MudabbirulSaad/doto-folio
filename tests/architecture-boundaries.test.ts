@@ -114,6 +114,18 @@ test('admin comments tests avoid loose casts', () => {
   assert.equal(source.includes('any'), false)
 })
 
+test('admin blog taxonomy application contract does not use explicit any', () => {
+  const source = readFileSync(join(process.cwd(), 'lib/server/application/blog/admin-blog-taxonomy.ts'), 'utf8')
+
+  assert.equal(source.includes('any'), false)
+})
+
+test('admin blog taxonomy tests avoid loose casts', () => {
+  const source = readFileSync(join(process.cwd(), 'tests/admin-blog-taxonomy.test.ts'), 'utf8')
+
+  assert.equal(source.includes('any'), false)
+})
+
 test('blog app pages do not fetch this app through internal HTTP APIs', () => {
   const blogFiles = tsFiles(join(process.cwd(), 'app/blog'))
   const offenders = blogFiles.filter(file => {

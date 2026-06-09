@@ -8,13 +8,25 @@ import type {
   UpdateBlogTagData
 } from '@/lib/types/blog'
 
+export type AdminBlogCategoryRecord =
+  | BlogCategory
+  | (Omit<BlogCategory, 'post_count'> & { post_count?: Array<{ count: number }> })
+
+export type AdminBlogTagRecord = BlogTag
+
+export interface AdminBlogTaxonomyDuplicate {
+  id: string
+  name: string
+  slug: string
+}
+
 export interface AdminBlogTaxonomyRepository {
   listCategories(): Promise<BlogCategory[]>
   listTags(): Promise<BlogTag[]>
-  findCategoryById(id: string): Promise<any | null>
-  findTagById(id: string): Promise<any | null>
-  findCategoryDuplicate(name: string, slug: string, excludeId?: string): Promise<{ id: string; name: string; slug: string } | null>
-  findTagDuplicate(name: string, slug: string, excludeId?: string): Promise<{ id: string; name: string; slug: string } | null>
+  findCategoryById(id: string): Promise<AdminBlogCategoryRecord | null>
+  findTagById(id: string): Promise<AdminBlogTagRecord | null>
+  findCategoryDuplicate(name: string, slug: string, excludeId?: string): Promise<AdminBlogTaxonomyDuplicate | null>
+  findTagDuplicate(name: string, slug: string, excludeId?: string): Promise<AdminBlogTaxonomyDuplicate | null>
   createCategory(data: Record<string, unknown>): Promise<BlogCategory>
   updateCategory(id: string, data: Record<string, unknown>): Promise<BlogCategory>
   deleteCategory(id: string): Promise<void>
@@ -49,7 +61,11 @@ function trimNullable(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : null
 }
 
-function categoryPostCount(category: any) {
+function categoryPostCount(category: AdminBlogCategoryRecord) {
+  if (typeof category.post_count === 'number') {
+    return category.post_count
+  }
+
   return category.post_count?.[0]?.count || 0
 }
 
