@@ -28,7 +28,6 @@ export default function ContentManagementPage() {
         isContentPublished: false,
         commentsCount: 0
     })
-    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         let mounted = true
@@ -41,14 +40,9 @@ export default function ContentManagementPage() {
             if (result.success) {
                 setStats(result.stats)
             }
-            setLoading(false)
         }
 
-        loadStats().catch(() => {
-            if (mounted) {
-                setLoading(false)
-            }
-        })
+        loadStats().catch(() => {})
 
         return () => {
             mounted = false

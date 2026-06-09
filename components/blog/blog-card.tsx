@@ -32,7 +32,6 @@ export function BlogCard({
   useEffect(() => {
     const card = cardRef.current
     const image = imageRef.current
-    const content = contentRef.current
 
     if (!card) return
 

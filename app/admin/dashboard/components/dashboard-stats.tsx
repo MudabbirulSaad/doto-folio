@@ -7,8 +7,7 @@ import {
     Mail,
     Briefcase,
     ArrowUpRight,
-    TrendingUp,
-    Users
+    TrendingUp
 } from 'lucide-react'
 import Link from 'next/link'
 
