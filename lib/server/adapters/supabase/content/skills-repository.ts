@@ -2,8 +2,15 @@ import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type { SkillContentRepository } from '@/lib/server/application/content/skills'
 
+type SkillRow = Record<string, unknown>
+
 function databaseError(message: string, error: { message?: string }): never {
   throw new ApplicationError('DATABASE_ERROR', message, error.message ? [error.message] : [message])
+}
+
+function isMissingPublishedColumnError(error: { message?: string; code?: string }) {
+  const message = error.message || ''
+  return message.includes('skills.is_published') && message.includes('does not exist')
 }
 
 export function createSupabaseSkillContentRepository(supabase: SupabaseDataClient): SkillContentRepository {
@@ -13,7 +20,18 @@ export function createSupabaseSkillContentRepository(supabase: SupabaseDataClien
         .from('skills')
         .select('id, name, category, proficiency, icon_name, display_order, is_published, created_at, updated_at')
         .order('display_order', { ascending: true })
-      if (error) databaseError('Failed to fetch skills', error)
+      if (error) {
+        if (!isMissingPublishedColumnError(error)) {
+          databaseError('Failed to fetch skills', error)
+        }
+
+        const { data: legacyData, error: legacyError } = await supabase
+          .from('skills')
+          .select('id, name, category, proficiency, icon_name, display_order, created_at, updated_at')
+          .order('display_order', { ascending: true })
+        if (legacyError) databaseError('Failed to fetch skills', legacyError)
+        return ((legacyData || []) as SkillRow[]).map(skill => ({ ...skill, is_published: true }))
+      }
       return data || []
     },
 
