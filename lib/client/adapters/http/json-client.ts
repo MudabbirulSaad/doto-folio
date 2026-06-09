@@ -9,8 +9,14 @@ async function readJson<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    const message = typeof payload?.error === 'string' ? payload.error : 'Request failed'
-    throw new Error(message)
+    const message = typeof payload?.error === 'string'
+      ? payload.error
+      : typeof payload?.error?.message === 'string'
+        ? payload.error.message
+        : 'Request failed'
+    const details = Array.isArray(payload?.error?.details) ? payload.error.details : []
+    const detailText = details.length > 0 ? `: ${details.join(', ')}` : ''
+    throw new Error(`${message}${detailText}`)
   }
 
   return payload as T

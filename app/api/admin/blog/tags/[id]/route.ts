@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { withAuth } from '@/lib/api/middleware'
+import { withScopedAuth } from '@/lib/api/middleware'
 import { createSuccessResponse } from '@/lib/api/response'
 import { createAdminBlogTaxonomyUseCases } from '@/lib/server/composition/blog'
 import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
@@ -34,6 +34,6 @@ async function deleteTagHandler(_: { request: NextRequest }, { params }: { param
   }
 }
 
-export const GET = withAuth(getTagHandler)
-export const PUT = withAuth(updateTagHandler)
-export const DELETE = withAuth(deleteTagHandler)
+export const GET = withScopedAuth(getTagHandler, 'blog-taxonomy:read')
+export const PUT = withScopedAuth(updateTagHandler, 'blog-tags:update')
+export const DELETE = withScopedAuth(deleteTagHandler, 'blog-tags:delete')

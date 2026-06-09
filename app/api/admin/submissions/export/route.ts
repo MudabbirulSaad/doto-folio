@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminAuth } from '@/lib/auth/server'
+import { authorizeAdminRequest } from '@/lib/auth/api-authorization'
 import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 import { createAdminContactSubmissionUseCases } from '@/lib/server/composition/contact'
 import { exportContactSubmissions } from '@/lib/server/application/contact/admin-submissions'
@@ -7,7 +7,7 @@ import { exportContactSubmissions } from '@/lib/server/application/contact/admin
 // GET - Export contact submissions in various formats
 export async function GET(request: NextRequest) {
   try {
-    await requireAdminAuth()
+    await authorizeAdminRequest(request, 'contact-submissions:export')
 
     const { searchParams } = new URL(request.url)
     const format = searchParams.get('format') || 'csv'

@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { withScopedAuth } from '@/lib/api/middleware'
 import { convertMarkdownToEditorBlocks } from '@/lib/server/application/blog/editor-tools'
 
-export async function POST(request: Request) {
+async function convertMarkdownHandler({ request }: { request: NextRequest }) {
   try {
     const { content } = await request.json()
 
@@ -15,3 +16,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
+
+export const POST = withScopedAuth(convertMarkdownHandler, 'blog-tools:convert-markdown')

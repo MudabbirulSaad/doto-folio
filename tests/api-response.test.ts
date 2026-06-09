@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
   createSuccessResponse,
   createValidationErrorResponse,
+  createInvalidJsonResponse,
   createUnauthorizedResponse,
   createNotFoundResponse,
   createRateLimitResponse,
@@ -62,6 +63,17 @@ test('createValidationErrorResponse accepts a single validation message', async 
     details: ['Name is required']
   })
   assert.match(body.requestId as string, /^req_/)
+})
+
+test('createInvalidJsonResponse reports malformed JSON as a client error', async () => {
+  const response = createInvalidJsonResponse()
+  const body = await readJson(response)
+
+  assert.equal(response.status, 400)
+  assert.deepEqual(body.error, {
+    code: 'INVALID_JSON',
+    message: 'Invalid JSON format'
+  })
 })
 
 test('auth, not-found, rate-limit, and internal errors use the shared error envelope', async () => {

@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentAdminUser } from '@/lib/auth/server'
+import { authorizeAdminRequest } from '@/lib/auth/api-authorization'
 import { createSkillContentUseCases } from '@/lib/server/composition/content'
-import { createLegacyJsonErrorResponse, createLegacyUnauthorizedResponse } from '@/lib/server/adapters/http/legacy-json-response'
+import { createLegacyJsonErrorResponse } from '@/lib/server/adapters/http/legacy-json-response'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ categoryId: string }> }
 ) {
   try {
-    const user = await getCurrentAdminUser()
-    if (!user) return createLegacyUnauthorizedResponse()
+    await authorizeAdminRequest(request, 'skills:update')
 
     const { categoryId: skillId } = await params
     const skill = await (await createSkillContentUseCases()).updateFlat(skillId, await request.json())
@@ -25,8 +24,7 @@ export async function DELETE(
   { params }: { params: Promise<{ categoryId: string }> }
 ) {
   try {
-    const user = await getCurrentAdminUser()
-    if (!user) return createLegacyUnauthorizedResponse()
+    await authorizeAdminRequest(_request, 'skills:delete')
 
     const { categoryId: skillId } = await params
     await (await createSkillContentUseCases()).delete(skillId)

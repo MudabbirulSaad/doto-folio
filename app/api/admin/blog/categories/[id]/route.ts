@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { withAuth } from '@/lib/api/middleware'
+import { withScopedAuth } from '@/lib/api/middleware'
 import { createSuccessResponse } from '@/lib/api/response'
 import { createAdminBlogTaxonomyUseCases } from '@/lib/server/composition/blog'
 import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
@@ -34,6 +34,6 @@ async function deleteCategoryHandler(_: { request: NextRequest }, { params }: { 
   }
 }
 
-export const GET = withAuth(getCategoryHandler)
-export const PUT = withAuth(updateCategoryHandler)
-export const DELETE = withAuth(deleteCategoryHandler)
+export const GET = withScopedAuth(getCategoryHandler, 'blog-taxonomy:read')
+export const PUT = withScopedAuth(updateCategoryHandler, 'blog-categories:update')
+export const DELETE = withScopedAuth(deleteCategoryHandler, 'blog-categories:delete')

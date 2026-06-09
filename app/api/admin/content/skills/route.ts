@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentAdminUser } from '@/lib/auth/server'
+import { authorizeAdminRequest } from '@/lib/auth/api-authorization'
 import { createSkillContentUseCases } from '@/lib/server/composition/content'
-import { createLegacyJsonErrorResponse, createLegacyUnauthorizedResponse } from '@/lib/server/adapters/http/legacy-json-response'
+import { createLegacyJsonErrorResponse } from '@/lib/server/adapters/http/legacy-json-response'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentAdminUser()
-    if (!user) return createLegacyUnauthorizedResponse()
+    await authorizeAdminRequest(request, 'skills:read')
 
     const skills = await (await createSkillContentUseCases()).listFlat()
     return NextResponse.json({ data: skills })
@@ -18,8 +17,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentAdminUser()
-    if (!user) return createLegacyUnauthorizedResponse()
+    await authorizeAdminRequest(request, 'skills:create')
 
     const skill = await (await createSkillContentUseCases()).createFlat(await request.json())
     return NextResponse.json({ data: skill, message: 'Skill created successfully' })

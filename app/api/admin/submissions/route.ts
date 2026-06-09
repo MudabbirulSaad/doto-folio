@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminAuth } from '@/lib/auth/server'
+import { authorizeAdminRequest } from '@/lib/auth/api-authorization'
 import { createAdminContactSubmissionUseCases } from '@/lib/server/composition/contact'
 import { createLegacyJsonErrorResponse } from '@/lib/server/adapters/http/legacy-json-response'
 
@@ -16,7 +16,7 @@ function filtersFromRequest(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdminAuth()
+    await authorizeAdminRequest(request, 'contact-submissions:read')
     const submissions = await createAdminContactSubmissionUseCases().list(filtersFromRequest(request))
     return NextResponse.json({ submissions })
   } catch (error) {
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    await requireAdminAuth()
+    await authorizeAdminRequest(request, 'contact-submissions:update')
     const result = await createAdminContactSubmissionUseCases().updateReadStatus(await request.json())
     return NextResponse.json(result)
   } catch (error) {

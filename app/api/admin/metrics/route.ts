@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSuccessResponse } from '@/lib/api/response'
 import { performanceMonitor } from '@/lib/api/monitoring'
-import { withAuth } from '@/lib/api/middleware'
+import { withScopedAuth } from '@/lib/api/middleware'
 
 async function getMetricsHandler(context: { request: NextRequest }) {
   const { request } = context
@@ -67,4 +67,4 @@ async function getMetricsHandler(context: { request: NextRequest }) {
   return createSuccessResponse(response)
 }
 
-export const GET = withAuth(getMetricsHandler)
+export const GET = withScopedAuth(getMetricsHandler, 'metrics:read')

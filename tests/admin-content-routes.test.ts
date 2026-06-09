@@ -29,8 +29,7 @@ test('admin content read APIs require an admin user before loading data', () => 
 
   for (const route of protectedRoutes) {
     const source = readFileSync(join(root, route), 'utf8')
-    const authIndex = source.indexOf('await getCurrentAdminUser()')
-    const unauthorizedIndex = source.indexOf('createLegacyUnauthorizedResponse()', authIndex)
+    const authIndex = source.indexOf('await authorizeAdminRequest(')
     const dataAccessIndex = Math.min(
       ...[
         source.indexOf('await (await createContactContentUseCases())'),
@@ -39,8 +38,7 @@ test('admin content read APIs require an admin user before loading data', () => 
       ].filter(index => index >= 0)
     )
 
-    assert.notEqual(authIndex, -1, `${route} should check the current admin user`)
-    assert.notEqual(unauthorizedIndex, -1, `${route} should reject missing admin users`)
+    assert.notEqual(authIndex, -1, `${route} should use the shared admin/agent authorization guard`)
     assert.ok(authIndex < dataAccessIndex, `${route} should authenticate before data access`)
   }
 })

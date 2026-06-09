@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { withAuth } from '@/lib/api/middleware'
+import { withScopedAuth } from '@/lib/api/middleware'
 import { createSuccessResponse, createInternalErrorResponse } from '@/lib/api/response'
 import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 import { createSiteContentUseCases } from '@/lib/server/composition/content'
@@ -16,7 +16,7 @@ async function getSiteContentHandler() {
   }
 }
 
-export const GET = withAuth(getSiteContentHandler)
+export const GET = withScopedAuth(getSiteContentHandler, 'site-content:read')
 
 async function updateSiteContentHandler(context: { request: NextRequest }) {
   try {
@@ -29,4 +29,4 @@ async function updateSiteContentHandler(context: { request: NextRequest }) {
   }
 }
 
-export const PUT = withAuth(updateSiteContentHandler)
+export const PUT = withScopedAuth(updateSiteContentHandler, 'site-content:update')

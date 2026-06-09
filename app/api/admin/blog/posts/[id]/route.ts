@@ -1,5 +1,5 @@
 // import { NextRequest } from 'next/server' // Not needed with middleware approach
-import { withAuth } from '@/lib/api/middleware'
+import { withScopedAuth } from '@/lib/api/middleware'
 import { createSuccessResponse } from '@/lib/api/response'
 import type { UpdateBlogPostData } from '@/lib/types/blog'
 import { createAdminBlogPostReadUseCases, createAdminBlogWorkflowUseCases } from '@/lib/server/composition/blog'
@@ -59,6 +59,6 @@ async function deletePostHandler(context: any) {
   }
 }
 
-export const GET = withAuth(getPostHandler)
-export const PUT = withAuth(updatePostHandler)
-export const DELETE = withAuth(deletePostHandler)
+export const GET = withScopedAuth(getPostHandler, 'blog-posts:read')
+export const PUT = withScopedAuth(updatePostHandler, 'blog-posts:update')
+export const DELETE = withScopedAuth(deletePostHandler, 'blog-posts:delete')

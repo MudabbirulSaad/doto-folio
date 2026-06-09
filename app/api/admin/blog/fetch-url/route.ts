@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { withAuth } from '@/lib/api/middleware'
+import { withScopedAuth } from '@/lib/api/middleware'
 import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
 import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 import { fetchEditorLinkMetadata } from '@/lib/server/application/blog/editor-tools'
@@ -32,4 +32,4 @@ async function fetchUrlHandler({ request }: { request: NextRequest }) {
   }
 }
 
-export const GET = withAuth(fetchUrlHandler)
+export const GET = withScopedAuth(fetchUrlHandler, 'blog-tools:fetch-url')

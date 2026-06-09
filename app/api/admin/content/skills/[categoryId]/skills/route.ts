@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentAdminUser } from '@/lib/auth/server'
+import { authorizeAdminRequest } from '@/lib/auth/api-authorization'
 import { createSkillContentUseCases } from '@/lib/server/composition/content'
-import { createLegacyJsonErrorResponse, createLegacyUnauthorizedResponse } from '@/lib/server/adapters/http/legacy-json-response'
+import { createLegacyJsonErrorResponse } from '@/lib/server/adapters/http/legacy-json-response'
 
 export async function POST(
   request: NextRequest,
@@ -9,8 +9,7 @@ export async function POST(
 ) {
   try {
     const { categoryId } = await params
-    const user = await getCurrentAdminUser()
-    if (!user) return createLegacyUnauthorizedResponse()
+    await authorizeAdminRequest(request, 'skills:create')
 
     const skill = await (await createSkillContentUseCases()).createInCategory(categoryId, await request.json())
     return NextResponse.json({ data: skill, message: 'Skill created successfully' })

@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentAdminUser } from '@/lib/auth/server'
+import { authorizeAdminRequest } from '@/lib/auth/api-authorization'
 import { createProjectUseCases } from '@/lib/server/composition/content'
-import { createLegacyJsonErrorResponse, createLegacyUnauthorizedResponse } from '@/lib/server/adapters/http/legacy-json-response'
+import { createLegacyJsonErrorResponse } from '@/lib/server/adapters/http/legacy-json-response'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getCurrentAdminUser()
-    if (!user) {
-      return createLegacyUnauthorizedResponse()
-    }
+    await authorizeAdminRequest(request, 'projects:read')
 
     const { id } = await params
     const project = await (await createProjectUseCases()).get(id)
@@ -28,10 +25,7 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    const user = await getCurrentAdminUser()
-    if (!user) {
-      return createLegacyUnauthorizedResponse()
-    }
+    await authorizeAdminRequest(request, 'projects:update')
 
     const body = await request.json()
     const projects = await createProjectUseCases()
@@ -54,10 +48,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const user = await getCurrentAdminUser()
-    if (!user) {
-      return createLegacyUnauthorizedResponse()
-    }
+    await authorizeAdminRequest(request, 'projects:delete')
 
     await (await createProjectUseCases()).delete(id)
 

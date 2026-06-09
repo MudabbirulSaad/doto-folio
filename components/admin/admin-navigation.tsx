@@ -22,7 +22,8 @@ import {
   BookOpen,
   Code2,
   Briefcase,
-  MessageSquare
+  MessageSquare,
+  Bot
 } from 'lucide-react'
 
 export default function AdminNavigation() {
@@ -138,6 +139,12 @@ export default function AdminNavigation() {
       href: '/admin/contacts',
       icon: Mail,
       current: pathname === '/admin/contacts'
+    },
+    {
+      name: 'Agents',
+      href: '/admin/agents',
+      icon: Bot,
+      current: pathname.startsWith('/admin/agents')
     }
   ]
 

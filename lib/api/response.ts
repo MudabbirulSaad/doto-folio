@@ -213,6 +213,20 @@ export function createValidationErrorResponse(
   )
 }
 
+export function createInvalidJsonResponse(
+  message = 'Invalid JSON format',
+  options: ResponseOptions = {}
+): NextResponse {
+  return createErrorResponse(
+    'INVALID_JSON',
+    message,
+    400,
+    undefined,
+    undefined,
+    options
+  )
+}
+
 export function createUnauthorizedResponse(
   message = 'Authentication required',
   options: ResponseOptions = {}

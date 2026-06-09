@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { withAuth } from '@/lib/api/middleware'
+import { withScopedAuth } from '@/lib/api/middleware'
 import { createSuccessResponse } from '@/lib/api/response'
 import { createAdminBlogTaxonomyUseCases } from '@/lib/server/composition/blog'
 import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
@@ -24,5 +24,5 @@ async function createTagHandler({ request }: { request: NextRequest }) {
   }
 }
 
-export const GET = withAuth(getTagsHandler)
-export const POST = withAuth(createTagHandler)
+export const GET = withScopedAuth(getTagsHandler, 'blog-taxonomy:read')
+export const POST = withScopedAuth(createTagHandler, 'blog-tags:create')

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { withAuth } from '@/lib/api/middleware'
+import { withScopedAuth } from '@/lib/api/middleware'
 import { createSuccessResponse } from '@/lib/api/response'
 import { createAdminBlogTaxonomyUseCases } from '@/lib/server/composition/blog'
 import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
@@ -24,5 +24,5 @@ async function createCategoryHandler({ request }: { request: NextRequest }) {
   }
 }
 
-export const GET = withAuth(getCategoriesHandler)
-export const POST = withAuth(createCategoryHandler)
+export const GET = withScopedAuth(getCategoriesHandler, 'blog-taxonomy:read')
+export const POST = withScopedAuth(createCategoryHandler, 'blog-categories:create')

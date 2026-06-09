@@ -13,7 +13,9 @@ export interface SupabaseQuery extends PromiseLike<SupabaseResult> {
   eq(column: string, value: unknown): SupabaseQuery
   neq(column: string, value: unknown): SupabaseQuery
   gte(column: string, value: unknown): SupabaseQuery
+  gt(column: string, value: unknown): SupabaseQuery
   lte(column: string, value: unknown): SupabaseQuery
+  is(column: string, value: unknown): SupabaseQuery
   in(column: string, values: unknown[]): SupabaseQuery
   ilike(column: string, pattern: string): SupabaseQuery
   or(filters: string): SupabaseQuery

@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentAdminUser } from '@/lib/auth/server'
+import { authorizeAdminRequest } from '@/lib/auth/api-authorization'
 import { createContactContentUseCases } from '@/lib/server/composition/content'
-import { createLegacyJsonErrorResponse, createLegacyUnauthorizedResponse } from '@/lib/server/adapters/http/legacy-json-response'
+import { createLegacyJsonErrorResponse } from '@/lib/server/adapters/http/legacy-json-response'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentAdminUser()
-    if (!user) {
-      return createLegacyUnauthorizedResponse()
-    }
+    await authorizeAdminRequest(request, 'contact-content:read')
 
     const data = await (await createContactContentUseCases()).get()
     return NextResponse.json({ data })
@@ -20,10 +17,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentAdminUser()
-    if (!user) {
-      return createLegacyUnauthorizedResponse()
-    }
+    await authorizeAdminRequest(request, 'contact-content:create')
 
     const result = await (await createContactContentUseCases()).create(await request.json())
     return NextResponse.json(result)

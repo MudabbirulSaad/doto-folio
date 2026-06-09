@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { withAuth } from '@/lib/api/middleware'
+import { withScopedAuth } from '@/lib/api/middleware'
 import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
 import type { CreateBlogPostData } from '@/lib/types/blog'
 import { createAdminBlogPostReadUseCases, createAdminBlogWorkflowUseCases } from '@/lib/server/composition/blog'
@@ -47,5 +47,5 @@ async function createPostHandler({ request }: { request: NextRequest }) {
   }
 }
 
-export const GET = withAuth(getPostsHandler)
-export const POST = withAuth(createPostHandler)
+export const GET = withScopedAuth(getPostsHandler, 'blog-posts:read')
+export const POST = withScopedAuth(createPostHandler, 'blog-posts:create')

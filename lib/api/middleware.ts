@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentAdminUser } from '@/lib/auth/server'
+import { authorizeAdminRequest, type ApiPrincipal } from '@/lib/auth/api-authorization'
 import { rateLimit, type RateLimitResult } from './rate-limit'
 import { 
   createUnauthorizedResponse,
+  createForbiddenResponse,
   createRateLimitResponse,
   createInternalErrorResponse,
   logApiRequest,
   logApiError
 } from './response'
+import { ApplicationError } from '@/lib/server/domain/errors'
+import type { AgentScope } from '@/lib/server/application/agent-access/agent-access'
 
 // =============================================
 // MIDDLEWARE TYPES
@@ -20,6 +23,7 @@ export interface ApiContext {
     email?: string
     role?: string
   }
+  principal?: ApiPrincipal
   rateLimitResult?: RateLimitResult
   startTime: number
   origin?: string
@@ -43,6 +47,7 @@ export type ApiHandler<
 
 export interface MiddlewareOptions {
   requireAuth?: boolean
+  requiredScope?: AgentScope
   rateLimit?: 'contact' | 'admin' | 'public' | false
   skipLogging?: boolean
 }
@@ -90,23 +95,22 @@ export function withMiddleware<
       // Authentication
       if (options.requireAuth) {
         try {
-          const user = await getCurrentAdminUser()
-          if (!user) {
-            if (!options.skipLogging) {
-              logApiRequest(method, path, 401, Date.now() - startTime)
-            }
-            return createUnauthorizedResponse(undefined, { 
-              origin, 
-              rateLimitResult: context.rateLimitResult 
-            })
-          }
-          context.user = user
+          const principal = await authorizeAdminRequest(request, options.requiredScope)
+          context.principal = principal
+          if (principal.type === 'admin') context.user = principal.user
         } catch (authError) {
           logApiError(authError as Error, { method, path })
+          const status = authError instanceof ApplicationError && authError.code === 'FORBIDDEN' ? 403 : 401
           if (!options.skipLogging) {
-            logApiRequest(method, path, 401, Date.now() - startTime)
+            logApiRequest(method, path, status, Date.now() - startTime)
           }
-          return createUnauthorizedResponse('Authentication failed', { 
+          if (status === 403 && authError instanceof Error) {
+            return createForbiddenResponse(authError.message, {
+              origin,
+              rateLimitResult: context.rateLimitResult
+            })
+          }
+          return createUnauthorizedResponse(authError instanceof Error ? authError.message : 'Authentication failed', { 
             origin, 
             rateLimitResult: context.rateLimitResult 
           })
@@ -153,6 +157,17 @@ export function withAuth<
 >(handler: ApiHandler<TParams, TRouteContext>) {
   return withMiddleware(handler, { 
     requireAuth: true, 
+    rateLimit: 'admin' 
+  })
+}
+
+export function withScopedAuth<
+  TParams = Record<string, string>,
+  TRouteContext extends ApiRouteContext<TParams> = ApiRouteContext<TParams>
+>(handler: ApiHandler<TParams, TRouteContext>, requiredScope: AgentScope) {
+  return withMiddleware(handler, { 
+    requireAuth: true, 
+    requiredScope,
     rateLimit: 'admin' 
   })
 }
