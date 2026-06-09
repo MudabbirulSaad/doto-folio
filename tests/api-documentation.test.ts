@@ -24,3 +24,10 @@ test('generated API docs describe the comment rate limit accurately', () => {
   assert.equal(commentPost?.rateLimit?.requests, 10)
   assert.equal(commentPost?.rateLimit?.window, '1 minute')
 })
+
+test('generated API docs include the agent access request polling endpoint', () => {
+  const spec = generateOpenApiSpec()
+  const paths = spec.paths as Record<string, Record<string, unknown>>
+
+  assert.ok(paths['/api/agent/access-requests/{code}']?.get)
+})

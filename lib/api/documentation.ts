@@ -478,6 +478,20 @@ export const API_DOCUMENTATION: ApiEndpoint[] = [
     }
   },
   {
+    path: '/api/agent/access-requests/{code}',
+    method: 'GET',
+    summary: 'Poll agent access request',
+    description: 'Checks the status of a fallback agent access request by request code.',
+    tags: ['Agent Access'],
+    parameters: [
+      { name: 'code', in: 'path', required: true, schema: { type: 'string', example: 'REQUEST_CODE' }, description: 'Access request polling code' }
+    ],
+    responses: {
+      '200': okJson('Agent access request status retrieved'),
+      '404': { description: 'Access request not found' }
+    }
+  },
+  {
     path: '/api/agent/me',
     method: 'GET',
     summary: 'Inspect agent token',
