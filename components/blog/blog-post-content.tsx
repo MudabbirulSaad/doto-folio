@@ -56,12 +56,13 @@ function canUseOptimizedImage(src: string) {
 
 function BlogContentImage({ src = '', alt = '', node, ...props }: BlogContentImageProps) {
   void node
+  const imageSrc = typeof src === 'string' ? src : ''
 
   return (
     <span className="my-6 block">
-      {canUseOptimizedImage(src) ? (
+      {canUseOptimizedImage(imageSrc) ? (
         <Image
-          src={src}
+          src={imageSrc}
           alt={alt}
           width={1200}
           height={675}
@@ -72,7 +73,7 @@ function BlogContentImage({ src = '', alt = '', node, ...props }: BlogContentIma
       ) : (
         createElement('img', {
           ...props,
-          src,
+          src: imageSrc,
           alt,
           className: 'w-full rounded-lg border border-border',
           loading: 'lazy'
