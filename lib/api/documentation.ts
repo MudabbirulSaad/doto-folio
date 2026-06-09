@@ -316,6 +316,101 @@ export const API_DOCUMENTATION: ApiEndpoint[] = [
     }
   },
   {
+    path: '/api/blog/categories/{slug}',
+    method: 'GET',
+    summary: 'List posts by category',
+    description: 'Returns published blog posts for a category slug with pagination.',
+    tags: ['Blog'],
+    parameters: [
+      { name: 'slug', in: 'path', required: true, schema: { type: 'string', example: 'architecture' }, description: 'Category slug' },
+      { name: 'page', in: 'query', required: false, schema: { type: 'integer', minimum: 1, example: 1 }, description: 'Page number' },
+      { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 50, example: 12 }, description: 'Posts per page' }
+    ],
+    responses: {
+      '200': okJson('Category posts retrieved'),
+      '404': { description: 'Category not found' }
+    }
+  },
+  {
+    path: '/api/blog/tags/{slug}',
+    method: 'GET',
+    summary: 'List posts by tag',
+    description: 'Returns published blog posts for a tag slug with pagination.',
+    tags: ['Blog'],
+    parameters: [
+      { name: 'slug', in: 'path', required: true, schema: { type: 'string', example: 'nextjs' }, description: 'Tag slug' },
+      { name: 'page', in: 'query', required: false, schema: { type: 'integer', minimum: 1, example: 1 }, description: 'Page number' },
+      { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 50, example: 12 }, description: 'Posts per page' }
+    ],
+    responses: {
+      '200': okJson('Tag posts retrieved'),
+      '404': { description: 'Tag not found' }
+    }
+  },
+  {
+    path: '/api/blog/posts/{slug}/recommendations',
+    method: 'GET',
+    summary: 'Get blog post recommendations',
+    description: 'Returns related posts for a published blog post slug.',
+    tags: ['Blog'],
+    parameters: [
+      { name: 'slug', in: 'path', required: true, schema: { type: 'string', example: 'building-agent-access' }, description: 'Blog post slug' }
+    ],
+    responses: {
+      '200': okJson('Blog post recommendations retrieved'),
+      '404': { description: 'Post not found' }
+    }
+  },
+  {
+    path: '/api/comments',
+    method: 'GET',
+    summary: 'List public blog comments',
+    description: 'Returns the public comment tree for a blog post.',
+    tags: ['Comments'],
+    parameters: [
+      { name: 'postId', in: 'query', required: true, schema: { type: 'string', format: 'uuid' }, description: 'Blog post id' }
+    ],
+    responses: {
+      '200': okJson('Comments retrieved'),
+      '400': { description: 'postId is required' }
+    }
+  },
+  {
+    path: '/api/comments',
+    method: 'POST',
+    summary: 'Create blog comment',
+    description: 'Creates a comment for an authenticated user. Rate limited to prevent comment abuse.',
+    tags: ['Comments'],
+    security: [{ type: 'bearer' }],
+    rateLimit: {
+      requests: 10,
+      window: '15 minutes'
+    },
+    requestBody: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: ['postId', 'content', 'userId'],
+            properties: {
+              postId: { type: 'string', format: 'uuid' },
+              content: { type: 'string', minLength: 1, maxLength: 1000 },
+              userId: { type: 'string', format: 'uuid' },
+              parentId: { type: 'string', format: 'uuid' }
+            }
+          }
+        }
+      }
+    },
+    responses: {
+      '200': okJson('Comment posted successfully'),
+      '400': { description: 'Validation error' },
+      '401': { description: 'Missing or invalid bearer token' },
+      '429': { description: 'Rate limit exceeded' }
+    }
+  },
+  {
     path: '/api/agent/public-context',
     method: 'GET',
     summary: 'Get public agent context',
@@ -547,6 +642,7 @@ export function generateOpenApiSpec(): Record<string, unknown> {
       { name: 'Health', description: 'Application health checks' },
       { name: 'Public Content', description: 'Public portfolio content' },
       { name: 'Blog', description: 'Public blog reads' },
+      { name: 'Comments', description: 'Public blog comments' },
       { name: 'Agent Access', description: 'Invite-first scoped agent access' },
       { name: 'Admin', description: 'Partial admin CMS operations' },
       { name: 'Content', description: 'Partial content management operations' },
