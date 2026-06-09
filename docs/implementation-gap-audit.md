@@ -81,8 +81,6 @@ Recommended fix:
 
 Several client pages/components still own raw `fetch`, response parsing, validation, mutation workflows, and UI messages directly:
 
-- `app/admin/blog/posts/new/page.tsx`
-- `app/admin/blog/posts/[id]/edit/page.tsx`
 - `app/admin/content/page.tsx`
 - `components/hero-section.tsx`
 - `components/seo/dynamic-seo.tsx`
@@ -110,6 +108,8 @@ Closed:
 - `tests/client/admin-skills-workflow.test.ts` covers skills load, form mapping, validation, save, update, and delete behavior.
 - `app/admin/blog/categories/page.tsx` and `app/admin/blog/tags/page.tsx` no longer own taxonomy list/create/update/delete `fetch` calls. They delegate to `lib/client/application/admin/blog-taxonomy.ts` and `createAdminBlogTaxonomyApiGateway`.
 - `tests/client/admin-blog-taxonomy-workflow.test.ts` covers category/tag load, form mapping, validation, save, update, and delete behavior.
+- `app/admin/blog/posts/new/page.tsx` and `app/admin/blog/posts/[id]/edit/page.tsx` no longer own post/category/tag HTTP fetches. They delegate create/update/delete to `lib/client/application/admin/blog-posts.ts`, taxonomy reads/creates to `lib/client/application/admin/blog-taxonomy.ts`, and keep editor/browser state in the page.
+- `tests/client/admin-blog-posts-workflow.test.ts` covers post create/update validation and gateway calls.
 
 ### Server application layer still imports legacy services
 
@@ -267,7 +267,7 @@ Some `components/ui/*` files may be intentionally kept as design-system inventor
 - Public listing/detail pages: wired, but `app/blog/page.tsx` still uses legacy `lib/data/blog-server.ts`.
 - Admin listing page: partially refactored.
 - Admin taxonomy pages: list/create/update/delete fetches moved behind client workflow/gateway.
-- Admin create/edit post pages: still raw workflow-heavy client pages.
+- Admin create/edit post pages: post and taxonomy HTTP calls moved behind client workflow/gateway. Editor state and page navigation remain in the route containers.
 
 ### Comments
 

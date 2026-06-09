@@ -3,11 +3,14 @@ import type {
   AdminBlogPostList,
   AdminBlogPostWithRelations
 } from '@/lib/client/domain/admin-blog'
-import type { BlogCategory } from '@/lib/types/blog'
+import type { BlogCategory, CreateBlogPostData, UpdateBlogPostData } from '@/lib/types/blog'
 
 export interface AdminBlogPostGateway {
+  getPost(id: string): Promise<AdminBlogPostWithRelations>
   listPosts(): Promise<AdminBlogPostList>
   listCategories(): Promise<BlogCategory[]>
+  createPost(input: CreateBlogPostData): Promise<unknown>
+  updatePost(id: string, input: UpdateBlogPostData): Promise<unknown>
   deletePost(id: string): Promise<void>
 }
 
@@ -45,6 +48,53 @@ export async function deleteAdminBlogPost(gateway: AdminBlogPostGateway, id: str
     return {
       success: false as const,
       error: error instanceof Error ? error.message : 'Failed to delete post'
+    }
+  }
+}
+
+function validatePostInput(input: Pick<CreateBlogPostData, 'title' | 'content'>) {
+  if (!input.title.trim()) return 'Please enter a title'
+
+  try {
+    const content = JSON.parse(input.content)
+    if (!content?.blocks?.length) return 'Please add some content'
+  } catch {
+    return 'Please add some content'
+  }
+
+  return null
+}
+
+export async function saveNewAdminBlogPost(gateway: AdminBlogPostGateway, input: CreateBlogPostData) {
+  const error = validatePostInput(input)
+  if (error) return { success: false as const, error }
+
+  try {
+    const post = await gateway.createPost(input)
+    return { success: true as const, post }
+  } catch (error) {
+    return {
+      success: false as const,
+      error: error instanceof Error ? error.message : 'Failed to save post'
+    }
+  }
+}
+
+export async function updateAdminBlogPost(
+  gateway: AdminBlogPostGateway,
+  id: string,
+  input: UpdateBlogPostData
+) {
+  const error = validatePostInput(input as CreateBlogPostData)
+  if (error) return { success: false as const, error }
+
+  try {
+    const post = await gateway.updatePost(id, input)
+    return { success: true as const, post }
+  } catch (error) {
+    return {
+      success: false as const,
+      error: error instanceof Error ? error.message : 'Failed to update post'
     }
   }
 }

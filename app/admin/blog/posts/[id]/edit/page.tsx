@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -59,6 +59,15 @@ import {
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { markdownToBlocks } from '@/lib/markdown-converter'
+import { createAdminBlogPostApiGateway, createAdminBlogTaxonomyApiGateway } from '@/lib/client/adapters/http/admin-blog-api'
+import {
+  deleteAdminBlogPost,
+  updateAdminBlogPost
+} from '@/lib/client/application/admin/blog-posts'
+import {
+  loadAdminBlogCategories,
+  loadAdminBlogTags
+} from '@/lib/client/application/admin/blog-taxonomy'
 
 const NotionEditor = dynamic(() => import('@/components/admin/blog/notion-editor'), {
   ssr: false,
@@ -103,6 +112,8 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryColor, setNewCategoryColor] = useState('#3b82f6')
+  const postGateway = useMemo(() => createAdminBlogPostApiGateway(), [])
+  const taxonomyGateway = useMemo(() => createAdminBlogTaxonomyApiGateway(), [])
 
   useEffect(() => {
     fetchPost()
@@ -112,10 +123,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
 
   const fetchPost = async () => {
     try {
-      const response = await fetch(`/api/admin/blog/posts/${resolvedParams.id}`)
-      if (response.ok) {
-        const data = await response.json()
-        const postData = data.data
+      const postData = await postGateway.getPost(resolvedParams.id)
         setPost(postData)
 
         // Populate form fields
@@ -196,9 +204,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         if (postData.tags) {
           setSelectedTags(postData.tags.map((tagRel: any) => tagRel.tag))
         }
-      } else {
-        router.push('/admin/blog/posts')
-      }
     } catch (error) {
       console.error('Error fetching post:', error)
       router.push('/admin/blog/posts')
@@ -209,10 +214,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/admin/blog/categories')
-      if (response.ok) {
-        const data = await response.json()
-        setCategories(data.data || [])
+      const result = await loadAdminBlogCategories(taxonomyGateway)
+      if (result.success) {
+        setCategories(result.categories)
       }
     } catch (error) {
       console.error('Error fetching categories:', error)
@@ -221,10 +225,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/admin/blog/tags')
-      if (response.ok) {
-        const data = await response.json()
-        setTags(data.data || [])
+      const result = await loadAdminBlogTags(taxonomyGateway)
+      if (result.success) {
+        setTags(result.tags)
       }
     } catch (error) {
       console.error('Error fetching tags:', error)
@@ -269,19 +272,15 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         meta_description: metaDescription.trim() || null,
       }
 
-      const response = await fetch(`/api/admin/blog/posts/${resolvedParams.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(postData),
+      const result = await updateAdminBlogPost(postGateway, resolvedParams.id, {
+        id: resolvedParams.id,
+        ...postData
       })
 
-      if (response.ok) {
+      if (result.success) {
         router.push('/admin/blog/posts')
       } else {
-        const error = await response.json()
-        alert(error.message || 'Failed to update post')
+        alert(result.error)
       }
     } catch (error) {
       console.error('Error updating post:', error)
@@ -333,15 +332,12 @@ export default function EditPostPage({ params }: EditPostPageProps) {
 
     setSaving(true)
     try {
-      const response = await fetch(`/api/admin/blog/posts/${resolvedParams.id}`, {
-        method: 'DELETE',
-      })
+      const result = await deleteAdminBlogPost(postGateway, resolvedParams.id)
 
-      if (response.ok) {
+      if (result.success) {
         router.push('/admin/blog/posts')
       } else {
-        const error = await response.json()
-        alert(error.message || 'Failed to delete post')
+        alert(result.error)
       }
     } catch (error) {
       console.error('Error deleting post:', error)
@@ -480,14 +476,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                         // It's raw text, use as is
                       }
 
-                      fetch('/api/admin/blog/convert-markdown', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ content: contentToConvert }),
-                      })
-                        .then(res => res.json())
+                      markdownToBlocks(contentToConvert)
                         .then((blocksData: any) => {
                           if (blocksData.blocks) {
                             setEditorData(blocksData)

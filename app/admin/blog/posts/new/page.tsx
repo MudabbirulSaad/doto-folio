@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,16 +52,20 @@ const NotionEditor = dynamic(() => import('@/components/admin/blog/notion-editor
 })
 import type { BlogCategory, BlogTag } from '@/lib/types/blog'
 import type { OutputData } from '@editorjs/editorjs'
+import { createAdminBlogPostApiGateway, createAdminBlogTaxonomyApiGateway } from '@/lib/client/adapters/http/admin-blog-api'
+import { saveNewAdminBlogPost } from '@/lib/client/application/admin/blog-posts'
+import {
+  loadAdminBlogCategories,
+  loadAdminBlogTags,
+  saveAdminBlogCategory,
+  saveAdminBlogTag
+} from '@/lib/client/application/admin/blog-taxonomy'
 
 function generateSlug(value: string) {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
-}
-
-function getApiErrorMessage(error: any) {
-  return error?.error?.details?.[0] || error?.error?.message || error?.message || 'Failed to save post'
 }
 
 export default function NewPostPage() {
@@ -94,6 +98,8 @@ export default function NewPostPage() {
   const [newTagName, setNewTagName] = useState('')
   const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false)
   const [showNewTagDialog, setShowNewTagDialog] = useState(false)
+  const postGateway = useMemo(() => createAdminBlogPostApiGateway(), [])
+  const taxonomyGateway = useMemo(() => createAdminBlogTaxonomyApiGateway(), [])
 
   useEffect(() => {
     fetchCategories()
@@ -107,10 +113,9 @@ export default function NewPostPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/admin/blog/categories')
-      if (response.ok) {
-        const data = await response.json()
-        setCategories(data.data || [])
+      const result = await loadAdminBlogCategories(taxonomyGateway)
+      if (result.success) {
+        setCategories(result.categories)
       }
     } catch (error) {
       console.error('Error fetching categories:', error)
@@ -119,10 +124,9 @@ export default function NewPostPage() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/admin/blog/tags')
-      if (response.ok) {
-        const data = await response.json()
-        setTags(data.data || [])
+      const result = await loadAdminBlogTags(taxonomyGateway)
+      if (result.success) {
+        setTags(result.tags)
       }
     } catch (error) {
       console.error('Error fetching tags:', error)
@@ -136,20 +140,17 @@ export default function NewPostPage() {
       // Generate slug from name
       const slug = generateSlug(newCategoryName.trim())
 
-      const response = await fetch('/api/admin/blog/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newCategoryName.trim(),
-          slug: slug,
-          color: newCategoryColor
-        })
+      const result = await saveAdminBlogCategory(taxonomyGateway, {
+        name: newCategoryName.trim(),
+        slug,
+        description: '',
+        color: newCategoryColor,
+        display_order: 0
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        setCategories(prev => [...prev, data.data])
-        setCategoryId(data.data.id)
+      if (result.success) {
+        setCategories(prev => [...prev, result.category])
+        setCategoryId(result.category.id)
         setNewCategoryName('')
         setShowNewCategoryDialog(false)
       }
@@ -165,18 +166,14 @@ export default function NewPostPage() {
       // Generate slug from name
       const slug = generateSlug(newTagName.trim())
 
-      const response = await fetch('/api/admin/blog/tags', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newTagName.trim(),
-          slug: slug
-        })
+      const result = await saveAdminBlogTag(taxonomyGateway, {
+        name: newTagName.trim(),
+        slug,
+        description: ''
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        const newTag = data.data
+      if (result.success) {
+        const newTag = result.tag
         setTags(prev => [...prev, newTag])
         setSelectedTags(prev => [...prev, newTag])
         setNewTagName('')
@@ -225,20 +222,12 @@ export default function NewPostPage() {
         meta_description: metaDescription.trim() || null,
       }
 
-      const response = await fetch('/api/admin/blog/posts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(postData),
-      })
+      const result = await saveNewAdminBlogPost(postGateway, postData)
 
-      if (response.ok) {
-        await response.json()
+      if (result.success) {
         router.push('/admin/blog/posts')
       } else {
-        const error = await response.json()
-        alert(getApiErrorMessage(error))
+        alert(result.error)
       }
     } catch (error) {
       console.error('Error saving post:', error)

@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   deleteAdminBlogPost,
   filterAdminBlogPosts,
+  saveNewAdminBlogPost,
   summarizeAdminBlogPosts,
+  updateAdminBlogPost,
   type AdminBlogPostGateway
 } from '@/lib/client/application/admin/blog-posts'
 import type { AdminBlogPostWithRelations } from '@/lib/client/domain/admin-blog'
@@ -55,12 +57,51 @@ describe('admin blog post workflow', () => {
 
   it('delegates deletion through the gateway', async () => {
     const gateway: AdminBlogPostGateway = {
+      getPost: vi.fn(),
       listPosts: vi.fn(),
       listCategories: vi.fn(),
+      createPost: vi.fn(),
+      updatePost: vi.fn(),
       deletePost: vi.fn()
     }
 
     expect(await deleteAdminBlogPost(gateway, 'post-1')).toEqual({ success: true })
     expect(gateway.deletePost).toHaveBeenCalledWith('post-1')
+  })
+
+  it('validates and saves new or existing posts through the gateway', async () => {
+    const gateway: AdminBlogPostGateway = {
+      getPost: vi.fn(),
+      listPosts: vi.fn(),
+      listCategories: vi.fn(),
+      createPost: vi.fn(async input => ({ id: 'post-1', ...input })),
+      updatePost: vi.fn(async (_id, input) => ({ id: 'post-1', ...input })),
+      deletePost: vi.fn()
+    }
+    const input = {
+      title: 'Post',
+      slug: 'post',
+      excerpt: 'Excerpt',
+      content: JSON.stringify({ blocks: [{ type: 'paragraph', data: { text: 'Hello' } }] }),
+      category_id: null,
+      tag_ids: [],
+      status: 'draft' as const,
+      featured: false,
+      meta_title: null,
+      meta_description: null
+    }
+
+    await expect(saveNewAdminBlogPost(gateway, { ...input, title: '' })).resolves.toEqual({
+      success: false,
+      error: 'Please enter a title'
+    })
+    await expect(saveNewAdminBlogPost(gateway, input)).resolves.toMatchObject({
+      success: true,
+      post: { id: 'post-1' }
+    })
+    await expect(updateAdminBlogPost(gateway, 'post-1', input)).resolves.toMatchObject({
+      success: true,
+      post: { id: 'post-1' }
+    })
   })
 })

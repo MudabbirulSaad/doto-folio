@@ -5,9 +5,10 @@ import type {
   AdminBlogCategory,
   AdminBlogCategoryFormData,
   AdminBlogPostList,
+  AdminBlogPostWithRelations,
   AdminBlogTagFormData
 } from '@/lib/client/domain/admin-blog'
-import type { BlogCategory, BlogTag } from '@/lib/types/blog'
+import type { BlogCategory, BlogTag, CreateBlogPostData, UpdateBlogPostData } from '@/lib/types/blog'
 
 interface DataResponse<T> {
   data: T
@@ -15,12 +16,24 @@ interface DataResponse<T> {
 
 export function createAdminBlogPostApiGateway(client: JsonClient = createFetchJsonClient()): AdminBlogPostGateway {
   return {
+    async getPost(id: string) {
+      const response = await client.get<DataResponse<AdminBlogPostWithRelations>>(`/api/admin/blog/posts/${id}`)
+      return response.data
+    },
     async listPosts() {
       const response = await client.get<DataResponse<AdminBlogPostList>>('/api/admin/blog/posts')
       return response.data
     },
     async listCategories() {
       const response = await client.get<DataResponse<BlogCategory[]>>('/api/admin/blog/categories')
+      return response.data
+    },
+    async createPost(input: CreateBlogPostData) {
+      const response = await client.post<DataResponse<unknown>>('/api/admin/blog/posts', input)
+      return response.data
+    },
+    async updatePost(id: string, input: UpdateBlogPostData) {
+      const response = await client.put<DataResponse<unknown>>(`/api/admin/blog/posts/${id}`, input)
       return response.data
     },
     async deletePost(id: string) {
