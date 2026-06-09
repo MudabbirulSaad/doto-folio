@@ -52,10 +52,12 @@ function getPostTags(post: PublicBlogPostRecord): BlogTag[] {
 }
 
 function normalizePost(post: PublicBlogPostRecord): BlogPostWithRelations {
-  const { blog_categories, blog_post_tags, ...rest } = post
+  const normalizedPost = { ...post }
+  delete normalizedPost.blog_categories
+  delete normalizedPost.blog_post_tags
 
   return {
-    ...rest,
+    ...normalizedPost,
     category: getPostCategory(post),
     tags: getPostTags(post)
   }
