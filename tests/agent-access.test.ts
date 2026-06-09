@@ -203,7 +203,7 @@ test('createAgentAccessRequest stores only a code hash and returns the raw code 
 
   assert.equal(result.code, 'ABCD1234')
   assert.equal(testDeps.state.requests[0].codeHash, 'hash:ABCD1234')
-  assert.equal((result.request as any).codeHash, undefined)
+  assert.equal('codeHash' in result.request, false)
 })
 
 test('createAgentAccessRequest accepts agents without a given name', async () => {
@@ -298,7 +298,7 @@ test('createAgentInvitation stores only a code hash and returns the raw code onc
 
   assert.equal(result.code, 'ABCD1234')
   assert.equal(testDeps.state.invitations[0].codeHash, 'hash:ABCD1234')
-  assert.equal((result.invitation as any).codeHash, undefined)
+  assert.equal('codeHash' in result.invitation, false)
 })
 
 test('claimAgentInvitation issues a scoped token and prevents double claim', async () => {

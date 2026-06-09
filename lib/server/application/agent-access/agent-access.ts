@@ -225,16 +225,19 @@ function ensurePending(request: AgentAccessRequest, now: Date) {
 
 function redactRequest(request: AgentAccessRequest) {
   const { codeHash: _codeHash, ...safeRequest } = request
+  void _codeHash
   return safeRequest
 }
 
 function redactInvitation(invitation: AgentInvitation) {
   const { codeHash: _codeHash, ...safeInvitation } = invitation
+  void _codeHash
   return safeInvitation
 }
 
 function redactToken(token: AgentToken) {
   const { tokenHash: _tokenHash, ...safeToken } = token
+  void _tokenHash
   return safeToken
 }
 
