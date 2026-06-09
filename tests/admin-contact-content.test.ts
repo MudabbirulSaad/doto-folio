@@ -3,14 +3,31 @@ import assert from 'node:assert/strict'
 import {
   createContactContentItem,
   getContactContent,
-  type ContactContentRepository
+  type ContactContentRepository,
+  type ContactMethodContent,
+  type SocialLinkContent
 } from '../lib/server/application/content/contact-content'
 import { ApplicationError } from '../lib/server/domain/errors'
 
-function repository(): ContactContentRepository & { contactMethods: any[]; socialLinks: any[] } {
+function repository(): ContactContentRepository & { contactMethods: ContactMethodContent[]; socialLinks: SocialLinkContent[] } {
   return {
-    contactMethods: [{ id: 'contact-1', title: 'Email' }],
-    socialLinks: [{ id: 'social-1', platform: 'GitHub' }],
+    contactMethods: [{
+      id: 'contact-1',
+      title: 'Email',
+      value: 'hello@example.com',
+      description: 'Email me',
+      link: 'mailto:hello@example.com',
+      icon_name: 'Mail',
+      display_order: 1
+    }],
+    socialLinks: [{
+      id: 'social-1',
+      platform: 'GitHub',
+      url: 'https://github.com/example',
+      username: 'example',
+      icon_name: 'Github',
+      display_order: 1
+    }],
     async listContactMethods() { return this.contactMethods },
     async listSocialLinks() { return this.socialLinks },
     async getLastContactMethodDisplayOrder() { return 2 },
@@ -32,8 +49,23 @@ test('getContactContent returns published contact methods and social links', asy
   const result = await getContactContent(repository())
 
   assert.deepEqual(result, {
-    contactMethods: [{ id: 'contact-1', title: 'Email' }],
-    socialLinks: [{ id: 'social-1', platform: 'GitHub' }]
+    contactMethods: [{
+      id: 'contact-1',
+      title: 'Email',
+      value: 'hello@example.com',
+      description: 'Email me',
+      link: 'mailto:hello@example.com',
+      icon_name: 'Mail',
+      display_order: 1
+    }],
+    socialLinks: [{
+      id: 'social-1',
+      platform: 'GitHub',
+      url: 'https://github.com/example',
+      username: 'example',
+      icon_name: 'Github',
+      display_order: 1
+    }]
   })
 })
 

@@ -13,7 +13,8 @@ import {
 } from '@/lib/server/application/content/site-content'
 import {
   createContactContentItem,
-  getContactContent
+  getContactContent,
+  type CreateContactContentInput
 } from '@/lib/server/application/content/contact-content'
 import {
   createFlatSkill,
@@ -58,7 +59,7 @@ export async function createContactContentUseCases() {
 
   return {
     get: () => getContactContent(repository),
-    create: (input: Record<string, any>) => createContactContentItem(repository, input)
+    create: (input: CreateContactContentInput) => createContactContentItem(repository, input)
   }
 }
 
