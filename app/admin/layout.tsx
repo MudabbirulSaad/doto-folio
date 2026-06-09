@@ -1,34 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import AdminNavigation from '@/components/admin/admin-navigation'
 import { SectionNebula } from '@/components/section-nebula'
+import { useAdminSidebarCollapsed } from '@/components/admin/use-admin-sidebar-collapsed'
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-
-  // Sync with sidebar state from localStorage
-  useEffect(() => {
-    const savedState = localStorage.getItem('admin-sidebar-collapsed')
-    if (savedState !== null) {
-      setIsSidebarCollapsed(JSON.parse(savedState))
-    }
-
-    // Listen for storage changes to sync across tabs
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'admin-sidebar-collapsed' && e.newValue !== null) {
-        setIsSidebarCollapsed(JSON.parse(e.newValue))
-      }
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
-  }, [])
+  const [isSidebarCollapsed] = useAdminSidebarCollapsed()
 
   // Authentication is handled by middleware
   const pathname = usePathname()

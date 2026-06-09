@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { getCurrentSession, logoutAdmin } from '@/lib/auth/admin'
+import { useAdminSidebarCollapsed } from '@/components/admin/use-admin-sidebar-collapsed'
 import {
   LayoutDashboard,
   Mail,
@@ -32,21 +33,11 @@ export default function AdminNavigation() {
   const [isLoading, setIsLoading] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-
-  // Load sidebar state from localStorage
-  useEffect(() => {
-    const savedState = localStorage.getItem('admin-sidebar-collapsed')
-    if (savedState !== null) {
-      setIsSidebarCollapsed(JSON.parse(savedState))
-    }
-  }, [])
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useAdminSidebarCollapsed()
 
   // Save sidebar state to localStorage
   const toggleSidebar = () => {
-    const newState = !isSidebarCollapsed
-    setIsSidebarCollapsed(newState)
-    localStorage.setItem('admin-sidebar-collapsed', JSON.stringify(newState))
+    setIsSidebarCollapsed(!isSidebarCollapsed)
   }
 
   useEffect(() => {
