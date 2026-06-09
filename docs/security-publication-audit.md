@@ -5,8 +5,8 @@ Date: 2026-06-09
 ## Verification Results
 
 - `npm audit --json`: passed with 0 total vulnerabilities.
-- `npm run test:server`: passed, 86 tests.
-- `npm run test:client`: passed, 44 tests across 16 files.
+- `npm test`: passed, 132 tests.
+- `npm run test:client`: passed, 52 tests across 18 files.
 - `npm run build`: passed with TypeScript build errors enabled.
 - Secret path history check for `.env`, `.env.local`, `.env.production`, and `*.pem`: no matching Git history.
 - Local regex secret scan excluding `.env`, `.git`, `.next`, `node_modules`, and `package-lock.json`: no matches.
