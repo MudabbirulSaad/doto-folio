@@ -4,6 +4,7 @@ import {
   createBlogPost,
   deleteBlogPost,
   updateBlogPost,
+  type BlogPostWorkflowRecord,
   type BlogPostWorkflowRepository
 } from '../lib/server/application/blog/blog-post-workflow'
 
@@ -20,14 +21,30 @@ function editorContent(words: number) {
   })
 }
 
-function createRepository(): BlogPostWorkflowRepository & {
-  posts: Record<string, any>
+function postRecord(overrides: Partial<BlogPostWorkflowRecord> & Pick<BlogPostWorkflowRecord, 'id' | 'slug'>): BlogPostWorkflowRecord {
+  return {
+    title: 'Post',
+    excerpt: 'Excerpt',
+    content: editorContent(10),
+    category_id: null,
+    status: 'draft',
+    featured: false,
+    reading_time: 1,
+    published_at: null,
+    ...overrides
+  }
+}
+
+interface TestBlogPostWorkflowRepository extends BlogPostWorkflowRepository {
+  posts: Record<string, BlogPostWorkflowRecord>
   postTags: Record<string, string[]>
   calls: string[]
-} {
+}
+
+function createRepository(): TestBlogPostWorkflowRepository {
   let nextId = 1
   const repository = {
-    posts: {} as Record<string, any>,
+    posts: {} as Record<string, BlogPostWorkflowRecord>,
     postTags: {} as Record<string, string[]>,
     calls: [] as string[],
     async findPostBySlug(slug: string, excludeId?: string) {
@@ -48,12 +65,25 @@ function createRepository(): BlogPostWorkflowRepository & {
     },
     async createPost(data: Record<string, unknown>) {
       const id = `post-${nextId++}`
-      const post = { id, ...data }
+      const post = postRecord({
+        id,
+        title: String(data.title),
+        slug: String(data.slug),
+        excerpt: String(data.excerpt),
+        content: String(data.content),
+        category_id: typeof data.category_id === 'string' ? data.category_id : null,
+        status: data.status === 'published' || data.status === 'archived' ? data.status : 'draft',
+        featured: data.featured === true,
+        reading_time: Number(data.reading_time),
+        published_at: typeof data.published_at === 'string' ? data.published_at : null,
+        meta_title: data.meta_title,
+        meta_description: data.meta_description
+      })
       this.posts[id] = post
       return post
     },
     async updatePost(id: string, data: Record<string, unknown>) {
-      this.posts[id] = { ...this.posts[id], ...data }
+      this.posts[id] = postRecord({ ...this.posts[id], ...data })
       return this.posts[id]
     },
     async deletePost(id: string) {
@@ -79,7 +109,7 @@ function createRepository(): BlogPostWorkflowRepository & {
 
 test('createBlogPost validates, enforces slug uniqueness, publishes once, creates tags, and refreshes counts', async () => {
   const repository = createRepository()
-  repository.posts.existing = { id: 'existing', slug: 'taken' }
+  repository.posts.existing = postRecord({ id: 'existing', slug: 'taken' })
 
   await assert.rejects(
     () => createBlogPost(repository, { title: '', slug: 'new', excerpt: 'x', content: editorContent(10), tag_ids: [], status: 'draft', featured: false }),
@@ -145,6 +175,7 @@ test('createBlogPost derives an excerpt from editor content when one is not prov
 test('updateBlogPost handles slug/category/tag replacement, reading time, and first publish timestamp', async () => {
   const repository = createRepository()
   repository.posts['post-1'] = {
+    ...postRecord({ id: 'post-1', slug: 'old-slug' }),
     id: 'post-1',
     title: 'Draft',
     slug: 'old-slug',
@@ -186,6 +217,7 @@ test('updateBlogPost handles slug/category/tag replacement, reading time, and fi
 test('deleteBlogPost removes the post and refreshes affected category and tag counts', async () => {
   const repository = createRepository()
   repository.posts['post-1'] = {
+    ...postRecord({ id: 'post-1', slug: 'delete-me' }),
     id: 'post-1',
     title: 'Delete Me',
     slug: 'delete-me',

@@ -18,12 +18,26 @@ export interface BlogPostForDelete {
   tag_ids: string[]
 }
 
+export interface BlogPostWorkflowRecord {
+  id: string
+  title: string
+  slug: string
+  excerpt: string
+  content: string
+  category_id: string | null
+  status: BlogPostStatus
+  featured: boolean
+  reading_time: number
+  published_at: string | null
+  [key: string]: unknown
+}
+
 export interface BlogPostWorkflowRepository {
   findPostBySlug(slug: string, excludeId?: string): Promise<{ id: string } | null>
   findPostForUpdate(id: string): Promise<BlogPostForLifecycle | null>
   findPostForDelete(id: string): Promise<BlogPostForDelete | null>
-  createPost(data: Record<string, unknown>): Promise<any>
-  updatePost(id: string, data: Record<string, unknown>): Promise<any>
+  createPost(data: Record<string, unknown>): Promise<BlogPostWorkflowRecord>
+  updatePost(id: string, data: Record<string, unknown>): Promise<BlogPostWorkflowRecord>
   deletePost(id: string): Promise<void>
   getPostTagIds(id: string): Promise<string[]>
   replacePostTags(id: string, tagIds: string[]): Promise<void>
@@ -44,6 +58,20 @@ export class BlogPostWorkflowError extends ApplicationError {
 
 interface WorkflowOptions {
   now?: () => Date
+}
+
+interface EditorBlockData {
+  text?: unknown
+  caption?: unknown
+}
+
+interface EditorBlock {
+  type?: unknown
+  data?: EditorBlockData
+}
+
+interface EditorContent {
+  blocks?: unknown
 }
 
 type UpdateBlogPostWorkflowData = Partial<CreateBlogPostData> & {
@@ -80,13 +108,18 @@ function truncateExcerpt(value: string, maxLength = 180) {
   return truncated || normalized.slice(0, maxLength).trim()
 }
 
+function parseEditorBlocks(content: string): EditorBlock[] | null {
+  const contentData = JSON.parse(content) as EditorContent
+  return Array.isArray(contentData.blocks) ? contentData.blocks as EditorBlock[] : null
+}
+
 function excerptFromContent(content: string) {
   try {
-    const contentData = JSON.parse(content)
-    if (!Array.isArray(contentData.blocks)) return null
+    const blocks = parseEditorBlocks(content)
+    if (!blocks) return null
 
-    const text = contentData.blocks
-      .map((block: any) => stripHtml(String(block.data?.text || block.data?.caption || '')))
+    const text = blocks
+      .map((block) => stripHtml(String(block.data?.text || block.data?.caption || '')))
       .join(' ')
 
     return truncateExcerpt(text) || null
@@ -101,12 +134,12 @@ export function uniqueValues(values: Array<string | null | undefined>) {
 
 export function calculateReadingTime(content: string) {
   try {
-    const contentData = JSON.parse(content)
-    if (!Array.isArray(contentData.blocks)) return 5
+    const blocks = parseEditorBlocks(content)
+    if (!blocks) return 5
 
-    const wordCount = contentData.blocks
-      .filter((block: any) => block.type === 'paragraph' || block.type === 'header')
-      .reduce((count: number, block: any) => {
+    const wordCount = blocks
+      .filter((block) => block.type === 'paragraph' || block.type === 'header')
+      .reduce((count, block) => {
         const text = String(block.data?.text || '').replace(/<[^>]*>/g, ' ')
         const words = text.trim().split(/\s+/).filter(Boolean)
         return count + words.length
