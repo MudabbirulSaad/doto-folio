@@ -4,6 +4,8 @@ import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
 import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 import { fetchEditorLinkMetadata } from '@/lib/server/application/blog/editor-tools'
 
+export const runtime = 'nodejs'
+
 // GET - Fetch URL metadata for Editor.js Link Tool
 async function fetchUrlHandler({ request }: { request: NextRequest }) {
   try {
@@ -18,6 +20,7 @@ async function fetchUrlHandler({ request }: { request: NextRequest }) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; SAAD-Blog-Bot/1.0)',
       },
+      redirect: 'manual',
       signal: AbortSignal.timeout(10000),
     }))
 

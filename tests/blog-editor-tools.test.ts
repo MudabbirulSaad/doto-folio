@@ -63,7 +63,9 @@ test('fetchEditorLinkMetadata validates URLs and extracts editor link metadata',
     }
   }
 
-  const metadata = await fetchEditorLinkMetadata('https://example.com/post', fetcher)
+  const metadata = await fetchEditorLinkMetadata('https://example.com/post', fetcher, {
+    resolveHostname: async () => ['93.184.216.34']
+  })
 
   assert.deepEqual(metadata, {
     success: 1,
@@ -86,11 +88,89 @@ test('fetchEditorLinkMetadata rejects invalid or failed URL metadata fetches', a
   )
 
   await assert.rejects(
-    () => fetchEditorLinkMetadata('https://example.com/missing', async () => ({
+    () => fetchEditorLinkMetadata(
+      'https://example.com/missing',
+      async () => ({
+        ok: false,
+        status: 404,
+        text: async () => ''
+      }),
+      { resolveHostname: async () => ['93.184.216.34'] }
+    ),
+    (error: unknown) => error instanceof ApplicationError && error.code === 'EXTERNAL_SERVICE_ERROR'
+  )
+})
+
+test('fetchEditorLinkMetadata blocks private network URL targets', async () => {
+  const neverFetch: UrlMetadataFetcher = async () => {
+    throw new Error('should not fetch private targets')
+  }
+
+  for (const url of [
+    'file:///etc/passwd',
+    'http://localhost/admin',
+    'http://127.0.0.1/admin',
+    'http://10.0.0.1/admin',
+    'http://172.16.0.1/admin',
+    'http://192.168.1.1/admin',
+    'http://[::1]/admin'
+  ]) {
+    await assert.rejects(
+      () => fetchEditorLinkMetadata(url, neverFetch, {
+        resolveHostname: async () => ['93.184.216.34']
+      }),
+      (error: unknown) => error instanceof ApplicationError && error.code === 'VALIDATION_ERROR',
+      url
+    )
+  }
+
+  await assert.rejects(
+    () => fetchEditorLinkMetadata('https://internal.example/admin', neverFetch, {
+      resolveHostname: async () => ['192.168.1.10']
+    }),
+    (error: unknown) => error instanceof ApplicationError && error.code === 'VALIDATION_ERROR'
+  )
+})
+
+test('fetchEditorLinkMetadata validates redirect targets before following them', async () => {
+  const fetchedUrls: string[] = []
+  const fetcher: UrlMetadataFetcher = async url => {
+    fetchedUrls.push(url)
+    return {
       ok: false,
-      status: 404,
+      status: 302,
+      headers: {
+        get(name: string) {
+          return name.toLowerCase() === 'location' ? 'http://127.0.0.1/private' : null
+        }
+      },
       text: async () => ''
-    })),
+    }
+  }
+
+  await assert.rejects(
+    () => fetchEditorLinkMetadata('https://example.com/post', fetcher, {
+      resolveHostname: async hostname => hostname === 'example.com' ? ['93.184.216.34'] : ['127.0.0.1']
+    }),
+    (error: unknown) => error instanceof ApplicationError && error.code === 'VALIDATION_ERROR'
+  )
+  assert.deepEqual(fetchedUrls, ['https://example.com/post'])
+})
+
+test('fetchEditorLinkMetadata rejects oversized metadata responses', async () => {
+  await assert.rejects(
+    () => fetchEditorLinkMetadata(
+      'https://example.com/post',
+      async () => ({
+        ok: true,
+        status: 200,
+        text: async () => 'x'.repeat(20)
+      }),
+      {
+        resolveHostname: async () => ['93.184.216.34'],
+        maxBytes: 10
+      }
+    ),
     (error: unknown) => error instanceof ApplicationError && error.code === 'EXTERNAL_SERVICE_ERROR'
   )
 })

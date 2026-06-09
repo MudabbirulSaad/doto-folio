@@ -1,6 +1,8 @@
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
+import { lookup } from 'node:dns/promises'
+import { isIP } from 'node:net'
 import { ApplicationError } from '@/lib/server/domain/errors'
 
 export interface EditorBlock {
@@ -28,10 +30,21 @@ export interface EditorLinkMetadata {
 export interface UrlMetadataResponse {
   ok: boolean
   status: number
+  headers?: {
+    get(name: string): string | null
+  }
+  body?: ReadableStream<Uint8Array> | null
   text(): Promise<string>
 }
 
 export type UrlMetadataFetcher = (url: string) => Promise<UrlMetadataResponse>
+export type HostnameResolver = (hostname: string) => Promise<string[]>
+
+export interface UrlMetadataOptions {
+  resolveHostname?: HostnameResolver
+  maxRedirects?: number
+  maxBytes?: number
+}
 
 type MarkdownNode = {
   type: string
@@ -140,8 +153,48 @@ export async function convertMarkdownToEditorBlocks(markdown: string): Promise<E
 
 export async function fetchEditorLinkMetadata(
   rawUrl: string,
-  fetcher: UrlMetadataFetcher
+  fetcher: UrlMetadataFetcher,
+  options: UrlMetadataOptions = {}
 ): Promise<EditorLinkMetadata> {
+  const maxRedirects = options.maxRedirects ?? 3
+  const maxBytes = options.maxBytes ?? 1024 * 1024
+  const resolveHostname = options.resolveHostname ?? resolveHostnameToAddresses
+  let currentUrl = await validatePublicHttpUrl(rawUrl, resolveHostname)
+
+  for (let redirectCount = 0; redirectCount <= maxRedirects; redirectCount++) {
+    const response = await fetcher(currentUrl.toString())
+    const redirectLocation = getRedirectLocation(response)
+
+    if (redirectLocation) {
+      if (redirectCount === maxRedirects) {
+        throw new ApplicationError('EXTERNAL_SERVICE_ERROR', 'Too many URL redirects')
+      }
+
+      currentUrl = await validatePublicHttpUrl(
+        new URL(redirectLocation, currentUrl).toString(),
+        resolveHostname
+      )
+      continue
+    }
+
+    if (!response.ok) {
+      throw new ApplicationError('EXTERNAL_SERVICE_ERROR', 'Failed to fetch URL', [
+        `Upstream status: ${response.status}`
+      ])
+    }
+
+    return extractEditorLinkMetadata(await readLimitedResponseText(response, maxBytes))
+  }
+
+  throw new ApplicationError('EXTERNAL_SERVICE_ERROR', 'Failed to fetch URL')
+}
+
+async function resolveHostnameToAddresses(hostname: string) {
+  const records = await lookup(hostname, { all: true, verbatim: true })
+  return records.map(record => record.address)
+}
+
+async function validatePublicHttpUrl(rawUrl: string, resolveHostname: HostnameResolver) {
   let parsedUrl: URL
   try {
     parsedUrl = new URL(rawUrl)
@@ -149,14 +202,111 @@ export async function fetchEditorLinkMetadata(
     throw new ApplicationError('VALIDATION_ERROR', 'Invalid URL format')
   }
 
-  const response = await fetcher(parsedUrl.toString())
-  if (!response.ok) {
-    throw new ApplicationError('EXTERNAL_SERVICE_ERROR', 'Failed to fetch URL', [
-      `Upstream status: ${response.status}`
-    ])
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    throw new ApplicationError('VALIDATION_ERROR', 'Only HTTP and HTTPS URLs are supported')
   }
 
-  return extractEditorLinkMetadata(await response.text())
+  if (parsedUrl.username || parsedUrl.password) {
+    throw new ApplicationError('VALIDATION_ERROR', 'URL credentials are not allowed')
+  }
+
+  const hostname = parsedUrl.hostname.toLowerCase()
+  if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
+    throw new ApplicationError('VALIDATION_ERROR', 'Private network URLs are not allowed')
+  }
+
+  const directIp = normalizeIpAddress(hostname)
+  const addresses = directIp ? [directIp] : await resolveHostname(hostname)
+  if (addresses.length === 0 || addresses.some(address => isBlockedIpAddress(address))) {
+    throw new ApplicationError('VALIDATION_ERROR', 'Private network URLs are not allowed')
+  }
+
+  return parsedUrl
+}
+
+function getRedirectLocation(response: UrlMetadataResponse) {
+  if (response.status < 300 || response.status >= 400) return null
+  return response.headers?.get('location') || null
+}
+
+async function readLimitedResponseText(response: UrlMetadataResponse, maxBytes: number) {
+  if (!response.body) {
+    const text = await response.text()
+    if (new TextEncoder().encode(text).byteLength > maxBytes) {
+      throw new ApplicationError('EXTERNAL_SERVICE_ERROR', 'URL response is too large')
+    }
+    return text
+  }
+
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let totalBytes = 0
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    if (!value) continue
+
+    totalBytes += value.byteLength
+    if (totalBytes > maxBytes) {
+      await reader.cancel()
+      throw new ApplicationError('EXTERNAL_SERVICE_ERROR', 'URL response is too large')
+    }
+    chunks.push(value)
+  }
+
+  const bytes = new Uint8Array(totalBytes)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+
+  return new TextDecoder().decode(bytes)
+}
+
+function normalizeIpAddress(hostname: string) {
+  const withoutBrackets = hostname.replace(/^\[|\]$/g, '')
+  if (withoutBrackets.startsWith('::ffff:')) {
+    return withoutBrackets.slice('::ffff:'.length)
+  }
+  return isIP(withoutBrackets) ? withoutBrackets : null
+}
+
+function isBlockedIpAddress(rawAddress: string) {
+  const address = normalizeIpAddress(rawAddress)
+  if (!address) return true
+
+  if (isIP(address) === 4) {
+    const octets = address.split('.').map(Number)
+    const [a, b, c] = octets
+
+    return (
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
+      (a === 100 && b >= 64 && b <= 127) ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 192 && b === 0 && c === 0) ||
+      (a === 192 && b === 0 && c === 2) ||
+      (a === 198 && (b === 18 || b === 19)) ||
+      (a === 198 && b === 51 && c === 100) ||
+      (a === 203 && b === 0 && c === 113) ||
+      a >= 224
+    )
+  }
+
+  const ipv6 = address.toLowerCase()
+  return (
+    ipv6 === '::' ||
+    ipv6 === '::1' ||
+    ipv6.startsWith('fc') ||
+    ipv6.startsWith('fd') ||
+    ipv6.startsWith('fe80:') ||
+    ipv6.startsWith('ff')
+  )
 }
 
 export function extractEditorLinkMetadata(html: string): EditorLinkMetadata {
