@@ -1,36 +1,25 @@
 import { AnimatedSection, AnimatedCard } from "./animations"
 import { RevealCard } from "./reveal-card"
 import { SectionNebula } from "./section-nebula"
+import type { PublicSkill } from "@/lib/server/application/content/public-portfolio"
 
-export function SkillsSection() {
-  const skillCategories = [
-    {
-      title: "Programming Languages",
-      skills: [
-        { name: "Python", level: "Advanced", description: "AI/ML development, data analysis" },
-        { name: "JavaScript", level: "Advanced", description: "Full-stack web development" },
-        { name: "Java", level: "Intermediate", description: "Object-oriented programming" },
-        { name: "C++", level: "Intermediate", description: "System programming, algorithms" },
-        { name: "C", level: "Intermediate", description: "Low-level programming" }
-      ]
-    },
-    {
-      title: "Web Technologies",
-      skills: [
-        { name: "HTML", level: "Advanced", description: "Semantic markup, accessibility" },
-        { name: "CSS", level: "Advanced", description: "Modern styling, responsive design" },
-        { name: "Node.js", level: "Intermediate", description: "Server-side JavaScript" }
-      ]
-    },
-    {
-      title: "Artificial Intelligence",
-      skills: [
-        { name: "Machine Learning", level: "Intermediate", description: "Algorithm implementation" },
-        { name: "Data Analysis", level: "Intermediate", description: "Pattern recognition, insights" },
-        { name: "Neural Networks", level: "Learning", description: "Deep learning fundamentals" }
-      ]
-    }
-  ]
+interface SkillsSectionProps {
+  skills?: PublicSkill[]
+}
+
+function proficiencyLevel(proficiency: number) {
+  if (proficiency >= 85) return 'Advanced'
+  if (proficiency >= 60) return 'Intermediate'
+  return 'Learning'
+}
+
+export function SkillsSection({ skills = [] }: SkillsSectionProps) {
+  const skillCategories = Object.entries(
+    skills.reduce<Record<string, PublicSkill[]>>((groups, skill) => {
+      groups[skill.category] = [...(groups[skill.category] || []), skill]
+      return groups
+    }, {})
+  )
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -61,25 +50,28 @@ export function SkillsSection() {
           </div>
 
           <div className="grid lg:grid-cols-3 gap-8">
-            {skillCategories.map((category, categoryIndex) => (
-              <AnimatedCard key={categoryIndex} delay={categoryIndex * 0.1}>
+            {skillCategories.map(([category, categorySkills], categoryIndex) => (
+              <AnimatedCard key={category} delay={categoryIndex * 0.1}>
                 <RevealCard className="bg-background/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-border/50 hover:shadow-2xl hover:border-primary/30 hover:bg-background/90 transition-all duration-500">
                   <h3 className="text-xl font-bold text-foreground mb-6 text-center">
-                    {category.title}
+                    {category}
                   </h3>
 
                   <div className="space-y-4">
-                    {category.skills.map((skill, skillIndex) => (
-                      <RevealCard key={skillIndex} className="bg-background/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-border/50 hover:shadow-xl hover:border-primary/30 hover:bg-background/90 transition-all duration-300">
+                    {categorySkills.map((skill) => {
+                      const level = proficiencyLevel(skill.proficiency)
+                      return (
+                      <RevealCard key={skill.id} className="bg-background/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-border/50 hover:shadow-xl hover:border-primary/30 hover:bg-background/90 transition-all duration-300">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium text-foreground">{skill.name}</h4>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getLevelColor(skill.level)}`}>
-                            {skill.level}
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getLevelColor(level)}`}>
+                            {level}
                           </span>
                         </div>
-                        <p className="text-sm text-muted-foreground">{skill.description}</p>
+                        <p className="text-sm text-muted-foreground">{skill.proficiency}% proficiency</p>
                       </RevealCard>
-                    ))}
+                      )
+                    })}
                   </div>
                 </RevealCard>
               </AnimatedCard>

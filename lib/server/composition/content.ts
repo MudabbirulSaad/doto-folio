@@ -22,6 +22,7 @@ import {
   listFlatSkills,
   updateFlatSkill
 } from '@/lib/server/application/content/skills'
+import { getPublicPortfolioContent } from '@/lib/server/application/content/public-portfolio'
 import { getAdminContentOverview } from '@/lib/server/application/content/content-overview'
 import { createSupabaseProjectRepository } from '@/lib/server/adapters/supabase/content/projects-repository'
 import { createSupabaseSiteContentRepository } from '@/lib/server/adapters/supabase/content/site-content-repository'
@@ -77,4 +78,20 @@ export async function createAdminContentOverviewUseCase() {
   const repository = createSupabaseAdminContentOverviewRepository(await createClient())
 
   return () => getAdminContentOverview(repository)
+}
+
+export async function createPublicPortfolioContentUseCase() {
+  const supabase = await createClient()
+  const siteContentRepository = createSupabaseSiteContentRepository(supabase)
+  const projectRepository = createSupabaseProjectRepository(supabase)
+  const skillRepository = createSupabaseSkillContentRepository(supabase)
+  const contactRepository = createSupabaseContactContentRepository(supabase)
+
+  return () => getPublicPortfolioContent({
+    getPublishedSiteContent: () => siteContentRepository.getPublishedSiteContent(),
+    listPublishedProjects: () => projectRepository.listProjects(),
+    listPublishedSkills: () => skillRepository.listFlatSkills(),
+    listPublishedContactMethods: () => contactRepository.listContactMethods(),
+    listPublishedSocialLinks: () => contactRepository.listSocialLinks()
+  })
 }

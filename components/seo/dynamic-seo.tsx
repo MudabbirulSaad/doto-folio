@@ -1,42 +1,18 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Head from "next/head"
 
-interface SiteContent {
-  hero_title: string
-  hero_subtitle?: string
-  about_intro: string
-  about_description: string
-  footer_brand_description: string
-  footer_location: string
-  footer_university: string
-  footer_field: string
+interface DynamicSEOProps {
+  content: Record<string, unknown>
 }
 
-export function DynamicSEO() {
-  const [content, setContent] = useState<SiteContent | null>(null)
+function text(content: Record<string, unknown>, key: string) {
+  return String(content[key] || '')
+}
 
-  useEffect(() => {
-    const fetchContent = async () => {
-      try {
-        const response = await fetch('/api/site-content')
-        if (response.ok) {
-          const result = await response.json()
-          setContent(result.data)
-        }
-      } catch (error) {
-        console.error('Error fetching SEO content:', error)
-      }
-    }
-
-    fetchContent()
-  }, [])
-
-  if (!content) return null
-
-  const dynamicTitle = `${content.hero_title} | SAAD - Mudabbirul Saad`
-  const dynamicDescription = `${content.about_intro} ${content.about_description}`.substring(0, 160)
+export function DynamicSEO({ content }: DynamicSEOProps) {
+  const dynamicTitle = `${text(content, 'hero_title')} | SAAD - Mudabbirul Saad`
+  const dynamicDescription = `${text(content, 'about_intro')} ${text(content, 'about_description')}`.substring(0, 160)
   
   return (
     <Head>
@@ -60,17 +36,17 @@ export function DynamicSEO() {
             "author": {
               "@type": "Person",
               "name": "Mudabbirul Saad",
-              "description": content.footer_brand_description,
+              "description": text(content, 'footer_brand_description'),
               "address": {
                 "@type": "PostalAddress",
-                "addressLocality": content.footer_location.split(', ')[0] || "Melbourne",
-                "addressCountry": content.footer_location.split(', ')[1] || "Australia"
+                "addressLocality": text(content, 'footer_location').split(', ')[0] || "Melbourne",
+                "addressCountry": text(content, 'footer_location').split(', ')[1] || "Australia"
               },
               "affiliation": {
                 "@type": "EducationalOrganization",
-                "name": content.footer_university
+                "name": text(content, 'footer_university')
               },
-              "studyField": content.footer_field
+              "studyField": text(content, 'footer_field')
             }
           })
         }}

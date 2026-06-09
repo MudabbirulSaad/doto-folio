@@ -11,7 +11,7 @@ export function createSupabaseSkillContentRepository(supabase: SupabaseDataClien
     async listFlatSkills() {
       const { data, error } = await supabase
         .from('skills')
-        .select('id, name, category, proficiency, icon_name, display_order, created_at, updated_at')
+        .select('id, name, category, proficiency, icon_name, display_order, is_published, created_at, updated_at')
         .order('display_order', { ascending: true })
       if (error) databaseError('Failed to fetch skills', error)
       return data || []

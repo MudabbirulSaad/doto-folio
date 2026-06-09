@@ -1,29 +1,13 @@
 import { AnimatedSection, AnimatedCard } from "./animations"
 import { RevealCard } from "./reveal-card"
 import { SectionNebula } from "./section-nebula"
+import type { PublicProject } from "@/lib/server/application/content/public-portfolio"
 
-export function ProjectsSection() {
-  const projectPlaceholders = [
-    {
-      title: "AI-Powered Application",
-      description: "Intelligent system leveraging machine learning algorithms to solve complex problems.",
-      technologies: ["Python", "Pytorch", "Node.js"],
-      status: "In Development"
-    },
-    {
-      title: "Web Development Project",
-      description: "Full-stack web application with modern design and responsive functionality.",
-      technologies: ["JavaScript", "HTML", "CSS", "Node.js"],
-      status: "Completed"
-    },
-    {
-      title: "Data Analysis Tool",
-      description: "Comprehensive data processing and visualization tool for insights generation.",
-      technologies: ["Python", "C++", "JavaScript"],
-      status: "Planning"
-    }
-  ]
+interface ProjectsSectionProps {
+  projects?: PublicProject[]
+}
 
+export function ProjectsSection({ projects = [] }: ProjectsSectionProps) {
   return (
     <section id="projects" className="relative py-20 sm:py-24 lg:py-32 bg-muted/30 overflow-hidden z-0">
       <SectionNebula />
@@ -40,8 +24,8 @@ export function ProjectsSection() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projectPlaceholders.map((project, index) => (
-              <AnimatedCard key={index} delay={index * 0.1}>
+            {projects.map((project, index) => (
+              <AnimatedCard key={project.id} delay={index * 0.1}>
                 <RevealCard className="bg-background/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-border/50 hover:shadow-2xl hover:border-primary/30 hover:bg-background/90 transition-all duration-500">
                   <div className="flex items-center justify-between mb-4">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium border ${project.status === 'Completed' ? 'bg-primary/10 text-primary border-primary/20' :
@@ -61,9 +45,9 @@ export function ProjectsSection() {
                   </p>
 
                   <div className="flex flex-wrap gap-2">
-                    {project.technologies.map((tech, techIndex) => (
-                      <span key={techIndex} className="px-2 py-1 bg-muted/50 text-muted-foreground text-sm rounded-md">
-                        {tech}
+                    {(project.project_technologies || []).map((technology) => (
+                      <span key={technology.technology_name} className="px-2 py-1 bg-muted/50 text-muted-foreground text-sm rounded-md">
+                        {technology.technology_name}
                       </span>
                     ))}
                   </div>
@@ -72,6 +56,7 @@ export function ProjectsSection() {
             ))}
           </div>
 
+          {projects.length === 0 && (
           <div className="mt-12">
             <AnimatedSection animation="fadeUp" delay={0.4}>
               <RevealCard className="bg-background/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-border/50 hover:shadow-2xl hover:border-primary/30 hover:bg-background/90 transition-all duration-500 text-center max-w-2xl mx-auto">
@@ -86,6 +71,7 @@ export function ProjectsSection() {
               </RevealCard>
             </AnimatedSection>
           </div>
+          )}
         </div>
       </div>
     </section>
