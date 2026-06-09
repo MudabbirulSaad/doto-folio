@@ -1,7 +1,9 @@
-import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
+import type { SupabaseAuthClient, SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import type { SessionAuthPort } from '@/lib/server/application/auth/logout'
 
-export function createSupabaseSessionAuth(supabase: SupabaseDataClient): SessionAuthPort {
+type SupabaseAuthDataClient = SupabaseDataClient & { auth: SupabaseAuthClient }
+
+export function createSupabaseSessionAuth(supabase: SupabaseAuthDataClient): SessionAuthPort {
   return {
     async signOut() {
       const { error } = await supabase.auth.signOut()

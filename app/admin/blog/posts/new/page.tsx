@@ -214,12 +214,12 @@ export default function NewPostPage() {
         slug: slug.trim(),
         excerpt: excerpt.trim(),
         content: JSON.stringify(editorData),
-        category_id: categoryId && categoryId !== 'none' ? categoryId : null,
+        category_id: categoryId && categoryId !== 'none' ? categoryId : undefined,
         tag_ids: selectedTags.map(tag => tag.id),
         status: publishNow ? 'published' : status,
         featured: isFeatured,
-        meta_title: metaTitle.trim() || null,
-        meta_description: metaDescription.trim() || null,
+        meta_title: metaTitle.trim() || undefined,
+        meta_description: metaDescription.trim() || undefined,
       }
 
       const result = await saveNewAdminBlogPost(postGateway, postData)

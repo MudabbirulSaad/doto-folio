@@ -1,7 +1,11 @@
-import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
+import type { SupabaseAuthClient, SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import type { AdminCommentAuthor, AdminCommentRepository } from '@/lib/server/application/comments/admin-comments'
 
-export function createSupabaseAdminCommentRepository(supabaseAdmin: SupabaseDataClient): AdminCommentRepository {
+type SupabaseAdminDataClient = SupabaseDataClient & {
+  auth: SupabaseAuthClient & { admin: NonNullable<SupabaseAuthClient['admin']> }
+}
+
+export function createSupabaseAdminCommentRepository(supabaseAdmin: SupabaseAdminDataClient): AdminCommentRepository {
   return {
     async listCommentsWithPosts() {
       const { data: comments, error } = await supabaseAdmin
@@ -17,13 +21,14 @@ export function createSupabaseAdminCommentRepository(supabaseAdmin: SupabaseData
     },
 
     async listUsers() {
-      const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers({
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers({
         perPage: 1000
       })
 
       if (error) throw error
 
       const userMap = new Map<string, AdminCommentAuthor>()
+      const users = data?.users || []
       users.forEach((user: any) => {
         userMap.set(user.id, {
           name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Anonymous',

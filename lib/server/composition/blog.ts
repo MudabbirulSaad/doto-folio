@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseAdminDataClient } from '@/lib/server/adapters/supabase/types'
 import { getPublicBlogListing } from '@/lib/server/application/blog/public-blog-listing'
 import {
   getBlogCategoriesWithCounts,
@@ -42,7 +43,7 @@ import type {
   UpdateBlogTagData
 } from '@/lib/types/blog'
 
-function createServiceRoleSupabaseClient() {
+function createServiceRoleSupabaseClient(): SupabaseAdminDataClient {
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -52,7 +53,7 @@ function createServiceRoleSupabaseClient() {
         persistSession: false
       }
     }
-  )
+  ) as unknown as SupabaseAdminDataClient
 }
 
 export async function createPublicBlogListingUseCase() {

@@ -1,6 +1,8 @@
 import { requireEmail, requireNonEmpty, validationResult, type ValidationResult } from '@/lib/client/application/forms'
 import type { ContactFormData, ContactSubmissionResult } from '@/lib/client/domain/contact'
 
+export type { ContactFormData }
+
 export interface ContactSubmissionGateway {
   submit(formData: ContactFormData): Promise<ContactSubmissionResult>
 }

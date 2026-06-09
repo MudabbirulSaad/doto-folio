@@ -144,7 +144,7 @@ export interface CreateBlogPostData {
   meta_description?: string
   category_id?: string
   tag_ids: string[]
-  status: 'draft' | 'published'
+  status: 'draft' | 'published' | 'archived'
   featured: boolean
 }
 

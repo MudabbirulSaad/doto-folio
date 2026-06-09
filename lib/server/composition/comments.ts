@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import type { SupabaseAdminDataClient } from '@/lib/server/adapters/supabase/types'
 import { createComment, listComments } from '@/lib/server/application/comments/comments'
 import { deleteAdminComment, listAdminComments } from '@/lib/server/application/comments/admin-comments'
 import { createSupabaseCommentRepository } from '@/lib/server/adapters/supabase/comments/comments-repository'
@@ -6,11 +7,11 @@ import { createSupabaseCommenterAuthenticator } from '@/lib/server/adapters/supa
 import { createSupabaseAdminCommentRepository } from '@/lib/server/adapters/supabase/comments/admin-comments-repository'
 import type { CreateCommentInput } from '@/lib/server/application/comments/comments'
 
-function createSupabaseAdminClient() {
+function createSupabaseAdminClient(): SupabaseAdminDataClient {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  ) as unknown as SupabaseAdminDataClient
 }
 
 export function createCommentUseCases() {

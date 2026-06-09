@@ -1,4 +1,4 @@
-import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
+import type { SupabaseAuthClient, SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import type {
   AdminDashboardRepository,
   DashboardAuthor
@@ -13,11 +13,9 @@ interface DashboardAdminUser {
   }
 }
 
-interface DashboardAdminClient {
-  auth: {
-    admin: {
-      listUsers(input: { perPage: number }): Promise<{ data: { users: DashboardAdminUser[] } }>
-    }
+type DashboardAdminClient = SupabaseDataClient & {
+  auth: SupabaseAuthClient & {
+    admin: NonNullable<SupabaseAuthClient['admin']>
   }
 }
 
@@ -71,7 +69,8 @@ export function createSupabaseAdminDashboardRepository(
     },
 
     async listCommentAuthors() {
-      const { data: { users } } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
+      const { data } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
+      const users = (data?.users || []) as DashboardAdminUser[]
 
       return (users || []).map((user): DashboardAuthor => ({
         id: user.id,

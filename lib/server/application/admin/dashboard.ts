@@ -121,7 +121,7 @@ export async function getAdminDashboard(
 
   return {
     stats: {
-      totalViews: postViewCounts.reduce((total, count) => total + (count || 0), 0),
+      totalViews: postViewCounts.reduce<number>((total, count) => total + (count || 0), 0),
       totalComments: counts.totalComments,
       totalSubmissions: counts.totalSubmissions,
       totalProjects: counts.totalProjects,

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import type { SupabaseAdminDataClient } from '@/lib/server/adapters/supabase/types'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { requestMagicLink, requestOtp, verifyOtp } from '@/lib/server/application/auth/auth-flows'
 import {
@@ -11,11 +12,11 @@ import { createSupabaseAuthDelivery } from '@/lib/server/adapters/supabase/auth/
 import { createSupabaseCurrentAdminUser } from '@/lib/server/adapters/supabase/auth/current-admin-user'
 import { createSupabaseSessionAuth } from '@/lib/server/adapters/supabase/auth/session-auth'
 
-function createSupabaseAdminClient() {
+function createSupabaseAdminClient(): SupabaseAdminDataClient {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  ) as unknown as SupabaseAdminDataClient
 }
 
 function createAuthDependencies() {

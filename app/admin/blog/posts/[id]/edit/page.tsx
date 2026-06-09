@@ -73,7 +73,8 @@ const NotionEditor = dynamic(() => import('@/components/admin/blog/notion-editor
   ssr: false,
   loading: () => <div className="min-h-[400px] flex items-center justify-center text-muted-foreground">Loading editor...</div>
 })
-import type { BlogCategory, BlogTag, BlogPostWithRelations } from '@/lib/types/blog'
+import type { AdminBlogPostWithRelations } from '@/lib/client/domain/admin-blog'
+import type { BlogCategory, BlogTag } from '@/lib/types/blog'
 import type { OutputData } from '@editorjs/editorjs'
 
 interface EditPostPageProps {
@@ -86,7 +87,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editorVersion, setEditorVersion] = useState(0)
-  const [post, setPost] = useState<BlogPostWithRelations | null>(null)
+  const [post, setPost] = useState<AdminBlogPostWithRelations | null>(null)
   const [categories, setCategories] = useState<BlogCategory[]>([])
   const [tags, setTags] = useState<BlogTag[]>([])
   const [selectedTags, setSelectedTags] = useState<BlogTag[]>([])
@@ -132,7 +133,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         setExcerpt(postData.excerpt || '')
         setCategoryId(postData.category_id || '')
         setStatus(postData.status)
-        setIsFeatured(postData.is_featured)
+        setIsFeatured(postData.featured)
         setMetaTitle(postData.meta_title || '')
         setMetaDescription(postData.meta_description || '')
 
@@ -264,12 +265,12 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         slug: slug.trim(),
         excerpt: excerpt.trim(),
         content: JSON.stringify(editorData),
-        category_id: categoryId || null,
+        category_id: categoryId || undefined,
         tag_ids: selectedTags.map(tag => tag.id),
         status: publishNow ? 'published' : status,
-        is_featured: isFeatured,
-        meta_title: metaTitle.trim() || null,
-        meta_description: metaDescription.trim() || null,
+        featured: isFeatured,
+        meta_title: metaTitle.trim() || undefined,
+        meta_description: metaDescription.trim() || undefined,
       }
 
       const result = await updateAdminBlogPost(postGateway, resolvedParams.id, {

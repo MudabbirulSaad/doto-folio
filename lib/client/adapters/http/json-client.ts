@@ -20,10 +20,10 @@ export function createFetchJsonClient(fetcher: typeof fetch = fetch): JsonClient
   const jsonHeaders = { 'Content-Type': 'application/json' }
 
   return {
-    get<T>(url, init) {
+    get<T>(url: string, init?: RequestInit) {
       return fetcher(url, init).then(readJson<T>)
     },
-    post<T>(url, body, init) {
+    post<T>(url: string, body: unknown, init?: RequestInit) {
       return fetcher(url, {
         ...init,
         method: 'POST',
@@ -31,7 +31,7 @@ export function createFetchJsonClient(fetcher: typeof fetch = fetch): JsonClient
         body: JSON.stringify(body)
       }).then(readJson<T>)
     },
-    put<T>(url, body, init) {
+    put<T>(url: string, body: unknown, init?: RequestInit) {
       return fetcher(url, {
         ...init,
         method: 'PUT',
@@ -39,7 +39,7 @@ export function createFetchJsonClient(fetcher: typeof fetch = fetch): JsonClient
         body: JSON.stringify(body)
       }).then(readJson<T>)
     },
-    delete<T>(url, init) {
+    delete<T>(url: string, init?: RequestInit) {
       return fetcher(url, { ...init, method: 'DELETE' }).then(readJson<T>)
     }
   }

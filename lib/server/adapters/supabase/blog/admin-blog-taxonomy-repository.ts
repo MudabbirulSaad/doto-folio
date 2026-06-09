@@ -1,4 +1,5 @@
 import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
+import type { BlogCategory, BlogTag } from '@/lib/types/blog'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type { AdminBlogTaxonomyRepository } from '@/lib/server/application/blog/admin-blog-taxonomy'
 
@@ -31,7 +32,7 @@ export function createSupabaseAdminBlogTaxonomyRepository(supabase: SupabaseData
         .from('blog_categories')
         .select('*')
         .eq('id', id)
-        .single()
+        .single<BlogTag>()
       if (error) return null
       return data
     },
@@ -41,7 +42,7 @@ export function createSupabaseAdminBlogTaxonomyRepository(supabase: SupabaseData
         .from('blog_tags')
         .select('*')
         .eq('id', id)
-        .single()
+        .single<BlogCategory>()
       if (error) return null
       return data
     },
@@ -53,7 +54,7 @@ export function createSupabaseAdminBlogTaxonomyRepository(supabase: SupabaseData
         .or(`name.eq.${name},slug.eq.${slug}`)
 
       if (excludeId) query = query.neq('id', excludeId)
-      const { data } = await query.single()
+      const { data } = await query.single<{ id: string; name: string; slug: string }>()
       return data || null
     },
 
@@ -64,7 +65,7 @@ export function createSupabaseAdminBlogTaxonomyRepository(supabase: SupabaseData
         .or(`name.eq.${name},slug.eq.${slug}`)
 
       if (excludeId) query = query.neq('id', excludeId)
-      const { data } = await query.single()
+      const { data } = await query.single<{ id: string; name: string; slug: string }>()
       return data || null
     },
 
@@ -73,8 +74,9 @@ export function createSupabaseAdminBlogTaxonomyRepository(supabase: SupabaseData
         .from('blog_categories')
         .insert(data)
         .select()
-        .single()
+        .single<BlogCategory>()
       if (error) databaseError('Failed to create category', error)
+      if (!category) databaseError('Failed to create category', { message: 'No category returned' })
       return category
     },
 
@@ -84,8 +86,9 @@ export function createSupabaseAdminBlogTaxonomyRepository(supabase: SupabaseData
         .update(data)
         .eq('id', id)
         .select()
-        .single()
+        .single<BlogCategory>()
       if (error) databaseError('Failed to update category', error)
+      if (!category) databaseError('Failed to update category', { message: 'No category returned' })
       return category
     },
 
@@ -110,8 +113,9 @@ export function createSupabaseAdminBlogTaxonomyRepository(supabase: SupabaseData
         .from('blog_tags')
         .insert(data)
         .select()
-        .single()
+        .single<BlogTag>()
       if (error) databaseError('Failed to create tag', error)
+      if (!tag) databaseError('Failed to create tag', { message: 'No tag returned' })
       return tag
     },
 
@@ -121,8 +125,9 @@ export function createSupabaseAdminBlogTaxonomyRepository(supabase: SupabaseData
         .update(data)
         .eq('id', id)
         .select()
-        .single()
+        .single<BlogTag>()
       if (error) databaseError('Failed to update tag', error)
+      if (!tag) databaseError('Failed to update tag', { message: 'No tag returned' })
       return tag
     },
 
