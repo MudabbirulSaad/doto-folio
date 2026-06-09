@@ -39,7 +39,7 @@ function gateway(): AdminAgentGateway {
       createdAt: '2026-06-09T00:00:00.000Z',
       updatedAt: '2026-06-09T00:00:00.000Z'
     }]),
-    createInvitation: vi.fn(async (_input) => ({
+    createInvitation: vi.fn(async () => ({
       code: 'ABCD1234',
       expiresAt: '2026-06-09T00:15:00.000Z',
       invitation: {

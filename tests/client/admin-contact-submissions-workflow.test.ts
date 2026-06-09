@@ -5,6 +5,7 @@ import {
   updateAdminContactSubmissionReadStatus,
   type AdminContactSubmissionGateway
 } from '@/lib/client/application/admin/contact-submissions'
+import type { AdminContactSubmission } from '@/lib/client/domain/contact-submissions'
 
 const filters = {
   search: 'ada',
@@ -12,17 +13,30 @@ const filters = {
   timeFilter: 'last7days'
 }
 
+const submissionFixture: AdminContactSubmission = {
+  id: 'submission-1',
+  name: 'Ada',
+  email: 'ada@example.com',
+  subject: 'Project',
+  message: 'Hello there',
+  is_read: false,
+  read_at: null,
+  read_by: null,
+  created_at: '2026-06-09T00:00:00.000Z',
+  updated_at: '2026-06-09T00:00:00.000Z'
+}
+
 describe('admin contact submissions workflow', () => {
   it('loads submissions through the gateway with filters', async () => {
     const gateway: AdminContactSubmissionGateway = {
-      list: vi.fn(async () => [{ id: 'submission-1', name: 'Ada' } as any]),
+      list: vi.fn(async () => [submissionFixture]),
       updateReadStatus: vi.fn(),
       export: vi.fn()
     }
 
     await expect(loadAdminContactSubmissions(gateway, filters)).resolves.toEqual({
       success: true,
-      submissions: [{ id: 'submission-1', name: 'Ada' }]
+      submissions: [submissionFixture]
     })
     expect(gateway.list).toHaveBeenCalledWith(filters)
   })

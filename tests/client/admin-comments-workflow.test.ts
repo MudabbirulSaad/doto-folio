@@ -5,18 +5,33 @@ import {
   replyToAdminComment,
   type AdminCommentGateway
 } from '@/lib/client/application/admin/comments'
+import type { AdminComment } from '@/lib/client/domain/admin-comments'
+
+const commentFixture: AdminComment = {
+  id: 'comment-1',
+  content: 'Hello',
+  created_at: '2026-06-09T00:00:00.000Z',
+  author_name: 'Ada',
+  author_email: 'ada@example.com',
+  post_id: 'post-1',
+  parent_id: null,
+  post: {
+    title: 'Post',
+    slug: 'post'
+  }
+}
 
 describe('admin comments workflow', () => {
   it('loads comments through the gateway', async () => {
     const gateway: AdminCommentGateway = {
-      list: vi.fn(async () => [{ id: 'comment-1', content: 'Hello' } as any]),
+      list: vi.fn(async () => [commentFixture]),
       delete: vi.fn(),
       reply: vi.fn()
     }
 
     await expect(loadAdminComments(gateway)).resolves.toEqual({
       success: true,
-      comments: [{ id: 'comment-1', content: 'Hello' }]
+      comments: [commentFixture]
     })
   })
 
@@ -38,7 +53,7 @@ describe('admin comments workflow', () => {
     const gateway: AdminCommentGateway = {
       list: vi.fn(),
       delete: vi.fn(),
-      reply: vi.fn(async () => ({ id: 'reply-1' } as any))
+      reply: vi.fn(async () => ({ id: 'reply-1' }))
     }
     const comment = { id: 'comment-1', post_id: 'post-1' }
     const session = { accessToken: 'token', userId: 'user-1' }
