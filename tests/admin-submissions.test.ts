@@ -4,21 +4,46 @@ import {
   exportContactSubmissions,
   listContactSubmissions,
   updateContactSubmissionReadStatus,
-  type ContactSubmissionAdminRepository
+  type ContactSubmissionAdminRepository,
+  type ContactSubmissionReadStatusUpdate
 } from '../lib/server/application/contact/admin-submissions'
 import { ApplicationError } from '../lib/server/domain/errors'
 
-function repository(): ContactSubmissionAdminRepository & { updated: unknown | null } {
+interface CapturedReadStatusUpdate {
+  submissionIds: string[]
+  data: ContactSubmissionReadStatusUpdate
+}
+
+function repository(): ContactSubmissionAdminRepository & { updated: CapturedReadStatusUpdate | null } {
   return {
     updated: null,
     async listSubmissions(filters) {
       assert.equal(filters.search, 'ada')
       assert.equal(filters.readStatus, 'unread')
-      return [{ id: 'submission-1', name: 'Ada' }]
+      return [{
+        id: 'submission-1',
+        name: 'Ada',
+        email: 'ada@example.com',
+        subject: 'Project',
+        message: 'Hello',
+        created_at: '2026-06-08T00:00:00.000Z',
+        updated_at: '2026-06-08T00:00:00.000Z',
+        is_read: false,
+        read_at: null,
+        read_by: null
+      }]
     },
     async updateReadStatus(submissionIds, data) {
       this.updated = { submissionIds, data }
-      return [{ id: submissionIds[0], ...data }]
+      return [{
+        id: submissionIds[0],
+        name: 'Ada',
+        email: 'ada@example.com',
+        subject: 'Project',
+        message: 'Hello',
+        created_at: '2026-06-08T00:00:00.000Z',
+        ...data
+      }]
     }
   }
 }
@@ -30,7 +55,8 @@ test('listContactSubmissions delegates normalized filters to the repository', as
     timeFilter: 'all'
   })
 
-  assert.deepEqual(submissions, [{ id: 'submission-1', name: 'Ada' }])
+  assert.equal(submissions[0].id, 'submission-1')
+  assert.equal(submissions[0].name, 'Ada')
 })
 
 test('updateContactSubmissionReadStatus validates ids and sets read metadata', async () => {
@@ -49,7 +75,7 @@ test('updateContactSubmissionReadStatus validates ids and sets read metadata', a
   })
 
   assert.equal(result.updated, 1)
-  assert.deepEqual((repo.updated as any).data, {
+  assert.deepEqual(repo.updated?.data, {
     is_read: true,
     updated_at: '2026-06-08T00:00:00.000Z',
     read_at: '2026-06-08T00:00:00.000Z',

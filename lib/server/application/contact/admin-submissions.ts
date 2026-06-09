@@ -8,14 +8,33 @@ export interface ContactSubmissionFilters {
   endDate?: string | null
 }
 
+export interface ContactSubmissionAdminRecord {
+  id: string
+  name: string
+  email: string
+  subject: string
+  message: string
+  created_at: string
+  updated_at: string
+  is_read: boolean
+  read_at: string | null
+  read_by: string | null
+  [key: string]: unknown
+}
+
+export interface ContactSubmissionReadStatusUpdate {
+  is_read: boolean
+  updated_at: string
+  read_at?: string | null
+  read_by?: string | null
+}
+
 export interface ContactSubmissionAdminRepository {
-  listSubmissions(filters: ContactSubmissionFilters & { now: Date }): Promise<any[]>
-  updateReadStatus(submissionIds: string[], data: {
-    is_read: boolean
-    updated_at: string
-    read_at?: string | null
-    read_by?: string | null
-  }): Promise<any[]>
+  listSubmissions(filters: ContactSubmissionFilters & { now: Date }): Promise<ContactSubmissionAdminRecord[]>
+  updateReadStatus(
+    submissionIds: string[],
+    data: ContactSubmissionReadStatusUpdate
+  ): Promise<ContactSubmissionAdminRecord[]>
 }
 
 export interface ContactSubmissionExportRecord {
@@ -60,12 +79,7 @@ export async function updateContactSubmissionReadStatus(
   }
 
   const now = (options.now || (() => new Date()))().toISOString()
-  const updateData: {
-    is_read: boolean
-    updated_at: string
-    read_at?: string | null
-    read_by?: string | null
-  } = {
+  const updateData: ContactSubmissionReadStatusUpdate = {
     is_read: input.isRead,
     updated_at: now
   }
