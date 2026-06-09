@@ -6,8 +6,19 @@ export interface AdminCommentAuthor {
   avatar?: string
 }
 
+export interface AdminCommentRecord {
+  id: string
+  user_id: string
+  content: string
+  post: {
+    title: string
+    slug: string
+  } | null
+  [key: string]: unknown
+}
+
 export interface AdminCommentRepository {
-  listCommentsWithPosts(): Promise<any[]>
+  listCommentsWithPosts(): Promise<AdminCommentRecord[]>
   listUsers(): Promise<Map<string, AdminCommentAuthor>>
   deleteComment(id: string): Promise<void>
 }

@@ -8,7 +8,11 @@ import {
 import { ApplicationError } from '../lib/server/domain/errors'
 import { signOutCurrentSession, type SessionAuthPort } from '../lib/server/application/auth/logout'
 
-function repository(): AdminCommentRepository {
+interface TestAdminCommentRepository extends AdminCommentRepository {
+  deletedId: string | null
+}
+
+function repository(): TestAdminCommentRepository {
   return {
     deletedId: null,
     async listCommentsWithPosts() {
@@ -47,7 +51,7 @@ test('deleteAdminComment validates and deletes a comment through the repository'
   const result = await deleteAdminComment(repo, 'comment-1')
 
   assert.deepEqual(result, { success: true })
-  assert.equal((repo as any).deletedId, 'comment-1')
+  assert.equal(repo.deletedId, 'comment-1')
 })
 
 test('signOutCurrentSession delegates to the auth port', async () => {
