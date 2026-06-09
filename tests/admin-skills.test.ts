@@ -4,11 +4,13 @@ import {
   createFlatSkill,
   createSkillInCategory,
   updateFlatSkill,
+  type CategorySkillContent,
+  type FlatSkillContent,
   type SkillContentRepository
 } from '../lib/server/application/content/skills'
 import { ApplicationError } from '../lib/server/domain/errors'
 
-function repository(): SkillContentRepository & { skills: Record<string, any>; categories: Set<string> } {
+function repository(): SkillContentRepository & { skills: Record<string, FlatSkillContent | CategorySkillContent>; categories: Set<string> } {
   return {
     skills: {},
     categories: new Set(['cat-1']),

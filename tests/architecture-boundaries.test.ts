@@ -54,6 +54,12 @@ test('project content application contract does not use explicit any', () => {
   assert.equal(source.includes('any'), false)
 })
 
+test('skill content application contract does not use explicit any', () => {
+  const source = readFileSync(join(process.cwd(), 'lib/server/application/content/skills.ts'), 'utf8')
+
+  assert.equal(source.includes('any'), false)
+})
+
 test('blog app pages do not fetch this app through internal HTTP APIs', () => {
   const blogFiles = tsFiles(join(process.cwd(), 'app/blog'))
   const offenders = blogFiles.filter(file => {
