@@ -160,6 +160,15 @@ Recommended fix:
 
 ### Admin API authentication conventions are split
 
+Status: Partially closed in public blog composition slice.
+
+Evidence:
+
+- `tests/architecture-boundaries.test.ts`
+- `npm test`
+- `npm run test:client`
+- `npm run build`
+
 `proxy.ts` says admin API authentication is handled by `withAuth` in each route, but admin API routes currently use a mixture of:
 
 - `withAuth`
@@ -174,6 +183,11 @@ Examples:
 - `app/api/admin/content/contact/route.ts` has unauthenticated `GET` and authenticated `POST`.
 
 This may be intentional for public content reads, but the `/api/admin/*` namespace and proxy comment make the contract unclear.
+
+Closed:
+
+- `app/blog/category/[slug]/page.tsx` and `app/blog/tag/[slug]/page.tsx` no longer fetch this app's own `/api/blog/*` endpoints over HTTP from server components. They now use `createServiceRolePublicBlogTaxonomyUseCases()` directly.
+- `tests/architecture-boundaries.test.ts` now guards against `app/blog` pages depending on `NEXT_PUBLIC_SITE_URL` plus `/api/blog/*` internal HTTP calls.
 
 Recommended fix:
 

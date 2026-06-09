@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { BlogGrid } from '@/components/blog/blog-grid'
 import { BlogPagination } from '@/components/blog/blog-pagination'
 import { BlogSkeleton } from '@/components/blog/blog-skeleton'
-import type { BlogCategoryResponse } from '@/lib/types/blog'
+import { createServiceRolePublicBlogTaxonomyUseCases } from '@/lib/server/composition/blog'
 
 interface CategoryPageProps {
   params: Promise<{
@@ -28,20 +28,11 @@ interface CategoryPageProps {
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   try {
     const resolvedParams = await params
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/blog/categories/${resolvedParams.slug}`, {
-      next: { revalidate: 300 }
+    const categoryData = await createServiceRolePublicBlogTaxonomyUseCases().postsByCategory(resolvedParams.slug, {
+      page: 1,
+      limit: 1
     })
-
-    if (!response.ok) {
-      return {
-        title: 'Category Not Found | SAAD Portfolio',
-        description: 'The requested blog category could not be found.'
-      }
-    }
-
-    const data = await response.json()
-    const categoryData: BlogCategoryResponse = data.data
-    const category = categoryData.category
+    const { category } = categoryData
 
     return {
       title: `${category.name} Articles | SAAD Portfolio`,
@@ -76,21 +67,10 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     const resolvedSearchParams = await searchParams
     const page = parseInt(resolvedSearchParams.page || '1')
     const limit = Math.min(parseInt(resolvedSearchParams.limit || '12'), 50)
-
-    const queryParams = new URLSearchParams()
-    queryParams.set('page', page.toString())
-    queryParams.set('limit', limit.toString())
-
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/blog/categories/${resolvedParams.slug}?${queryParams.toString()}`, {
-      next: { revalidate: 60 }
+    const categoryData = await createServiceRolePublicBlogTaxonomyUseCases().postsByCategory(resolvedParams.slug, {
+      page,
+      limit
     })
-
-    if (!response.ok) {
-      notFound()
-    }
-
-    const data = await response.json()
-    const categoryData: BlogCategoryResponse = data.data
     const { category, posts, total, hasMore } = categoryData
 
     return (

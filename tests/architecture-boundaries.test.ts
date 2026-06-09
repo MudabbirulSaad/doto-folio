@@ -34,3 +34,13 @@ test('app routes do not import legacy data pass-throughs', () => {
 
   assert.deepEqual(offenders.map(file => file.replace(process.cwd(), '')), [])
 })
+
+test('blog app pages do not fetch this app through internal HTTP APIs', () => {
+  const blogFiles = tsFiles(join(process.cwd(), 'app/blog'))
+  const offenders = blogFiles.filter(file => {
+    const source = readFileSync(file, 'utf8')
+    return source.includes('NEXT_PUBLIC_SITE_URL') && source.includes('/api/blog/')
+  })
+
+  assert.deepEqual(offenders.map(file => file.replace(process.cwd(), '')), [])
+})

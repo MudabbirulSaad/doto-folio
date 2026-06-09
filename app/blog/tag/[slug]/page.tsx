@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { BlogGrid } from '@/components/blog/blog-grid'
 import { BlogPagination } from '@/components/blog/blog-pagination'
 import { BlogSkeleton } from '@/components/blog/blog-skeleton'
-import type { BlogTagResponse } from '@/lib/types/blog'
+import { createServiceRolePublicBlogTaxonomyUseCases } from '@/lib/server/composition/blog'
 
 interface TagPageProps {
   params: Promise<{
@@ -24,20 +24,11 @@ interface TagPageProps {
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
   try {
     const resolvedParams = await params
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/blog/tags/${resolvedParams.slug}`, {
-      next: { revalidate: 300 }
+    const tagData = await createServiceRolePublicBlogTaxonomyUseCases().postsByTag(resolvedParams.slug, {
+      page: 1,
+      limit: 1
     })
-
-    if (!response.ok) {
-      return {
-        title: 'Tag Not Found | SAAD Portfolio',
-        description: 'The requested blog tag could not be found.'
-      }
-    }
-
-    const data = await response.json()
-    const tagData: BlogTagResponse = data.data
-    const tag = tagData.tag
+    const { tag } = tagData
 
     return {
       title: `#${tag.name} Articles | SAAD Portfolio`,
@@ -72,21 +63,10 @@ export default async function TagPage({ params, searchParams }: TagPageProps) {
     const resolvedSearchParams = await searchParams
     const page = parseInt(resolvedSearchParams.page || '1')
     const limit = Math.min(parseInt(resolvedSearchParams.limit || '12'), 50)
-
-    const queryParams = new URLSearchParams()
-    queryParams.set('page', page.toString())
-    queryParams.set('limit', limit.toString())
-
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/blog/tags/${resolvedParams.slug}?${queryParams.toString()}`, {
-      next: { revalidate: 60 }
+    const tagData = await createServiceRolePublicBlogTaxonomyUseCases().postsByTag(resolvedParams.slug, {
+      page,
+      limit
     })
-
-    if (!response.ok) {
-      notFound()
-    }
-
-    const data = await response.json()
-    const tagData: BlogTagResponse = data.data
     const { tag, posts, total, hasMore } = tagData
 
     return (
