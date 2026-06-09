@@ -49,7 +49,8 @@ BEGIN
     FROM blog_post_tags 
     WHERE blog_post_tags.tag_id = blog_tags.id
   ),
-  updated_at = NOW();
+  updated_at = NOW()
+  WHERE id IS NOT NULL;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -64,7 +65,8 @@ BEGIN
     WHERE blog_posts.category_id = blog_categories.id
     AND status = 'published'
   ),
-  updated_at = NOW();
+  updated_at = NOW()
+  WHERE id IS NOT NULL;
 END;
 $$ LANGUAGE plpgsql;
 

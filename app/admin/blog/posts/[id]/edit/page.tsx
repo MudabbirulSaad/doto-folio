@@ -410,18 +410,20 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                 <Eye className="h-4 w-4 mr-1" />
                 Preview
               </Button>
-              <Button
-                onClick={() => handleSave(true)}
-                disabled={saving}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {saving ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4 mr-1" />
-                )}
-                Publish
-              </Button>
+              {status !== 'published' && (
+                <Button
+                  onClick={() => handleSave(true)}
+                  disabled={saving}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4 mr-1" />
+                  )}
+                  Publish
+                </Button>
+              )}
             </div>
           </div>
         </div>
