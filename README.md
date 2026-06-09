@@ -69,6 +69,26 @@ A modern, responsive portfolio website for **Mudabbirul Saad** - AI Student & De
 - **SEO**: Comprehensive search engine optimization with structured data
 - **Performance**: Optimized loading, preloading, and Core Web Vitals
 
+## Public Repository Safety
+
+This project is safe to share publicly only when secrets stay outside Git.
+Use `.env.example` as the local setup template, then create a private `.env`
+file with real values. The `.gitignore` intentionally ignores `.env*`, `.vercel`,
+and private key files.
+
+Before making the repository public, rotate any credentials that have existed in
+local development or deployment environments:
+
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `GMAIL_PASS`
+- `RECAPTCHA_SECRET_KEY`
+- any production credentials stored in `.env` or the deployment provider
+
+Public browser variables such as `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_RECAPTCHA_SITE_KEY`, and
+`NEXT_PUBLIC_GA_MEASUREMENT_ID` can be visible to users, but they should still be
+scoped and configured safely in their providers.
+
 ## 📦 Dependencies
 
 ### Core Dependencies
