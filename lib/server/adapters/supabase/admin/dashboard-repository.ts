@@ -4,6 +4,23 @@ import type {
   DashboardAuthor
 } from '@/lib/server/application/admin/dashboard'
 
+interface DashboardAdminUser {
+  id: string
+  email?: string
+  user_metadata?: {
+    full_name?: string
+    avatar_url?: string
+  }
+}
+
+interface DashboardAdminClient {
+  auth: {
+    admin: {
+      listUsers(input: { perPage: number }): Promise<{ data: { users: DashboardAdminUser[] } }>
+    }
+  }
+}
+
 async function countTable(supabase: SupabaseDataClient, table: string) {
   const { count } = await supabase.from(table).select('*', { count: 'exact', head: true })
   return count || 0
@@ -11,7 +28,7 @@ async function countTable(supabase: SupabaseDataClient, table: string) {
 
 export function createSupabaseAdminDashboardRepository(
   supabase: SupabaseDataClient,
-  adminClient: any
+  adminClient: DashboardAdminClient
 ): AdminDashboardRepository {
   return {
     async getCounts() {
@@ -56,7 +73,7 @@ export function createSupabaseAdminDashboardRepository(
     async listCommentAuthors() {
       const { data: { users } } = await adminClient.auth.admin.listUsers({ perPage: 1000 })
 
-      return (users || []).map((user: any): DashboardAuthor => ({
+      return (users || []).map((user): DashboardAuthor => ({
         id: user.id,
         name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Anonymous',
         email: user.email,

@@ -17,3 +17,13 @@ test('server application modules do not import legacy services', () => {
 
   assert.deepEqual(offenders.map(file => file.replace(process.cwd(), '')), [])
 })
+
+test('supabase adapters do not declare local any-based clients', () => {
+  const adapterFiles = tsFiles(join(process.cwd(), 'lib/server/adapters/supabase'))
+  const offenders = adapterFiles.filter(file => {
+    const source = readFileSync(file, 'utf8')
+    return source.includes('from(table: string): any') || source.includes('adminClient: any')
+  })
+
+  assert.deepEqual(offenders.map(file => file.replace(process.cwd(), '')), [])
+})

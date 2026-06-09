@@ -1,11 +1,8 @@
 import type { PublicBlogListingRepository } from '@/lib/server/application/blog/public-blog-listing'
-
-interface SupabaseClientLike {
-  from(table: string): any
-}
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 
 export function createSupabasePublicBlogListingRepository(
-  supabase: SupabaseClientLike
+  supabase: SupabaseDataClient
 ): PublicBlogListingRepository {
   return {
     async getPublishedPosts() {
