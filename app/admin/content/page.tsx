@@ -15,18 +15,12 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-
-interface ContentStats {
-    projectsCount: number
-    skillsCount: number
-    contactMethodsCount: number
-    socialLinksCount: number
-    isContentPublished: boolean
-    commentsCount: number
-}
+import { loadAdminContentOverview } from '@/lib/client/application/admin/content-overview'
+import { createAdminContentOverviewApiGateway } from '@/lib/client/adapters/http/admin-content-overview-api'
+import type { AdminContentOverviewStats } from '@/lib/client/domain/admin-overview'
 
 export default function ContentManagementPage() {
-    const [stats, setStats] = useState<ContentStats>({
+    const [stats, setStats] = useState<AdminContentOverviewStats>({
         projectsCount: 0,
         skillsCount: 0,
         contactMethodsCount: 0,
@@ -37,20 +31,28 @@ export default function ContentManagementPage() {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const response = await fetch('/api/admin/content/overview')
-                const payload = await response.json()
+        let mounted = true
 
-                if (response.ok && payload.success) {
-                    setStats(payload.data)
-                }
-            } finally {
-                setLoading(false)
+        const loadStats = async () => {
+            const overviewGateway = createAdminContentOverviewApiGateway()
+            const result = await loadAdminContentOverview(overviewGateway)
+            if (!mounted) return
+
+            if (result.success) {
+                setStats(result.stats)
             }
+            setLoading(false)
         }
 
-        fetchStats()
+        loadStats().catch(() => {
+            if (mounted) {
+                setLoading(false)
+            }
+        })
+
+        return () => {
+            mounted = false
+        }
     }, [])
 
     const contentSections = [
