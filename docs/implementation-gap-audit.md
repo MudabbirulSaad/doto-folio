@@ -132,27 +132,29 @@ Recommended fix:
 
 ### API route thinness is inconsistent
 
-Status: Partially closed in backend editor tools slice.
+Status: Closed across backend editor tools and submission export slices.
 
 Evidence:
 
 - `tests/blog-editor-tools.test.ts`
+- `tests/admin-submissions.test.ts`
 - `npm test`
 - `npm run test:client`
 - `npm run build`
 
 Routes that still own application logic:
 
-- `app/api/admin/submissions/export/route.ts` owns CSV/JSON/HTML export formatting directly.
+- None currently listed in this section.
 
 Closed:
 
 - `app/api/admin/blog/fetch-url/route.ts` now delegates URL validation and metadata extraction to `lib/server/application/blog/editor-tools.ts`, with the route injecting the HTTP fetcher.
 - `app/api/admin/blog/convert-markdown/route.ts` now delegates markdown-to-EditorJS conversion to `lib/server/application/blog/editor-tools.ts`.
+- `app/api/admin/submissions/export/route.ts` now delegates CSV/JSON/HTML formatting to `exportContactSubmissions` in `lib/server/application/contact/admin-submissions.ts`.
 
 Recommended fix:
 
-1. Move submission export formatting into a server application exporter with tests.
+1. Keep new admin API utilities on this route-thin pattern.
 
 ## Medium Priority Gaps
 

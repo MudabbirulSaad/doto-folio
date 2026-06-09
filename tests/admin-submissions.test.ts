@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  exportContactSubmissions,
   listContactSubmissions,
   updateContactSubmissionReadStatus,
   type ContactSubmissionAdminRepository
@@ -54,4 +55,54 @@ test('updateContactSubmissionReadStatus validates ids and sets read metadata', a
     read_at: '2026-06-08T00:00:00.000Z',
     read_by: 'admin@example.com'
   })
+})
+
+test('exportContactSubmissions formats CSV, JSON, and escaped HTML downloads', () => {
+  const submissions = [{
+    id: 'submission-1',
+    name: 'Ada "Lovelace"',
+    email: 'ada@example.com',
+    subject: 'Hello <team>',
+    message: 'Line one\nLine <two>',
+    created_at: '2026-06-08T00:00:00.000Z',
+    updated_at: '2026-06-08T01:00:00.000Z',
+    is_read: true,
+    read_at: '2026-06-08T02:00:00.000Z',
+    read_by: 'admin@example.com'
+  }]
+
+  const csv = exportContactSubmissions(submissions, 'csv', {
+    now: () => new Date('2026-06-09T00:00:00.000Z')
+  })
+
+  assert.equal(csv.contentType, 'text/csv')
+  assert.equal(csv.filename, 'contact-submissions-2026-06-09.csv')
+  assert.match(csv.body, /"Ada ""Lovelace"""/)
+  assert.match(csv.body, /"Line one\nLine <two>"/)
+
+  const json = exportContactSubmissions(submissions, 'json', {
+    now: () => new Date('2026-06-09T00:00:00.000Z')
+  })
+
+  assert.equal(json.contentType, 'application/json')
+  assert.equal(json.filename, 'contact-submissions-2026-06-09.json')
+  assert.deepEqual(JSON.parse(json.body), submissions)
+
+  const html = exportContactSubmissions(submissions, 'html', {
+    now: () => new Date('2026-06-09T00:00:00.000Z')
+  })
+
+  assert.equal(html.contentType, 'text/html')
+  assert.equal(html.filename, 'contact-submissions-2026-06-09.html')
+  assert.match(html.body, /Ada &quot;Lovelace&quot;/)
+  assert.match(html.body, /Hello &lt;team&gt;/)
+  assert.match(html.body, /Line &lt;two&gt;/)
+  assert.doesNotMatch(html.body, /Line <two>/)
+})
+
+test('exportContactSubmissions rejects unsupported formats', () => {
+  assert.throws(
+    () => exportContactSubmissions([], 'pdf'),
+    (error: unknown) => error instanceof ApplicationError && error.code === 'VALIDATION_ERROR'
+  )
 })
