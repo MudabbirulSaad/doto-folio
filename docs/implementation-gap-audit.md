@@ -155,7 +155,8 @@ Commands:
 
 Current verification results:
 
-- Server tests: 76 passing.
-- Client tests: 44 passing.
-- Production build: passing.
-- `next.config.ts` remains the only unstaged local change and was not included in the refactor commits.
+- `npm test`: 132 passing.
+- `npm run test:client`: 52 passing.
+- `npm run build`: passing.
+- Raw `fetch` scan: only the intentional integration points listed above.
+- Legacy import scan: only boundary-test strings and the intentional email infrastructure adapters listed above.
