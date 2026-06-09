@@ -20,3 +20,19 @@ export async function GET(request: NextRequest) {
     return createErrorResponse(error.message || 'Failed to fetch comments', 500)
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await requireAdminAuth()
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id') || ''
+    const result = await createAdminCommentUseCases().delete(id)
+    return createSuccessResponse(result)
+  } catch (error: any) {
+    console.error('Admin Comment Delete API Error:', error)
+    if (error.message?.includes('Unauthorized') || error.message?.includes('Admin access required')) {
+      return createUnauthorizedResponse(error.message)
+    }
+    return createErrorResponse(error.message || 'Failed to delete comment', 500)
+  }
+}

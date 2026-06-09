@@ -1,13 +1,16 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  deleteAdminComment,
   listAdminComments,
   type AdminCommentRepository
 } from '../lib/server/application/comments/admin-comments'
+import { ApplicationError } from '../lib/server/domain/errors'
 import { signOutCurrentSession, type SessionAuthPort } from '../lib/server/application/auth/logout'
 
 function repository(): AdminCommentRepository {
   return {
+    deletedId: null,
     async listCommentsWithPosts() {
       return [
         { id: 'comment-1', user_id: 'user-1', content: 'Hello', post: { title: 'Post', slug: 'post' } },
@@ -18,6 +21,9 @@ function repository(): AdminCommentRepository {
       return new Map([
         ['user-1', { name: 'Ada', email: 'ada@example.com', avatar: 'avatar.png' }]
       ])
+    },
+    async deleteComment(id: string) {
+      this.deletedId = id
     }
   }
 }
@@ -29,6 +35,19 @@ test('listAdminComments enriches authors and falls back for missing users', asyn
   assert.equal(comments[0].author_email, 'ada@example.com')
   assert.equal(comments[1].author_name, 'Anonymous')
   assert.equal(comments[1].author_email, 'No Email')
+})
+
+test('deleteAdminComment validates and deletes a comment through the repository', async () => {
+  await assert.rejects(
+    () => deleteAdminComment(repository(), ''),
+    (error: unknown) => error instanceof ApplicationError && error.code === 'VALIDATION_ERROR'
+  )
+
+  const repo = repository()
+  const result = await deleteAdminComment(repo, 'comment-1')
+
+  assert.deepEqual(result, { success: true })
+  assert.equal((repo as any).deletedId, 'comment-1')
 })
 
 test('signOutCurrentSession delegates to the auth port', async () => {

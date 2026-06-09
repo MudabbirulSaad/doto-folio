@@ -85,7 +85,6 @@ Several client pages/components still own raw `fetch`, response parsing, validat
 - `app/admin/blog/tags/page.tsx`
 - `app/admin/blog/posts/new/page.tsx`
 - `app/admin/blog/posts/[id]/edit/page.tsx`
-- `app/admin/comments/page.tsx`
 - `app/admin/content/page.tsx`
 - `app/admin/content/hero-about/page.tsx`
 - `app/admin/content/skills/page.tsx`
@@ -107,6 +106,8 @@ Closed:
 
 - `components/admin/contact-submissions-table.tsx` no longer owns contact submission list/update/export `fetch` calls. It delegates to `lib/client/application/admin/contact-submissions.ts` and `lib/client/adapters/http/admin-contact-submissions-api.ts`.
 - `tests/client/admin-contact-submissions-workflow.test.ts` covers load, read-status update, export, and gateway failure behavior.
+- `app/admin/comments/page.tsx` no longer owns admin comments list/delete/reply `fetch` calls. It delegates to `lib/client/application/admin/comments.ts` and `lib/client/adapters/http/admin-comments-api.ts`.
+- `tests/client/admin-comments-workflow.test.ts` covers load, delete, reply validation, session requirement, and reply gateway behavior.
 
 ### Server application layer still imports legacy services
 
@@ -268,7 +269,8 @@ Some `components/ui/*` files may be intentionally kept as design-system inventor
 
 - Backend/public/admin APIs: present.
 - Public comment components: partially refactored through client application/adapters.
-- Admin comments page: still raw fetch/workflow-heavy.
+- Admin comments page: list/delete/reply fetches moved behind client workflow/gateway.
+- Admin delete now has a real authenticated `DELETE /api/admin/comments?id=...` path backed by `deleteAdminComment`.
 
 ### Contact submissions
 

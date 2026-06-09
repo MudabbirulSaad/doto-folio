@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -18,28 +18,22 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
 import { getCurrentSession } from '@/lib/auth/admin'
-
-interface Comment {
-    id: string
-    content: string
-    created_at: string
-    author_name: string
-    author_email: string
-    post_id: string
-    parent_id: string | null
-    post: {
-        title: string
-        slug: string
-    }
-}
+import { createAdminCommentApiGateway } from '@/lib/client/adapters/http/admin-comments-api'
+import {
+    deleteAdminComment,
+    loadAdminComments,
+    replyToAdminComment
+} from '@/lib/client/application/admin/comments'
+import type { AdminComment } from '@/lib/client/domain/admin-comments'
 
 export default function CommentsManagementPage() {
-    const [comments, setComments] = useState<Comment[]>([])
+    const [comments, setComments] = useState<AdminComment[]>([])
     const [loading, setLoading] = useState(true)
     const [replyingTo, setReplyingTo] = useState<string | null>(null)
     const [replyContent, setReplyContent] = useState('')
     const [actionLoading, setActionLoading] = useState<string | null>(null)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+    const gateway = useMemo(() => createAdminCommentApiGateway(), [])
 
     useEffect(() => {
         fetchComments()
@@ -47,15 +41,12 @@ export default function CommentsManagementPage() {
 
     const fetchComments = async () => {
         try {
-            const response = await fetch('/api/admin/comments')
-            const result = await response.json()
-
-            if (!response.ok) throw new Error(result.error || 'Failed to fetch comments')
-
-            setComments(result.data || [])
-        } catch (error) {
-            console.error('Error fetching comments:', error)
-            setMessage({ type: 'error', text: 'Failed to load comments' })
+            const result = await loadAdminComments(gateway)
+            if (result.success) {
+                setComments(result.comments)
+            } else {
+                setMessage({ type: 'error', text: result.error })
+            }
         } finally {
             setLoading(false)
         }
@@ -66,15 +57,13 @@ export default function CommentsManagementPage() {
 
         setActionLoading(commentId)
         try {
-            const response = await fetch(`/api/comments?id=${commentId}`, {
-                method: 'DELETE',
-            })
+            const result = await deleteAdminComment(gateway, commentId)
 
-            if (response.ok) {
+            if (result.success) {
                 setMessage({ type: 'success', text: 'Comment deleted successfully' })
-                setComments(comments.filter(c => c.id !== commentId))
+                setComments(comments.filter(c => c.id !== result.id))
             } else {
-                setMessage({ type: 'error', text: 'Failed to delete comment' })
+                setMessage({ type: 'error', text: result.error })
             }
         } catch (error) {
             console.error('Error deleting comment:', error)
@@ -84,40 +73,24 @@ export default function CommentsManagementPage() {
         }
     }
 
-    const handleReply = async (comment: Comment) => {
+    const handleReply = async (comment: AdminComment) => {
         if (!replyContent.trim()) return
 
         setActionLoading(comment.id)
         try {
             const session = await getCurrentSession()
+            const result = await replyToAdminComment(gateway, comment, replyContent, session ? {
+                accessToken: session.access_token,
+                userId: session.user.id
+            } : null)
 
-            if (!session) {
-                setMessage({ type: 'error', text: 'Please log in to reply' })
-                return
-            }
-
-            const response = await fetch('/api/comments', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`
-                },
-                body: JSON.stringify({
-                    postId: comment.post_id,
-                    parentId: comment.id,
-                    content: replyContent,
-                    userId: session.user.id
-                }),
-            })
-
-            if (response.ok) {
+            if (result.success) {
                 setMessage({ type: 'success', text: 'Reply posted successfully' })
                 setReplyContent('')
                 setReplyingTo(null)
                 fetchComments()
             } else {
-                const error = await response.json()
-                setMessage({ type: 'error', text: error.message || 'Failed to post reply' })
+                setMessage({ type: 'error', text: result.error })
             }
         } catch (error) {
             console.error('Error posting reply:', error)

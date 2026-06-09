@@ -33,6 +33,15 @@ export function createSupabaseAdminCommentRepository(supabaseAdmin: SupabaseData
       })
 
       return userMap
+    },
+
+    async deleteComment(id: string) {
+      const { error } = await supabaseAdmin
+        .from('blog_comments')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
     }
   }
 }

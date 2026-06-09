@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { createComment, listComments } from '@/lib/server/application/comments/comments'
-import { listAdminComments } from '@/lib/server/application/comments/admin-comments'
+import { deleteAdminComment, listAdminComments } from '@/lib/server/application/comments/admin-comments'
 import { createSupabaseCommentRepository } from '@/lib/server/adapters/supabase/comments/comments-repository'
 import { createSupabaseCommenterAuthenticator } from '@/lib/server/adapters/supabase/comments/commenter-authenticator'
 import { createSupabaseAdminCommentRepository } from '@/lib/server/adapters/supabase/comments/admin-comments-repository'
@@ -29,6 +29,7 @@ export function createAdminCommentUseCases() {
   const repository = createSupabaseAdminCommentRepository(supabaseAdmin)
 
   return {
-    list: () => listAdminComments(repository)
+    list: () => listAdminComments(repository),
+    delete: (id: string) => deleteAdminComment(repository, id)
   }
 }
