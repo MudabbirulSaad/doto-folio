@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 // import { useRouter } from 'next/navigation' // Removed unused import
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,42 +15,17 @@ import {
   CheckCircle
 } from 'lucide-react'
 import Link from 'next/link'
-
-interface SiteContent {
-  id: string
-  hero_title: string
-  hero_subtitle: string | null
-  hero_cta_text: string
-  hero_cta_link: string
-  about_title: string
-  about_intro: string
-  about_description: string
-  about_personal: string
-  education_title: string
-  education_degree: string
-  education_field: string
-  education_institution: string
-  approach_title: string
-  approach_description: string
-  contact_title: string
-  contact_description: string
-  contact_opportunities_title: string
-  contact_opportunities_description: string
-  footer_brand_name: string
-  footer_brand_description: string
-  footer_location: string
-  footer_university: string
-  footer_field: string
-  footer_copyright: string
-  is_published: boolean
-}
+import { createAdminSiteContentApiGateway } from '@/lib/client/adapters/http/admin-site-content-api'
+import { loadAdminSiteContent, saveAdminSiteContent } from '@/lib/client/application/admin/site-content'
+import type { AdminSiteContent } from '@/lib/client/domain/admin-content'
 
 export default function HeroAboutContentPage() {
   // const router = useRouter() // Removed unused variable
-  const [content, setContent] = useState<SiteContent | null>(null)
+  const [content, setContent] = useState<AdminSiteContent | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const gateway = useMemo(() => createAdminSiteContentApiGateway(), [])
 
   // Fetch current content
   useEffect(() => {
@@ -59,12 +34,11 @@ export default function HeroAboutContentPage() {
 
   const fetchContent = async () => {
     try {
-      const response = await fetch('/api/admin/content/site')
-      if (response.ok) {
-        const result = await response.json()
-        setContent(result.data)
+      const result = await loadAdminSiteContent(gateway)
+      if (result.success) {
+        setContent(result.content)
       } else {
-        setMessage({ type: 'error', text: 'Failed to load content' })
+        setMessage({ type: 'error', text: result.error })
       }
     } catch (error) {
       console.error('Error fetching content:', error)
@@ -81,21 +55,13 @@ export default function HeroAboutContentPage() {
     setMessage(null)
 
     try {
-      const response = await fetch('/api/admin/content/site', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(content),
-      })
+      const result = await saveAdminSiteContent(gateway, content)
 
-      const result = await response.json()
-
-      if (response.ok) {
+      if (result.success) {
         setMessage({ type: 'success', text: 'Content saved successfully!' })
-        setContent(result.data)
+        setContent(result.content)
       } else {
-        setMessage({ type: 'error', text: result.error || 'Failed to save content' })
+        setMessage({ type: 'error', text: result.error })
       }
     } catch (error) {
       console.error('Error saving content:', error)
@@ -105,7 +71,7 @@ export default function HeroAboutContentPage() {
     }
   }
 
-  const updateContent = (field: keyof SiteContent, value: string | boolean) => {
+  const updateContent = (field: keyof AdminSiteContent, value: string | boolean) => {
     if (!content) return
     setContent({ ...content, [field]: value })
   }

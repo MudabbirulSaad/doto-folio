@@ -86,7 +86,6 @@ Several client pages/components still own raw `fetch`, response parsing, validat
 - `app/admin/blog/posts/new/page.tsx`
 - `app/admin/blog/posts/[id]/edit/page.tsx`
 - `app/admin/content/page.tsx`
-- `app/admin/content/hero-about/page.tsx`
 - `app/admin/content/skills/page.tsx`
 - `components/hero-section.tsx`
 - `components/seo/dynamic-seo.tsx`
@@ -108,6 +107,8 @@ Closed:
 - `tests/client/admin-contact-submissions-workflow.test.ts` covers load, read-status update, export, and gateway failure behavior.
 - `app/admin/comments/page.tsx` no longer owns admin comments list/delete/reply `fetch` calls. It delegates to `lib/client/application/admin/comments.ts` and `lib/client/adapters/http/admin-comments-api.ts`.
 - `tests/client/admin-comments-workflow.test.ts` covers load, delete, reply validation, session requirement, and reply gateway behavior.
+- `app/admin/content/hero-about/page.tsx` no longer owns site-content load/save `fetch` calls. It delegates to `lib/client/application/admin/site-content.ts` and `lib/client/adapters/http/admin-site-content-api.ts`.
+- `tests/client/admin-site-content-workflow.test.ts` covers site-content load/save and gateway failure behavior.
 
 ### Server application layer still imports legacy services
 
@@ -234,8 +235,8 @@ Some `components/ui/*` files may be intentionally kept as design-system inventor
 
 - Backend: present.
 - Admin edit page: present for hero/about fields.
-- Public frontend: only hero and dynamic SEO use it.
-- Gap: about, contact intro/opportunity copy, footer fields are stranded.
+- Public frontend: hero, dynamic SEO, about, contact intro/opportunity copy, and footer fields are wired through public portfolio content.
+- Admin hero/about page: load/save fetches moved behind client workflow/gateway.
 
 ### Projects
 
