@@ -14,11 +14,6 @@ export function PerformanceSEO() {
       fontLink.crossOrigin = 'anonymous'
       document.head.appendChild(fontLink)
 
-      // Preload critical API endpoints
-      const apiLink = document.createElement('link')
-      apiLink.rel = 'prefetch'
-      apiLink.href = '/api/admin/content/site'
-      document.head.appendChild(apiLink)
     }
 
     // Add performance hints
