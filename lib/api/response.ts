@@ -41,6 +41,7 @@ export const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',
   FORBIDDEN: 'FORBIDDEN',
   NOT_FOUND: 'NOT_FOUND',
+  METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
   RATE_LIMITED: 'RATE_LIMITED',
   REQUEST_TOO_LARGE: 'REQUEST_TOO_LARGE',
   INVALID_JSON: 'INVALID_JSON',
@@ -75,6 +76,8 @@ function statusToErrorCode(status: number): ApiErrorCode {
       return 'FORBIDDEN'
     case 404:
       return 'NOT_FOUND'
+    case 405:
+      return 'METHOD_NOT_ALLOWED'
     case 429:
       return 'RATE_LIMITED'
     default:
@@ -263,6 +266,20 @@ export function createNotFoundResponse(
     'NOT_FOUND',
     message,
     404,
+    undefined,
+    undefined,
+    options
+  )
+}
+
+export function createMethodNotAllowedResponse(
+  message = 'Method not allowed',
+  options: ResponseOptions = {}
+): NextResponse {
+  return createErrorResponse(
+    'METHOD_NOT_ALLOWED',
+    message,
+    405,
     undefined,
     undefined,
     options

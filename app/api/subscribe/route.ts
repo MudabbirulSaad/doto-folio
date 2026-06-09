@@ -1,10 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { parseAndValidateJSON } from '@/lib/api/validation'
 import { rateLimit } from '@/lib/api/rate-limit'
 import {
   createRateLimitResponse,
-  createValidationErrorResponse
+  createValidationErrorResponse,
+  createSuccessResponse,
+  createErrorResponse,
+  createInternalErrorResponse,
+  createMethodNotAllowedResponse
 } from '@/lib/api/response'
 import { createNewsletterSubscriptionUseCase } from '@/lib/server/composition/subscriptions'
 import { isApplicationError } from '@/lib/server/domain/errors'
@@ -36,39 +40,31 @@ export async function POST(request: NextRequest) {
     const result = await createNewsletterSubscriptionUseCase()({ name, email })
 
     if (result.status === 'reactivated') {
-      return NextResponse.json({
-        success: true,
+      return createSuccessResponse({
         message: 'Successfully reactivated your subscription!'
-      })
+      }, 'Successfully reactivated your subscription!')
     }
 
-    return NextResponse.json({
-      success: true,
+    return createSuccessResponse({
       message: 'Successfully subscribed to newsletter!',
       subscriber: {
         id: result.subscriber.id,
         email: result.subscriber.email,
         name: result.subscriber.name
       }
-    })
+    }, 'Successfully subscribed to newsletter!')
 
   } catch (error) {
     if (isApplicationError(error)) {
       const status = error.code === 'FORBIDDEN' ? 409 : error.code === 'VALIDATION_ERROR' ? 400 : 500
-      return NextResponse.json({ error: error.message }, { status })
+      return createErrorResponse(error.code, error.message, status, error.details)
     }
 
     console.error('Subscription API error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return createInternalErrorResponse('Internal server error')
   }
 }
 
 export async function GET() {
-  return NextResponse.json(
-    { error: 'Method not allowed' },
-    { status: 405 }
-  )
+  return createMethodNotAllowedResponse()
 }

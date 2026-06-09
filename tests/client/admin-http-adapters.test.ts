@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createAdminProjectApiGateway } from '@/lib/client/adapters/http/admin-projects-api'
 import { createAdminSkillApiGateway } from '@/lib/client/adapters/http/admin-skills-api'
 import { createAdminContactSubmissionApiGateway } from '@/lib/client/adapters/http/admin-contact-submissions-api'
+import { createNewsletterSubscriptionApiGateway } from '@/lib/client/adapters/http/subscription-api'
 import type { JsonClient } from '@/lib/client/adapters/http/json-client'
 import type { AdminProject, AdminSkill } from '@/lib/client/domain/admin-content'
 import type { AdminContactSubmission } from '@/lib/client/domain/contact-submissions'
@@ -79,6 +80,18 @@ describe('admin HTTP adapters', () => {
     await expect(gateway.updateReadStatus(['submission-1'], true, 'Admin')).resolves.toEqual({
       updated: 1,
       submissions: [{ id: 'submission-1' }]
+    })
+  })
+
+  it('reads newsletter subscription messages from the shared success envelope', async () => {
+    const gateway = createNewsletterSubscriptionApiGateway(jsonClient({
+      success: true,
+      data: { message: 'Successfully subscribed to newsletter!' }
+    }))
+
+    await expect(gateway.subscribe({ name: 'Ada', email: 'ada@example.com' })).resolves.toEqual({
+      success: true,
+      message: 'Successfully subscribed to newsletter!'
     })
   })
 })

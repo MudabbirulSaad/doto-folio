@@ -6,8 +6,11 @@ import type {
 } from '@/lib/client/domain/subscription'
 
 interface SubscriptionApiResponse {
+  success: true
+  data: {
+    message?: string
+  }
   message?: string
-  error?: string
 }
 
 export function createNewsletterSubscriptionApiGateway(
@@ -19,7 +22,7 @@ export function createNewsletterSubscriptionApiGateway(
 
       return {
         success: true,
-        message: response.message
+        message: response.data.message || response.message
       }
     }
   }

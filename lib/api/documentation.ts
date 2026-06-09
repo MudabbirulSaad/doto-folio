@@ -81,6 +81,12 @@ const messageEnvelope = (message: string): Schema => ({
   type: 'object',
   properties: {
     success: { type: 'boolean', example: true },
+    data: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: message }
+      }
+    },
     message: { type: 'string', example: message }
   }
 })

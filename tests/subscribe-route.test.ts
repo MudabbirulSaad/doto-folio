@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { NextRequest } from 'next/server'
-import { POST } from '../app/api/subscribe/route'
+import { GET, POST } from '../app/api/subscribe/route'
 
 function subscribeRequest(body: string, headers: Record<string, string> = {}) {
   return new NextRequest('http://localhost:3000/api/subscribe', {
@@ -52,4 +52,14 @@ test('POST /api/subscribe rate limits repeated attempts', async () => {
   const limited = await POST(subscribeRequest('{', headers))
   assert.equal(limited.status, 429)
   assert.equal((await limited.json()).error.code, 'RATE_LIMITED')
+})
+
+test('GET /api/subscribe returns the shared method-not-allowed envelope', async () => {
+  const response = await GET()
+  const payload = await response.json()
+
+  assert.equal(response.status, 405)
+  assert.equal(payload.success, false)
+  assert.equal(payload.error.code, 'METHOD_NOT_ALLOWED')
+  assert.equal(payload.error.message, 'Method not allowed')
 })
