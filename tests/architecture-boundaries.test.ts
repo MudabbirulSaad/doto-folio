@@ -11,6 +11,23 @@ function tsFiles(directory: string): string[] {
   })
 }
 
+function hasExplicitAny(source: string): boolean {
+  const withoutLineComments = source
+    .split(/\r?\n/)
+    .map(line => line.replace(/\/\/.*$/, ''))
+    .join('\n')
+
+  return /(?:[:<]\s*any\b|\bas\s+any\b)/.test(withoutLineComments)
+}
+
+test('explicit any detector catches type debt without matching prose', () => {
+  assert.equal(hasExplicitAny('const value = source as any'), true)
+  assert.equal(hasExplicitAny('function read(input: any) { return input }'), true)
+  assert.equal(hasExplicitAny('type Items = Array<any>'), true)
+  assert.equal(hasExplicitAny('const company = "Acme"'), false)
+  assert.equal(hasExplicitAny('// any future implementation can use typed ports'), false)
+})
+
 test('server application modules do not import legacy services', () => {
   const applicationFiles = tsFiles(join(process.cwd(), 'lib/server/application'))
   const offenders = applicationFiles.filter(file => readFileSync(file, 'utf8').includes('@/lib/services'))
@@ -22,7 +39,7 @@ test('supabase adapters do not declare local any-based clients', () => {
   const adapterFiles = tsFiles(join(process.cwd(), 'lib/server/adapters/supabase'))
   const offenders = adapterFiles.filter(file => {
     const source = readFileSync(file, 'utf8')
-    return source.includes('from(table: string): any') || source.includes('adminClient: any')
+    return source.includes('from(table: string): any') || hasExplicitAny(source.match(/adminClient[^\n]*/)?.[0] ?? '')
   })
 
   assert.deepEqual(offenders.map(file => file.replace(process.cwd(), '')), [])
@@ -37,7 +54,7 @@ test('app routes do not import legacy data pass-throughs', () => {
 
 test('api routes do not catch errors as explicit any', () => {
   const apiFiles = tsFiles(join(process.cwd(), 'app/api'))
-  const offenders = apiFiles.filter(file => readFileSync(file, 'utf8').includes('catch (error: any)'))
+  const offenders = apiFiles.filter(file => /catch\s*\([^)]*:\s*any\b/.test(readFileSync(file, 'utf8')))
 
   assert.deepEqual(offenders.map(file => file.replace(process.cwd(), '')), [])
 })
@@ -45,121 +62,121 @@ test('api routes do not catch errors as explicit any', () => {
 test('contact content application contract does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/application/content/contact-content.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('project content application contract does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/application/content/projects.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('skill content application contract does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/application/content/skills.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('site content application contract does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/application/content/site-content.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('content composition use case wiring does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/composition/content.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('agent access tests avoid loose casts', () => {
   const source = readFileSync(join(process.cwd(), 'tests/agent-access.test.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('admin dashboard application contract does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/application/admin/dashboard.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('current admin user application contract does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/application/auth/current-admin-user.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('contact submissions application contract does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/application/contact/admin-submissions.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('contact submissions tests avoid loose casts', () => {
   const source = readFileSync(join(process.cwd(), 'tests/admin-submissions.test.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('admin comments application contract does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/application/comments/admin-comments.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('admin comments tests avoid loose casts', () => {
   const source = readFileSync(join(process.cwd(), 'tests/admin-comments-auth.test.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('admin blog taxonomy application contract does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/application/blog/admin-blog-taxonomy.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('admin blog taxonomy tests avoid loose casts', () => {
   const source = readFileSync(join(process.cwd(), 'tests/admin-blog-taxonomy.test.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('admin blog posts application contract does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/application/blog/admin-blog-posts.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('blog post workflow application contract does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/application/blog/blog-post-workflow.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('blog post workflow tests avoid loose casts', () => {
   const source = readFileSync(join(process.cwd(), 'tests/blog-post-workflow.test.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('shared Supabase adapter types do not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/server/adapters/supabase/types.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('markdown converter does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'lib/markdown-converter.ts'), 'utf8')
 
-  assert.equal(source.includes('any'), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('content setup script does not use explicit any', () => {
   const source = readFileSync(join(process.cwd(), 'scripts/setup-content-management.ts'), 'utf8')
 
-  assert.equal(/:\s*any\b|as\s+any\b/.test(source), false)
+  assert.equal(hasExplicitAny(source), false)
 })
 
 test('blog app pages do not fetch this app through internal HTTP APIs', () => {
