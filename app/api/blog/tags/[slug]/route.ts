@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server'
-import { withPublicApi } from '@/lib/api/middleware'
 import { createSuccessResponse, createNotFoundErrorResponse, createInternalErrorResponse } from '@/lib/api/response'
 import { createPublicBlogTaxonomyUseCases } from '@/lib/server/composition/blog'
 import { isApplicationError } from '@/lib/server/domain/errors'

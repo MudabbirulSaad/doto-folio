@@ -8,7 +8,6 @@ import {
     createRateLimitResponse,
     createInternalErrorResponse,
     createUnauthorizedResponse,
-    createErrorResponse,
     logApiRequest,
     logApiError
 } from '@/lib/api/response'
