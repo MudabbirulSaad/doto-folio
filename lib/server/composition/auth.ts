@@ -1,7 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { requestMagicLink, requestOtp, verifyOtp } from '@/lib/server/application/auth/auth-flows'
-import { getCurrentAdminUser } from '@/lib/server/application/auth/current-admin-user'
+import {
+  getCurrentAdminUser,
+  resolveAdminEmailAllowlist
+} from '@/lib/server/application/auth/current-admin-user'
 import { signOutCurrentSession } from '@/lib/server/application/auth/logout'
 import { createRecaptchaHumanVerifier } from '@/lib/server/adapters/http/recaptcha-human-verifier'
 import { createSupabaseAuthDelivery } from '@/lib/server/adapters/supabase/auth/auth-delivery'
@@ -48,5 +51,10 @@ export async function createLogoutUseCase() {
 
 export async function createCurrentAdminUserUseCase() {
   const auth = createSupabaseCurrentAdminUser(await createServerClient())
-  return () => getCurrentAdminUser(auth)
+  const allowedAdminEmails = resolveAdminEmailAllowlist({
+    ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL
+  })
+
+  return () => getCurrentAdminUser(auth, allowedAdminEmails)
 }
