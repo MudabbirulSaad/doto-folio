@@ -13,12 +13,13 @@ import * as dotenv from 'dotenv'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import type { SupabaseAdminDataClient } from '../lib/server/adapters/supabase/types.ts'
 import { createAdminClient } from '../lib/supabase/admin.ts'
 
 // Load environment variables
 dotenv.config({ path: '.env.local' })
 
-async function insertInitialData(supabase: any) {
+async function insertInitialData(supabase: SupabaseAdminDataClient) {
   try {
     // Insert site content
     const { error: siteError } = await supabase
@@ -141,7 +142,7 @@ async function setupContentManagement() {
         } else {
           console.log(`${table}: ${count} records`)
         }
-      } catch (error) {
+      } catch {
         console.log(`${table}: Table doesn't exist yet`)
         tablesExist = false
       }
