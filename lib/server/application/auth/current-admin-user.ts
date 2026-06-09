@@ -1,6 +1,13 @@
+export interface CurrentAdminUser {
+  id: string
+  email?: string
+  role?: string
+  [key: string]: unknown
+}
+
 export interface CurrentAdminUserPort {
   getUser(): Promise<{
-    user: any | null
+    user: CurrentAdminUser | null
     error?: unknown
   }>
 }

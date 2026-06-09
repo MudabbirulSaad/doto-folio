@@ -84,6 +84,12 @@ test('admin dashboard application contract does not use explicit any', () => {
   assert.equal(source.includes('any'), false)
 })
 
+test('current admin user application contract does not use explicit any', () => {
+  const source = readFileSync(join(process.cwd(), 'lib/server/application/auth/current-admin-user.ts'), 'utf8')
+
+  assert.equal(source.includes('any'), false)
+})
+
 test('blog app pages do not fetch this app through internal HTTP APIs', () => {
   const blogFiles = tsFiles(join(process.cwd(), 'app/blog'))
   const offenders = blogFiles.filter(file => {
