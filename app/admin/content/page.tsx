@@ -7,7 +7,6 @@ import {
     FolderOpen,
     Layers,
     Mail,
-    Settings,
     Edit,
     Eye,
     Plus,
@@ -109,17 +108,6 @@ export default function ContentManagementPage() {
             borderColor: 'border-orange-500/20',
             status: `${stats.contactMethodsCount + stats.socialLinksCount} Links`,
             statusColor: 'text-orange-400 bg-orange-500/10 border-orange-500/20'
-        },
-        {
-            title: 'Site Settings',
-            description: 'Manage navigation, footer content, and general site settings',
-            href: '/admin/content/settings',
-            icon: Settings,
-            color: 'text-gray-400',
-            bgColor: 'bg-gray-500/10',
-            borderColor: 'border-gray-500/20',
-            status: 'Configure',
-            statusColor: 'text-gray-400 bg-gray-500/10 border-gray-500/20'
         }
     ]
 

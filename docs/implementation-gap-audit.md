@@ -55,6 +55,16 @@ Recommended fix:
 
 ### Content dashboard links to missing admin pages
 
+Status: Closed in admin content route slice.
+
+Evidence:
+
+- `tests/admin-content-routes.test.ts`
+- `tests/client/admin-content-navigation.test.tsx`
+- `npm test`
+- `npm run test:client`
+- `npm run build`
+
 `app/admin/content/page.tsx` links to pages that do not exist:
 
 - `/admin/content/contact` -> missing `app/admin/content/contact/page.tsx`
