@@ -15,7 +15,7 @@ import { TableOfContents } from '@/components/blog/table-of-contents'
 import { CommentSection } from '@/components/blog/comments/comment-section'
 import { createBlogPostDetailUseCase } from '@/lib/server/composition/blog'
 
-import type { BlogPostWithRelations, BlogTag } from '@/lib/types/blog'
+import type { BlogPost, BlogPostWithRelations, BlogTag } from '@/lib/types/blog'
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -89,9 +89,20 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const resolvedParams = await params
-  const service = await createBlogPostDetailServiceForPage()
-  const { post, relatedPosts } = await service.readDetail(resolvedParams.slug, 3)
+  let post: BlogPostWithRelations | null
+  let relatedPosts: BlogPost[]
+  let service: Awaited<ReturnType<typeof createBlogPostDetailServiceForPage>>
+
+  try {
+    const resolvedParams = await params
+    service = await createBlogPostDetailServiceForPage()
+    const detail = await service.readDetail(resolvedParams.slug, 3)
+    post = detail.post
+    relatedPosts = detail.relatedPosts
+  } catch (error) {
+    console.error('Error loading blog post:', error)
+    notFound()
+  }
 
   if (!post) {
     notFound()
@@ -101,69 +112,62 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     console.error('Failed to track blog post view:', error)
   })
 
-  try {
-    const allowComments = (post as BlogPostWithRelations & { allow_comments?: boolean }).allow_comments ?? true
-    return (
-      <div className="min-h-screen bg-background relative overflow-hidden z-0">
-        <SectionNebula />
-        <article className="container mx-auto px-4 py-8 relative z-10">
-          <div className="max-w-7xl mx-auto">
-            {/* Post Header */}
-            <Suspense fallback={<BlogSkeleton variant="post" />}>
-              <BlogPostHeader post={post} />
-            </Suspense>
+  const allowComments = (post as BlogPostWithRelations & { allow_comments?: boolean }).allow_comments ?? true
+  return (
+    <div className="min-h-screen bg-background relative overflow-hidden z-0">
+      <SectionNebula />
+      <article className="container mx-auto px-4 py-8 relative z-10">
+        <div className="max-w-7xl mx-auto">
+          {/* Post Header */}
+          <Suspense fallback={<BlogSkeleton variant="post" />}>
+            <BlogPostHeader post={post} />
+          </Suspense>
 
-            {/* Mobile TOC - Show only on mobile */}
-            <div className="lg:hidden my-8">
-              <Suspense fallback={<div className="h-64 bg-muted rounded-lg animate-pulse" />}>
-                <TableOfContents content={post.content} />
+          {/* Mobile TOC - Show only on mobile */}
+          <div className="lg:hidden my-8">
+            <Suspense fallback={<div className="h-64 bg-muted rounded-lg animate-pulse" />}>
+              <TableOfContents content={post.content} />
+            </Suspense>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-12">
+            {/* Main Content */}
+            <div className="lg:col-span-8 xl:col-span-9">
+              <Suspense fallback={<BlogSkeleton variant="post" />}>
+                <BlogPostContent post={post} />
+              </Suspense>
+
+              {/* Comments Section */}
+              <CommentSection
+                postId={post.id}
+                allowComments={allowComments}
+              />
+            </div>
+
+            {/* Desktop Sidebar - Show only on desktop */}
+            <div className="hidden lg:block lg:col-span-4 xl:col-span-3">
+              <Suspense fallback={<div className="space-y-4">
+                <div className="h-64 bg-muted rounded-lg animate-pulse" />
+                <div className="h-32 bg-muted rounded-lg animate-pulse" />
+              </div>}>
+                <BlogPostSidebar post={post} />
               </Suspense>
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-12">
-              {/* Main Content */}
-              <div className="lg:col-span-8 xl:col-span-9">
-                <Suspense fallback={<BlogSkeleton variant="post" />}>
-                  <BlogPostContent post={post} />
-                </Suspense>
-
-                {/* Comments Section */}
-                <CommentSection
-                  postId={post.id}
-                  allowComments={allowComments}
-                />
-              </div>
-
-              {/* Desktop Sidebar - Show only on desktop */}
-              <div className="hidden lg:block lg:col-span-4 xl:col-span-3">
-                <Suspense fallback={<div className="space-y-4">
-                  <div className="h-64 bg-muted rounded-lg animate-pulse" />
-                  <div className="h-32 bg-muted rounded-lg animate-pulse" />
-                </div>}>
-                  <BlogPostSidebar post={post} />
-                </Suspense>
-              </div>
-            </div>
-
-
-
-            {/* Related Posts */}
-            {relatedPosts && relatedPosts.length > 0 && (
-              <div className="mt-20 border-t border-white/10 pt-12">
-                <h3 className="text-2xl font-bold mb-8">Related Articles</h3>
-                <Suspense fallback={<BlogSkeleton variant="grid" count={3} />}>
-                  <BlogRelatedPosts posts={relatedPosts} />
-                </Suspense>
-              </div>
-            )}
           </div>
-        </article>
-      </div>
-    )
-  } catch (error) {
-    console.error('Error loading blog post:', error)
-    notFound()
-  }
+
+          {/* Related Posts */}
+          {relatedPosts && relatedPosts.length > 0 && (
+            <div className="mt-20 border-t border-white/10 pt-12">
+              <h3 className="text-2xl font-bold mb-8">Related Articles</h3>
+              <Suspense fallback={<BlogSkeleton variant="grid" count={3} />}>
+                <BlogRelatedPosts posts={relatedPosts} />
+              </Suspense>
+            </div>
+          )}
+        </div>
+      </article>
+    </div>
+  )
 }
 
 // Removed generateStaticParams to ensure dynamic rendering

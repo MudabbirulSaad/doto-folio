@@ -1,6 +1,4 @@
 import { SectionNebula } from '@/components/section-nebula'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardContent } from '@/components/ui/card'
 
 export default function Loading() {
     return (

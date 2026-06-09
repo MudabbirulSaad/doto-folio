@@ -9,7 +9,7 @@ import { BlogFilters } from '@/components/blog/blog-filters'
 import { BlogGrid } from '@/components/blog/blog-grid'
 import { BlogPagination } from '@/components/blog/blog-pagination'
 import { createServiceRolePublicBlogListingUseCase, createServiceRolePublicBlogTaxonomyUseCases } from '@/lib/server/composition/blog'
-import type { BlogSearchParams } from '@/lib/types/blog'
+import type { BlogCategory, BlogPost, BlogSearchParams, BlogTag } from '@/lib/types/blog'
 
 export const metadata: Metadata = {
   title: 'Blog & Insights | SAAD Portfolio',
@@ -122,58 +122,57 @@ export default function BlogPage({ searchParams }: BlogPageProps) {
 
 // Hero Section Component
 async function BlogHeroSection() {
-  try {
-    const featuredPosts = await getFeaturedPosts(3)
+  let featuredPosts: BlogPost[] = []
 
-    return (
-      <BlogHero
-        title="Blog & Insights"
-        description="Exploring AI, technology trends, and development insights through detailed articles and tutorials."
-        featuredPosts={featuredPosts}
-      />
-    )
+  try {
+    featuredPosts = await getFeaturedPosts(3)
   } catch (error) {
     console.error('Error fetching featured posts:', error)
-    return (
-      <BlogHero
-        title="Blog & Insights"
-        description="Exploring AI, technology trends, and development insights through detailed articles and tutorials."
-        featuredPosts={[]}
-      />
-    )
   }
+
+  return (
+    <BlogHero
+      title="Blog & Insights"
+      description="Exploring AI, technology trends, and development insights through detailed articles and tutorials."
+      featuredPosts={featuredPosts}
+    />
+  )
 }
 
 // Filters Section Component
 async function BlogFiltersSection({ searchParams }: { searchParams: BlogPageProps['searchParams'] }) {
   const resolvedSearchParams = await searchParams
-  try {
-    const categories = await getCategories()
-    const tags = await getPopularTags(10)
+  let categories: BlogCategory[] = []
+  let tags: BlogTag[] = []
 
-    return (
-      <BlogFilters
-        categories={categories}
-        tags={tags}
-        selectedCategory={resolvedSearchParams.category}
-        selectedTag={resolvedSearchParams.tag}
-      />
-    )
+  try {
+    categories = await getCategories()
+    tags = await getPopularTags(10)
   } catch (error) {
     console.error('Error fetching filters data:', error)
-    return (
-      <BlogFilters
-        categories={[]}
-        tags={[]}
-        selectedCategory={undefined}
-        selectedTag={undefined}
-      />
-    )
   }
+
+  return (
+    <BlogFilters
+      categories={categories}
+      tags={tags}
+      selectedCategory={resolvedSearchParams.category}
+      selectedTag={resolvedSearchParams.tag}
+    />
+  )
 }
 
 // Blog Grid Section Component
 async function BlogGridSection({ searchParams }: { searchParams: BlogPageProps['searchParams'] }) {
+  let posts: BlogPost[] = []
+  let pagination = {
+    page: 1,
+    limit: 12,
+    total: 0,
+    totalPages: 0
+  }
+  let loadError = false
+
   try {
     const resolvedSearchParams = await searchParams
 
@@ -189,23 +188,14 @@ async function BlogGridSection({ searchParams }: { searchParams: BlogPageProps['
     }
 
     const result = await getBlogPosts(options)
-    const { posts, pagination } = result
-
-    return (
-      <div className="space-y-8">
-        <BlogGrid posts={posts} />
-
-        {pagination.total > pagination.limit && (
-          <BlogPagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            hasMore={pagination.page < pagination.totalPages}
-          />
-        )}
-      </div>
-    )
+    posts = result.posts
+    pagination = result.pagination
   } catch (error) {
     console.error('Error fetching blog posts:', error)
+    loadError = true
+  }
+
+  if (loadError) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">
@@ -214,4 +204,18 @@ async function BlogGridSection({ searchParams }: { searchParams: BlogPageProps['
       </div>
     )
   }
+
+  return (
+    <div className="space-y-8">
+      <BlogGrid posts={posts} />
+
+      {pagination.total > pagination.limit && (
+        <BlogPagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          hasMore={pagination.page < pagination.totalPages}
+        />
+      )}
+    </div>
+  )
 }

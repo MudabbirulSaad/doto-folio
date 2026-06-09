@@ -51,3 +51,13 @@ test('blog app pages do not fetch this app through internal HTTP APIs', () => {
 
   assert.deepEqual(offenders.map(file => file.replace(process.cwd(), '')), [])
 })
+
+test('blog app pages render JSX outside try blocks', () => {
+  const blogFiles = tsFiles(join(process.cwd(), 'app/blog'))
+  const offenders = blogFiles.filter(file => {
+    const source = readFileSync(file, 'utf8')
+    return /try\s*{(?:(?!}\s*catch)[\s\S])*return\s*\(/.test(source)
+  })
+
+  assert.deepEqual(offenders.map(file => file.replace(process.cwd(), '')), [])
+})
