@@ -1,10 +1,13 @@
-import { NextResponse } from 'next/server'
+import { createInternalErrorResponse, createSuccessResponse } from '@/lib/api/response'
 import { createLogoutUseCase } from '@/lib/server/composition/auth'
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    return NextResponse.json(await (await createLogoutUseCase())())
+    return createSuccessResponse(await (await createLogoutUseCase())())
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+    return createInternalErrorResponse(
+      'Failed to log out',
+      error instanceof Error ? [error.message] : undefined
+    )
   }
 }
