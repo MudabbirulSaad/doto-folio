@@ -8,9 +8,24 @@ export interface AdminBlogPostListParams {
   search?: string | null
 }
 
+export interface AdminBlogPostRecord {
+  id: string
+  title: string
+  [key: string]: unknown
+}
+
+export interface AdminBlogPostListResult {
+  posts: AdminBlogPostRecord[]
+  total: number
+}
+
+export type NormalizedAdminBlogPostListParams =
+  Required<Pick<AdminBlogPostListParams, 'page' | 'limit'>> &
+  Omit<AdminBlogPostListParams, 'page' | 'limit'>
+
 export interface AdminBlogPostRepository {
-  listPosts(params: Required<Pick<AdminBlogPostListParams, 'page' | 'limit'>> & Omit<AdminBlogPostListParams, 'page' | 'limit'>): Promise<{ posts: any[]; total: number }>
-  findPostById(id: string): Promise<any | null>
+  listPosts(params: NormalizedAdminBlogPostListParams): Promise<AdminBlogPostListResult>
+  findPostById(id: string): Promise<AdminBlogPostRecord | null>
 }
 
 function normalizePositiveInteger(value: number | undefined, fallback: number, maximum?: number) {
