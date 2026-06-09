@@ -143,7 +143,7 @@ export function summarizeAgentScopes(scopes: readonly ClientAgentScope[]) {
     .join(', ')
 }
 
-export const AGENT_SCOPE_TEMPLATES: AgentScopeTemplate[] = [
+const AGENT_SCOPE_TEMPLATE_DEFINITIONS: AgentScopeTemplate[] = [
   {
     id: 'publicContext',
     label: 'Public context',
@@ -232,7 +232,12 @@ export const AGENT_SCOPE_TEMPLATES: AgentScopeTemplate[] = [
     description: 'All currently assignable agent scopes.',
     scopes: [...CLIENT_AGENT_SCOPES]
   }
-].map(template => ({ ...template, scopes: uniqueScopes(template.scopes) }))
+]
+
+export const AGENT_SCOPE_TEMPLATES: AgentScopeTemplate[] = AGENT_SCOPE_TEMPLATE_DEFINITIONS.map(template => ({
+  ...template,
+  scopes: uniqueScopes(template.scopes)
+}))
 export type ClientAgentAccessRequestStatus = 'pending' | 'approved' | 'rejected' | 'expired'
 export type ClientAgentInvitationStatus = 'pending' | 'claimed' | 'expired' | 'revoked'
 
