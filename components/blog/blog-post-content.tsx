@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { createElement, useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 import ReactMarkdown from 'react-markdown'
@@ -18,6 +19,10 @@ gsap.registerPlugin(ScrollTrigger)
 
 interface BlogPostContentProps {
   post: BlogPostWithRelations
+}
+
+interface BlogContentImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+  node?: unknown
 }
 
 type EditorListItem = string | { content?: string }
@@ -43,6 +48,43 @@ function parseEditorJSContent(content: string): EditorJSBlock[] {
     console.error('Error parsing Editor.js content:', error)
     return []
   }
+}
+
+function canUseOptimizedImage(src: string) {
+  return src.startsWith('/')
+}
+
+function BlogContentImage({ src = '', alt = '', node, ...props }: BlogContentImageProps) {
+  void node
+
+  return (
+    <span className="my-6 block">
+      {canUseOptimizedImage(src) ? (
+        <Image
+          src={src}
+          alt={alt}
+          width={1200}
+          height={675}
+          className="h-auto w-full rounded-lg border border-border"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
+          loading="lazy"
+        />
+      ) : (
+        createElement('img', {
+          ...props,
+          src,
+          alt,
+          className: 'w-full rounded-lg border border-border',
+          loading: 'lazy'
+        })
+      )}
+      {alt && (
+        <span className="mt-2 block text-center text-sm italic text-muted-foreground">
+          {alt}
+        </span>
+      )}
+    </span>
+  )
 }
 
 // Helper function to render Editor.js blocks
@@ -323,22 +365,7 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
     ),
 
     // Images
-    img: ({ src, alt, ...props }) => (
-      <div className="my-6">
-        <img
-          src={src}
-          alt={alt}
-          className="w-full rounded-lg border border-border"
-          loading="lazy"
-          {...props}
-        />
-        {alt && (
-          <p className="text-sm text-muted-foreground text-center mt-2 italic">
-            {alt}
-          </p>
-        )}
-      </div>
-    )
+    img: BlogContentImage
   }
 
   return (
