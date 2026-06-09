@@ -384,7 +384,7 @@ export const API_DOCUMENTATION: ApiEndpoint[] = [
     security: [{ type: 'bearer' }],
     rateLimit: {
       requests: 10,
-      window: '15 minutes'
+      window: '1 minute'
     },
     requestBody: {
       required: true,
