@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -32,58 +32,53 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
-interface ContactSubmission {
-  id: string
-  name: string
-  email: string
-  subject: string
-  message: string
-  is_read: boolean
-  read_at: string | null
-  read_by: string | null
-  created_at: string
-  updated_at: string
-}
+import { createAdminContactSubmissionApiGateway } from '@/lib/client/adapters/http/admin-contact-submissions-api'
+import {
+  exportAdminContactSubmissions,
+  loadAdminContactSubmissions,
+  updateAdminContactSubmissionReadStatus
+} from '@/lib/client/application/admin/contact-submissions'
+import type {
+  AdminContactSubmission,
+  AdminContactSubmissionExportFormat
+} from '@/lib/client/domain/contact-submissions'
 
 interface ContactSubmissionsTableProps {
-  initialSubmissions: ContactSubmission[]
+  initialSubmissions: AdminContactSubmission[]
 }
 
 export default function ContactSubmissionsTable({ initialSubmissions }: ContactSubmissionsTableProps) {
-  const [submissions, setSubmissions] = useState<ContactSubmission[]>(initialSubmissions)
+  const [submissions, setSubmissions] = useState<AdminContactSubmission[]>(initialSubmissions)
   const [searchTerm, setSearchTerm] = useState('')
   const [readStatusFilter, setReadStatusFilter] = useState('all')
   const [timeFilter, setTimeFilter] = useState('all')
-  const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null)
+  const [selectedSubmission, setSelectedSubmission] = useState<AdminContactSubmission | null>(null)
   const [selectedSubmissions, setSelectedSubmissions] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+  const gateway = useMemo(() => createAdminContactSubmissionApiGateway(), [])
+
+  const currentFilters = useCallback(() => ({
+    search: searchTerm,
+    readStatus: readStatusFilter,
+    timeFilter
+  }), [searchTerm, readStatusFilter, timeFilter])
 
   // Fetch submissions with filters
   const fetchSubmissions = useCallback(async () => {
     setIsLoading(true)
     try {
-      const params = new URLSearchParams({
-        search: searchTerm,
-        readStatus: readStatusFilter,
-        timeFilter: timeFilter
-      })
+      const result = await loadAdminContactSubmissions(gateway, currentFilters())
 
-      const response = await fetch(`/api/admin/submissions?${params}`)
-      const data = await response.json()
-
-      if (response.ok) {
-        setSubmissions(data.submissions)
+      if (result.success) {
+        setSubmissions(result.submissions)
       } else {
-        console.error('Failed to fetch submissions:', data.error)
+        console.error('Failed to fetch submissions:', result.error)
       }
-    } catch (error) {
-      console.error('Error fetching submissions:', error)
     } finally {
       setIsLoading(false)
     }
-  }, [searchTerm, readStatusFilter, timeFilter])
+  }, [currentFilters, gateway])
 
   // Debounced search effect
   useEffect(() => {
@@ -96,62 +91,37 @@ export default function ContactSubmissionsTable({ initialSubmissions }: ContactS
 
   // Mark submissions as read/unread
   const updateReadStatus = async (submissionIds: string[], isRead: boolean) => {
-    try {
-      const response = await fetch('/api/admin/submissions', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          submissionIds,
-          isRead,
-          readBy: 'Admin' // You can get this from user context
-        }),
-      })
+    const result = await updateAdminContactSubmissionReadStatus(gateway, submissionIds, isRead)
 
-      const data = await response.json()
-
-      if (response.ok) {
-        // Update local state
-        setSubmissions(prev => prev.map(sub =>
-          submissionIds.includes(sub.id)
-            ? { ...sub, is_read: isRead, read_at: isRead ? new Date().toISOString() : null }
-            : sub
-        ))
-        setSelectedSubmissions([])
-      } else {
-        console.error('Failed to update read status:', data.error)
-      }
-    } catch (error) {
-      console.error('Error updating read status:', error)
+    if (result.success) {
+      setSubmissions(prev => prev.map(sub =>
+        result.submissionIds.includes(sub.id)
+          ? { ...sub, is_read: result.isRead, read_at: result.isRead ? new Date().toISOString() : null }
+          : sub
+      ))
+      setSelectedSubmissions([])
+    } else {
+      console.error('Failed to update read status:', result.error)
     }
   }
 
   // Export submissions
-  const exportSubmissions = async (format: 'csv' | 'json' | 'html') => {
+  const exportSubmissions = async (format: AdminContactSubmissionExportFormat) => {
     setIsExporting(true)
     try {
-      const params = new URLSearchParams({
-        format,
-        search: searchTerm,
-        readStatus: readStatusFilter,
-        timeFilter: timeFilter
-      })
+      const result = await exportAdminContactSubmissions(gateway, format, currentFilters())
 
-      const response = await fetch(`/api/admin/submissions/export?${params}`)
-
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
+      if (result.success) {
+        const url = window.URL.createObjectURL(result.blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `contact-submissions-${new Date().toISOString().split('T')[0]}.${format}`
+        a.download = result.filename
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
       } else {
-        console.error('Export failed')
+        console.error('Export failed:', result.error)
       }
     } catch (error) {
       console.error('Error exporting submissions:', error)

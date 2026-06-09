@@ -89,7 +89,6 @@ Several client pages/components still own raw `fetch`, response parsing, validat
 - `app/admin/content/page.tsx`
 - `app/admin/content/hero-about/page.tsx`
 - `app/admin/content/skills/page.tsx`
-- `components/admin/contact-submissions-table.tsx`
 - `components/hero-section.tsx`
 - `components/seo/dynamic-seo.tsx`
 
@@ -103,6 +102,11 @@ Recommended fix:
 1. Create missing `lib/client/application` workflows and `lib/client/adapters/http` gateways.
 2. Move page-level request parsing and API envelope handling out of components.
 3. Add behavior tests before each extraction.
+
+Closed:
+
+- `components/admin/contact-submissions-table.tsx` no longer owns contact submission list/update/export `fetch` calls. It delegates to `lib/client/application/admin/contact-submissions.ts` and `lib/client/adapters/http/admin-contact-submissions-api.ts`.
+- `tests/client/admin-contact-submissions-workflow.test.ts` covers load, read-status update, export, and gateway failure behavior.
 
 ### Server application layer still imports legacy services
 
@@ -270,7 +274,7 @@ Some `components/ui/*` files may be intentionally kept as design-system inventor
 
 - Backend/admin APIs: present.
 - Admin contacts page: server-side initial load exists.
-- Client table: still owns filtering, mutations, export fetch, and browser download workflow directly.
+- Client table: filtering, mutations, and export fetch moved behind client workflow/gateway. The component keeps only UI state and browser download click mechanics.
 
 ## Suggested Fix Order
 
