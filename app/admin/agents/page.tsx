@@ -173,12 +173,16 @@ export default function AdminAgentsPage() {
   }
 
   useEffect(() => {
-    refresh()
-      .catch(error => {
-        console.error('Failed to load agents:', error)
-        setMessage({ type: 'error', text: messageForLoadError(error) })
-      })
-      .finally(() => setLoading(false))
+    const timer = window.setTimeout(() => {
+      refresh()
+        .catch(error => {
+          console.error('Failed to load agents:', error)
+          setMessage({ type: 'error', text: messageForLoadError(error) })
+        })
+        .finally(() => setLoading(false))
+    }, 0)
+
+    return () => window.clearTimeout(timer)
   }, [])
 
   async function approve(request: AdminAgentAccessRequest) {
