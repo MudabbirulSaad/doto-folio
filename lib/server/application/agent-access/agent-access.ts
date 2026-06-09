@@ -579,6 +579,25 @@ export async function authenticateAgentToken(
   }
 }
 
+export async function resolveAgentCommentAuthor(
+  deps: AgentAccessDependencies,
+  bearerToken: string
+) {
+  const agent = await authenticateAgentToken(deps, bearerToken, 'comments:create', '/api/comments')
+
+  if (agent.invitationId) {
+    const invitation = await deps.invitations.findById(agent.invitationId)
+    if (invitation?.createdBy) return invitation.createdBy
+  }
+
+  if (agent.requestId) {
+    const request = await deps.requests.findById(agent.requestId)
+    if (request?.approvedBy) return request.approvedBy
+  }
+
+  throw new ApplicationError('FORBIDDEN', 'Agent token is missing a source admin user for comment creation')
+}
+
 export async function listAgentTokens(deps: AgentAccessDependencies) {
   const tokens = await deps.tokens.listActive(deps.clock.now().toISOString())
   return tokens.map(redactToken)

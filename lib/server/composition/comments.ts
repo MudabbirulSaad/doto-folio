@@ -6,6 +6,8 @@ import { createSupabaseCommentRepository } from '@/lib/server/adapters/supabase/
 import { createSupabaseCommenterAuthenticator } from '@/lib/server/adapters/supabase/comments/commenter-authenticator'
 import { createSupabaseAdminCommentRepository } from '@/lib/server/adapters/supabase/comments/admin-comments-repository'
 import type { CreateCommentInput } from '@/lib/server/application/comments/comments'
+import { createAgentAccessDependencies } from '@/lib/server/composition/agent-access'
+import { resolveAgentCommentAuthor } from '@/lib/server/application/agent-access/agent-access'
 
 function createSupabaseAdminClient(): SupabaseAdminDataClient {
   return createClient(
@@ -17,11 +19,20 @@ function createSupabaseAdminClient(): SupabaseAdminDataClient {
 export function createCommentUseCases() {
   const supabaseAdmin = createSupabaseAdminClient()
   const repository = createSupabaseCommentRepository(supabaseAdmin)
-  const authenticator = createSupabaseCommenterAuthenticator(supabaseAdmin)
+  const userAuthenticator = createSupabaseCommenterAuthenticator(supabaseAdmin)
+  const agentAccessDeps = createAgentAccessDependencies()
 
   return {
     list: (postId: string) => listComments(repository, postId),
-    create: (token: string, input: CreateCommentInput) => createComment(repository, authenticator, token, input)
+    create: (token: string, input: CreateCommentInput) => createComment(repository, {
+      async authenticate(bearerToken) {
+        const user = await userAuthenticator.authenticate(bearerToken)
+        if (user) return user
+
+        const authorId = await resolveAgentCommentAuthor(agentAccessDeps, bearerToken)
+        return { type: 'agent', id: authorId }
+      }
+    }, token, input)
   }
 }
 

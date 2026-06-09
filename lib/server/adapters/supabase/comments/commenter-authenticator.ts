@@ -9,7 +9,7 @@ export function createSupabaseCommenterAuthenticator(supabaseAdmin: SupabaseAuth
       const { data, error } = await supabaseAdmin.auth.getUser(token)
       const user = data?.user || null
       if (error || !user) return null
-      return { id: user.id }
+      return { type: 'user', id: user.id }
     }
   }
 }

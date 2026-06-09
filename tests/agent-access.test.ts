@@ -8,7 +8,9 @@ import {
   createAgentInvitation,
   getAgentInstructions,
   normalizeAgentScopes,
+  pollAgentAccessRequest,
   rejectAgentAccessRequest,
+  resolveAgentCommentAuthor,
   revokeAgentToken,
   updateAgentTokenAccess,
   type AgentInvitation,
@@ -357,6 +359,38 @@ test('comments:create is a valid agent scope with private reply guidance', async
   const instructions = await getAgentInstructions(testDeps, 'pa_test_token')
   assert.match(instructions.instructionsMd, /Reply to the latest blog feedback/)
   assert.match(instructions.instructionsMd, /Create comments and replies/)
+})
+
+test('resolveAgentCommentAuthor uses the invitation creator for scoped comment posting', async () => {
+  const testDeps = deps()
+  await createAgentInvitation(testDeps, {
+    agentLabel: 'Codex',
+    toolName: 'codex-cli',
+    scopes: ['comments:create'],
+    instructionsMd: 'Reply to blog comments.',
+    adminUserId: 'admin-1'
+  })
+  await claimAgentInvitation(testDeps, 'ABCD1234')
+
+  await assert.equal(await resolveAgentCommentAuthor(testDeps, 'pa_test_token'), 'admin-1')
+})
+
+test('resolveAgentCommentAuthor uses the approving admin for request tokens', async () => {
+  const testDeps = deps()
+  await createAgentAccessRequest(testDeps, {
+    agentName: 'Codex',
+    toolName: 'codex-cli',
+    reason: 'Reply to comments.',
+    requestedScopes: ['comments:create']
+  })
+  await approveAgentAccessRequest(testDeps, {
+    id: 'request-1',
+    approvedScopes: ['comments:create'],
+    adminUserId: 'admin-2'
+  })
+  await pollAgentAccessRequest(testDeps, 'ABCD1234')
+
+  await assert.equal(await resolveAgentCommentAuthor(testDeps, 'pa_test_token'), 'admin-2')
 })
 
 test('updateAgentTokenAccess changes scopes and can make a token permanent', async () => {

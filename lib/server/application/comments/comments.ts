@@ -21,14 +21,19 @@ export interface CommentRepository {
   insertComment(data: { post_id: string; user_id: string; content: string; parent_id: string | null }): Promise<Record<string, unknown>>
 }
 
+export type CommentPrincipal = {
+  type: 'user' | 'agent'
+  id: string
+}
+
 export interface CommenterAuthenticator {
-  authenticate(token: string): Promise<{ id: string } | null>
+  authenticate(token: string): Promise<CommentPrincipal | null>
 }
 
 export interface CreateCommentInput {
   postId: string
   content: string
-  userId: string
+  userId?: string
   parentId?: string
 }
 
@@ -54,7 +59,7 @@ export async function createComment(
   input: CreateCommentInput
 ) {
   const user = await authenticator.authenticate(token)
-  if (!user || user.id !== input.userId) {
+  if (!user || (user.type === 'user' && user.id !== input.userId)) {
     throw new ApplicationError('UNAUTHORIZED', 'Invalid or expired session')
   }
 
@@ -69,7 +74,7 @@ export async function createComment(
 
   return repository.insertComment({
     post_id: input.postId,
-    user_id: input.userId,
+    user_id: user.id,
     content: input.content,
     parent_id: input.parentId || null
   })

@@ -56,7 +56,7 @@ test('createComment authenticates the bearer token and checks comment settings',
   const authenticator: CommenterAuthenticator = {
     async authenticate(token) {
       assert.equal(token, 'token-1')
-      return { id: 'user-1' }
+      return { type: 'user', id: 'user-1' }
     }
   }
 
@@ -71,6 +71,34 @@ test('createComment authenticates the bearer token and checks comment settings',
   assert.equal(comment.parent_id, 'parent-1')
 })
 
+test('createComment allows scoped agents to create comments as the source admin', async () => {
+  const authenticator: CommenterAuthenticator = {
+    async authenticate(token) {
+      assert.equal(token, 'agent-token')
+      return { type: 'agent', id: 'admin-1' }
+    }
+  }
+
+  const comment = await createComment(repository(), authenticator, 'agent-token', {
+    postId: 'post-1',
+    content: 'Thanks for reading'
+  })
+
+  assert.equal(comment.user_id, 'admin-1')
+  assert.equal(comment.parent_id, null)
+})
+
+test('createComment allows scoped agents to reply to comments', async () => {
+  const comment = await createComment(repository(), { async authenticate() { return { type: 'agent', id: 'admin-1' } } }, 'agent-token', {
+    postId: 'post-1',
+    content: 'Good point',
+    parentId: 'parent-1'
+  })
+
+  assert.equal(comment.user_id, 'admin-1')
+  assert.equal(comment.parent_id, 'parent-1')
+})
+
 test('createComment rejects invalid sessions, missing posts, and disabled comments', async () => {
   await assert.rejects(
     () => createComment(repository(), { async authenticate() { return null } }, 'bad-token', {
@@ -82,7 +110,7 @@ test('createComment rejects invalid sessions, missing posts, and disabled commen
   )
 
   await assert.rejects(
-    () => createComment(repository({ async findPostCommentSettings() { return null } }), { async authenticate() { return { id: 'user-1' } } }, 'token', {
+    () => createComment(repository({ async findPostCommentSettings() { return null } }), { async authenticate() { return { type: 'user', id: 'user-1' } } }, 'token', {
       postId: 'post-1',
       userId: 'user-1',
       content: 'Hello'
@@ -91,11 +119,30 @@ test('createComment rejects invalid sessions, missing posts, and disabled commen
   )
 
   await assert.rejects(
-    () => createComment(repository({ async findPostCommentSettings() { return { allow_comments: false } } }), { async authenticate() { return { id: 'user-1' } } }, 'token', {
+    () => createComment(repository({ async findPostCommentSettings() { return { allow_comments: false } } }), { async authenticate() { return { type: 'user', id: 'user-1' } } }, 'token', {
       postId: 'post-1',
       userId: 'user-1',
       content: 'Hello'
     }),
     (error: unknown) => error instanceof ApplicationError && error.details?.includes('Comments are disabled for this post') === true
+  )
+})
+
+test('createComment keeps human comments tied to the matching session user', async () => {
+  await assert.rejects(
+    () => createComment(repository(), { async authenticate() { return { type: 'user', id: 'user-1' } } }, 'token', {
+      postId: 'post-1',
+      content: 'Hello'
+    }),
+    /Invalid or expired session/
+  )
+
+  await assert.rejects(
+    () => createComment(repository(), { async authenticate() { return { type: 'user', id: 'user-1' } } }, 'token', {
+      postId: 'post-1',
+      userId: 'user-2',
+      content: 'Hello'
+    }),
+    /Invalid or expired session/
   )
 })
