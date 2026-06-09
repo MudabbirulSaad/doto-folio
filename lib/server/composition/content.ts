@@ -9,7 +9,8 @@ import {
 import {
   getAdminSiteContent,
   getPublishedSiteContent,
-  saveSiteContent
+  saveSiteContent,
+  type SiteContentInput
 } from '@/lib/server/application/content/site-content'
 import {
   createContactContentItem,
@@ -20,6 +21,8 @@ import {
   createFlatSkill,
   createSkillInCategory,
   deleteSkill,
+  type CategorySkillInput,
+  type FlatSkillInput,
   listFlatSkills,
   updateFlatSkill
 } from '@/lib/server/application/content/skills'
@@ -50,7 +53,7 @@ export async function createSiteContentUseCases() {
   return {
     getPublished: () => getPublishedSiteContent(repository),
     getAdmin: () => getAdminSiteContent(repository),
-    save: (input: Record<string, any>) => saveSiteContent(repository, input)
+    save: (input: SiteContentInput) => saveSiteContent(repository, input)
   }
 }
 
@@ -68,10 +71,10 @@ export async function createSkillContentUseCases() {
 
   return {
     listFlat: () => listFlatSkills(repository),
-    createFlat: (input: Record<string, any>) => createFlatSkill(repository, input),
-    updateFlat: (id: string, input: Record<string, any>) => updateFlatSkill(repository, id, input),
+    createFlat: (input: FlatSkillInput) => createFlatSkill(repository, input),
+    updateFlat: (id: string, input: FlatSkillInput) => updateFlatSkill(repository, id, input),
     delete: (id: string) => deleteSkill(repository, id),
-    createInCategory: (categoryId: string, input: Record<string, any>) => createSkillInCategory(repository, categoryId, input)
+    createInCategory: (categoryId: string, input: CategorySkillInput) => createSkillInCategory(repository, categoryId, input)
   }
 }
 

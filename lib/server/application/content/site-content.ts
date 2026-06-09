@@ -33,7 +33,12 @@ const PUBLIC_SITE_CONTENT_FIELDS = [
   'footer_university',
   'footer_field',
   'footer_copyright'
-]
+] as const
+
+type SiteContentField = typeof PUBLIC_SITE_CONTENT_FIELDS[number]
+export type SiteContentInput = Partial<Record<SiteContentField, unknown>> & {
+  is_published?: unknown
+}
 
 export const PUBLIC_SITE_CONTENT_SELECT = PUBLIC_SITE_CONTENT_FIELDS.join(',\n')
 
@@ -74,7 +79,7 @@ const REQUIRED_SITE_CONTENT_FIELDS = [
   'education_field',
   'education_institution',
   'approach_description'
-]
+] as const
 
 export async function getPublishedSiteContent(repository: SiteContentRepository) {
   const content = await repository.getPublishedSiteContent()
@@ -95,7 +100,7 @@ export async function getAdminSiteContent(repository: SiteContentRepository) {
   return repository.getSiteContent()
 }
 
-function normalizeSiteContentInput(input: Record<string, any>) {
+function normalizeSiteContentInput(input: SiteContentInput): Record<string, unknown> {
   for (const field of REQUIRED_SITE_CONTENT_FIELDS) {
     if (!input[field] || String(input[field]).trim() === '') {
       throw new ApplicationError('VALIDATION_ERROR', 'Validation failed', [`${field} is required`])
@@ -131,7 +136,7 @@ function normalizeSiteContentInput(input: Record<string, any>) {
   }
 }
 
-export async function saveSiteContent(repository: SiteContentRepository, input: Record<string, any>) {
+export async function saveSiteContent(repository: SiteContentRepository, input: SiteContentInput) {
   const data = normalizeSiteContentInput(input)
   if (await repository.hasSiteContent()) {
     return repository.updateSiteContent({
