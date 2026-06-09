@@ -5,6 +5,9 @@ import { createLegacyJsonErrorResponse, createLegacyUnauthorizedResponse } from 
 
 export async function GET() {
   try {
+    const user = await getCurrentAdminUser()
+    if (!user) return createLegacyUnauthorizedResponse()
+
     const skills = await (await createSkillContentUseCases()).listFlat()
     return NextResponse.json({ data: skills })
   } catch (error) {

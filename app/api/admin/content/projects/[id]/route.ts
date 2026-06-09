@@ -8,6 +8,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getCurrentAdminUser()
+    if (!user) {
+      return createLegacyUnauthorizedResponse()
+    }
+
     const { id } = await params
     const project = await (await createProjectUseCases()).get(id)
     return NextResponse.json({ data: project })

@@ -5,6 +5,11 @@ import { createLegacyJsonErrorResponse, createLegacyUnauthorizedResponse } from 
 
 export async function GET() {
   try {
+    const user = await getCurrentAdminUser()
+    if (!user) {
+      return createLegacyUnauthorizedResponse()
+    }
+
     const projects = await (await createProjectUseCases()).list()
     return NextResponse.json({ data: projects })
   } catch (error) {

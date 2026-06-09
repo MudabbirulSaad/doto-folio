@@ -5,6 +5,11 @@ import { createLegacyJsonErrorResponse, createLegacyUnauthorizedResponse } from 
 
 export async function GET() {
   try {
+    const user = await getCurrentAdminUser()
+    if (!user) {
+      return createLegacyUnauthorizedResponse()
+    }
+
     const data = await (await createContactContentUseCases()).get()
     return NextResponse.json({ data })
   } catch (error) {
