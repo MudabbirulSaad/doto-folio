@@ -7,7 +7,7 @@ function tsFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
     const filePath = join(directory, entry.name)
     if (entry.isDirectory()) return tsFiles(filePath)
-    return entry.name.endsWith('.ts') ? [filePath] : []
+    return entry.name.endsWith('.ts') || entry.name.endsWith('.tsx') ? [filePath] : []
   })
 }
 
@@ -24,6 +24,13 @@ test('supabase adapters do not declare local any-based clients', () => {
     const source = readFileSync(file, 'utf8')
     return source.includes('from(table: string): any') || source.includes('adminClient: any')
   })
+
+  assert.deepEqual(offenders.map(file => file.replace(process.cwd(), '')), [])
+})
+
+test('app routes do not import legacy data pass-throughs', () => {
+  const appFiles = tsFiles(join(process.cwd(), 'app'))
+  const offenders = appFiles.filter(file => readFileSync(file, 'utf8').includes('@/lib/data'))
 
   assert.deepEqual(offenders.map(file => file.replace(process.cwd(), '')), [])
 })

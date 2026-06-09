@@ -8,7 +8,7 @@ import { BlogHero } from '@/components/blog/blog-hero'
 import { BlogFilters } from '@/components/blog/blog-filters'
 import { BlogGrid } from '@/components/blog/blog-grid'
 import { BlogPagination } from '@/components/blog/blog-pagination'
-import { BlogServerData } from '@/lib/data/blog-server'
+import { createServiceRolePublicBlogListingUseCase, createServiceRolePublicBlogTaxonomyUseCases } from '@/lib/server/composition/blog'
 import type { BlogSearchParams } from '@/lib/types/blog'
 
 export const metadata: Metadata = {
@@ -24,6 +24,61 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Blog & Insights | SAAD Portfolio',
     description: 'Exploring AI, technology trends, and development insights through detailed articles and tutorials.'
+  }
+}
+
+async function getFeaturedPosts(limit: number) {
+  const getBlogListing = createServiceRolePublicBlogListingUseCase()
+  const result = await getBlogListing({
+    featured: true,
+    page: 1,
+    limit,
+    sortBy: 'created_at',
+    sortOrder: 'desc'
+  }, { defaultLimit: limit, maxLimit: limit })
+  return result.posts
+}
+
+async function getCategories() {
+  return createServiceRolePublicBlogTaxonomyUseCases().categoriesWithCounts()
+}
+
+async function getPopularTags(limit: number) {
+  const getBlogListing = createServiceRolePublicBlogListingUseCase()
+  const result = await getBlogListing({}, { tagLimit: limit })
+  return result.tags
+}
+
+async function getBlogPosts(options: {
+  search?: string
+  category?: string
+  tag?: string
+  page?: number
+  limit?: number
+  featured?: boolean
+  sortBy?: BlogSearchParams['sortBy']
+  sortOrder?: BlogSearchParams['sortOrder']
+}) {
+  const getBlogListing = createServiceRolePublicBlogListingUseCase()
+  const result = await getBlogListing({
+    query: options.search,
+    category: options.category,
+    tag: options.tag,
+    featured: options.featured,
+    page: options.page || 1,
+    limit: options.limit || 12,
+    sortBy: options.sortBy,
+    sortOrder: options.sortOrder
+  }, { defaultLimit: 12, maxLimit: 50 })
+
+  return {
+    posts: result.posts,
+    pagination: {
+      page: result.page,
+      limit: result.limit,
+      total: result.total,
+      totalPages: result.totalPages
+    }
   }
 }
 
@@ -68,7 +123,7 @@ export default function BlogPage({ searchParams }: BlogPageProps) {
 // Hero Section Component
 async function BlogHeroSection() {
   try {
-    const featuredPosts = await BlogServerData.getFeaturedPosts(3)
+    const featuredPosts = await getFeaturedPosts(3)
 
     return (
       <BlogHero
@@ -93,8 +148,8 @@ async function BlogHeroSection() {
 async function BlogFiltersSection({ searchParams }: { searchParams: BlogPageProps['searchParams'] }) {
   const resolvedSearchParams = await searchParams
   try {
-    const categories = await BlogServerData.getCategories()
-    const tags = await BlogServerData.getPopularTags(10)
+    const categories = await getCategories()
+    const tags = await getPopularTags(10)
 
     return (
       <BlogFilters
@@ -133,7 +188,7 @@ async function BlogGridSection({ searchParams }: { searchParams: BlogPageProps['
       sortOrder: resolvedSearchParams.sortOrder as BlogSearchParams['sortOrder'] | undefined
     }
 
-    const result = await BlogServerData.getBlogPosts(options)
+    const result = await getBlogPosts(options)
     const { posts, pagination } = result
 
     return (
