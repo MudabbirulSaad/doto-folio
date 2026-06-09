@@ -34,21 +34,12 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import {
   Save,
   Eye,
   ArrowLeft,
-  Calendar,
   Tag,
   FolderOpen,
   Check,
-  ChevronsUpDown,
   X,
   Loader2,
   ChevronDown,
@@ -76,6 +67,13 @@ const NotionEditor = dynamic(() => import('@/components/admin/blog/notion-editor
 import type { AdminBlogPostWithRelations } from '@/lib/client/domain/admin-blog'
 import type { BlogCategory, BlogTag } from '@/lib/types/blog'
 import type { OutputData } from '@editorjs/editorjs'
+
+type MarkdownBlocksData = Awaited<ReturnType<typeof markdownToBlocks>>
+type EditorTextBlock = {
+  data?: {
+    text?: string
+  }
+}
 
 interface EditPostPageProps {
   params: Promise<{ id: string }>
@@ -109,10 +107,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const [tagsOpen, setTagsOpen] = useState(true)
   const [seoOpen, setSeoOpen] = useState(false)
 
-  // New category dialog state
-  const [showNewCategoryDialog, setShowNewCategoryDialog] = useState(false)
-  const [newCategoryName, setNewCategoryName] = useState('')
-  const [newCategoryColor, setNewCategoryColor] = useState('#3b82f6')
   const postGateway = useMemo(() => createAdminBlogPostApiGateway(), [])
   const taxonomyGateway = useMemo(() => createAdminBlogTaxonomyApiGateway(), [])
 
@@ -162,9 +156,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
             if (isRawMarkdown) {
               console.log('Detected raw markdown in JSON, converting...')
               const markdownContent = contentData.blocks[0].data.text
-              markdownToBlocks(markdownContent).then((blocksData: any) => {
+              markdownToBlocks(markdownContent).then((blocksData: MarkdownBlocksData) => {
                 setEditorData(blocksData)
-              }).catch((err: any) => {
+              }).catch((err: unknown) => {
                 console.error('Error converting markdown:', err)
                 setEditorData(contentData)
               })
@@ -180,9 +174,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           const markdownContent = postData.content || ''
 
           // Use the new converter
-          markdownToBlocks(markdownContent).then((blocksData: any) => {
+          markdownToBlocks(markdownContent).then((blocksData: MarkdownBlocksData) => {
             setEditorData(blocksData)
-          }).catch((err: any) => {
+          }).catch((err: unknown) => {
             console.error('Error converting markdown:', err)
             // Fallback to simple paragraph if conversion fails
             setEditorData({
@@ -203,7 +197,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
 
         // Set selected tags
         if (postData.tags) {
-          setSelectedTags(postData.tags.map((tagRel: any) => tagRel.tag))
+          setSelectedTags(postData.tags.map((tagRel) => tagRel.tag))
         }
     } catch (error) {
       console.error('Error fetching post:', error)
@@ -471,14 +465,14 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                         const json = JSON.parse(contentToConvert);
                         if (json.blocks && json.blocks.length > 0) {
                           // Extract text from the first block if it's a paragraph
-                          contentToConvert = json.blocks.map((b: any) => b.data.text).join('\n\n');
+                          contentToConvert = (json.blocks as EditorTextBlock[]).map((block) => block.data?.text ?? '').join('\n\n');
                         }
-                      } catch (e) {
+                      } catch {
                         // It's raw text, use as is
                       }
 
                       markdownToBlocks(contentToConvert)
-                        .then((blocksData: any) => {
+                        .then((blocksData: MarkdownBlocksData) => {
                           if (blocksData.blocks) {
                             setEditorData(blocksData)
                             setEditorVersion(v => v + 1)
@@ -562,15 +556,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => setShowNewCategoryDialog(true)}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      New Category
-                    </Button>
                   </CardContent>
                 </CollapsibleContent>
               </Card>
