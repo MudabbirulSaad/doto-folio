@@ -38,7 +38,13 @@ function repository(): AdminDashboardRepository {
       ]
     },
     async listRecentSubmissions() {
-      return [{ id: 'submission-1', name: 'Ada', created_at: '2026-06-08T09:00:00.000Z' }]
+      return [{
+        id: 'submission-1',
+        name: 'Ada',
+        subject: 'Project inquiry',
+        message: 'Can we work together?',
+        created_at: '2026-06-08T09:00:00.000Z'
+      }]
     },
     async listCommentAuthors() {
       return [

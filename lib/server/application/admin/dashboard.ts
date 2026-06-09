@@ -15,11 +15,30 @@ export interface DashboardActivityRecord {
   created_at: string
 }
 
+export interface DashboardRecentComment {
+  id: string
+  user_id?: string | null
+  content: string
+  created_at: string
+  post?: {
+    title?: string | null
+    slug?: string | null
+  } | null
+}
+
+export interface DashboardRecentSubmission {
+  id: string
+  name: string
+  subject: string
+  message: string
+  created_at: string
+}
+
 export interface AdminDashboardRepository {
   getCounts(): Promise<DashboardCounts>
   getPostViewCounts(): Promise<Array<number | null | undefined>>
-  listRecentComments(): Promise<any[]>
-  listRecentSubmissions(): Promise<any[]>
+  listRecentComments(): Promise<DashboardRecentComment[]>
+  listRecentSubmissions(): Promise<DashboardRecentSubmission[]>
   listCommentAuthors(): Promise<DashboardAuthor[]>
   listAllCommentUserIds(): Promise<Array<string | null | undefined>>
   listActivitySince(since: Date): Promise<{
@@ -60,7 +79,7 @@ export async function getAdminDashboard(
 
   const authorMap = new Map(authors.map(author => [author.id, author]))
   const enrichedRecentComments = recentComments.map(comment => {
-    const author = authorMap.get(comment.user_id)
+    const author = comment.user_id ? authorMap.get(comment.user_id) : undefined
 
     return {
       ...comment,
