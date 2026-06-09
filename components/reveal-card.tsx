@@ -1,20 +1,29 @@
 "use client"
 
-import { createElement, useRef, useEffect, ReactNode, ElementType } from "react"
+import { useCallback, useRef, useEffect, ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
 interface RevealCardProps {
   children: ReactNode
   className?: string
-  as?: ElementType
+  as?: "div" | "a"
+  href?: string
+  target?: string
+  rel?: string
 }
 
 export function RevealCard({ 
   children, 
   className = "", 
-  as: Component = "div" 
+  as: Component = "div",
+  href,
+  target,
+  rel
 }: RevealCardProps) {
-  const cardRef = useRef<HTMLElement>(null)
+  const cardRef = useRef<HTMLElement | null>(null)
+  const setCardRef = useCallback((node: HTMLElement | null) => {
+    cardRef.current = node
+  }, [])
 
   useEffect(() => {
     const card = cardRef.current
@@ -90,13 +99,20 @@ export function RevealCard({
     }
   }, [])
 
-  return createElement(
-    Component,
-    {
-      ref: cardRef,
-      className: cn("reveal-card", className)
-    } as any,
-    children
+  const revealClassName = cn("reveal-card", className)
+
+  if (Component === "a") {
+    return (
+      <a ref={setCardRef} className={revealClassName} href={href} target={target} rel={rel}>
+        {children}
+      </a>
+    )
+  }
+
+  return (
+    <div ref={setCardRef} className={revealClassName}>
+      {children}
+    </div>
   )
 }
 

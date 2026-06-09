@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 // Global registry to track active editors and prevent duplicates
 const editorRegistry = new Map<string, boolean>()
-import EditorJS, { OutputData, type ToolConstructable } from '@editorjs/editorjs'
+import EditorJS, { OutputData, type EditorConfig, type ToolConstructable } from '@editorjs/editorjs'
 import Header from '@editorjs/header'
 import List from '@editorjs/list'
 import Paragraph from '@editorjs/paragraph'
@@ -22,6 +22,15 @@ interface NotionEditorProps {
   readOnly?: boolean
 }
 
+declare global {
+  interface Window {
+    notionEditor?: {
+      save: () => Promise<OutputData | null>
+      clear: () => Promise<void>
+    }
+  }
+}
+
 export default function NotionEditor({
   data,
   onChange,
@@ -30,13 +39,21 @@ export default function NotionEditor({
 }: NotionEditorProps) {
   const editorRef = useRef<EditorJS | null>(null)
   const holderRef = useRef<HTMLDivElement>(null)
-  const [isReady, setIsReady] = useState(false)
   const initializingRef = useRef(false)
   const editorIdRef = useRef(`editor-${Math.random().toString(36).substr(2, 9)}`)
   const mountedRef = useRef(false)
+  const initialDataRef = useRef(data)
+  const initialPlaceholderRef = useRef(placeholder)
+  const initialReadOnlyRef = useRef(readOnly)
+  const onChangeRef = useRef(onChange)
 
   useEffect(() => {
-    if (!holderRef.current) return
+    onChangeRef.current = onChange
+  }, [onChange])
+
+  useEffect(() => {
+    const holder = holderRef.current
+    if (!holder) return
 
     const editorId = editorIdRef.current
 
@@ -46,7 +63,7 @@ export default function NotionEditor({
     }
 
     // Check if holder already has EditorJS content
-    if (holderRef.current.querySelector('.codex-editor')) {
+    if (holder.querySelector('.codex-editor')) {
       return
     }
 
@@ -56,16 +73,14 @@ export default function NotionEditor({
     initializingRef.current = true
 
     // Clear any existing content in the holder
-    if (holderRef.current) {
-      holderRef.current.innerHTML = ''
-    }
+    holder.innerHTML = ''
 
     // Initialize Editor.js
     const editor = new EditorJS({
-      holder: holderRef.current,
-      placeholder,
-      readOnly,
-      data: data || {
+      holder,
+      placeholder: initialPlaceholderRef.current,
+      readOnly: initialReadOnlyRef.current,
+      data: initialDataRef.current || {
         time: Date.now(),
         blocks: [],
         version: "2.28.2"
@@ -149,38 +164,30 @@ export default function NotionEditor({
         }
       },
       onChange: async () => {
-        if (onChange && editorRef.current) {
+        if (onChangeRef.current && editorRef.current) {
           try {
             const outputData = await editorRef.current.save()
-            onChange(outputData)
+            onChangeRef.current(outputData)
           } catch (error) {
             console.error('Error saving editor data:', error)
           }
         }
       },
       onReady: () => {
-        setIsReady(true)
         console.log('Editor.js is ready to work!')
 
         // Attach markdown shortcuts listener
-        const holder = holderRef.current
-        if (holder) {
-          holder.addEventListener('keyup', handleMarkdownShortcuts)
-        }
+        holder.addEventListener('keyup', handleMarkdownShortcuts)
       },
-      autofocus: !readOnly,
-      logLevel: 'ERROR' as any
+      autofocus: !initialReadOnlyRef.current,
+      logLevel: 'ERROR' as EditorConfig['logLevel']
     })
 
     editorRef.current = editor
 
     return () => {
-      const editorId = editorIdRef.current
-
       // Remove listener
-      if (holderRef.current) {
-        holderRef.current.removeEventListener('keyup', handleMarkdownShortcuts)
-      }
+      holder.removeEventListener('keyup', handleMarkdownShortcuts)
 
       if (editorRef.current) {
         try {
@@ -191,7 +198,6 @@ export default function NotionEditor({
           console.error('Error destroying editor:', error)
         } finally {
           editorRef.current = null
-          setIsReady(false)
           initializingRef.current = false
           mountedRef.current = false
           // Unregister this editor instance
@@ -248,22 +254,6 @@ export default function NotionEditor({
     }
   }
 
-  // Update editor data when prop changes
-  // useEffect(() => {
-  //   if (isReady && editorRef.current && data && data.blocks && data.blocks.length > 0) {
-  //     // Add a small delay to ensure editor is fully ready
-  //     const timer = setTimeout(() => {
-  //       if (editorRef.current && typeof editorRef.current.render === 'function') {
-  //         editorRef.current.render(data).catch((error: any) => {
-  //           console.error('Error rendering editor data:', error)
-  //         })
-  //       }
-  //     }, 100)
-
-  //     return () => clearTimeout(timer)
-  //   }
-  // }, [data, isReady])
-
   const save = async (): Promise<OutputData | null> => {
     if (editorRef.current) {
       try {
@@ -289,7 +279,7 @@ export default function NotionEditor({
   // Expose methods to parent component
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      (window as any).notionEditor = {
+      window.notionEditor = {
         save,
         clear
       }
