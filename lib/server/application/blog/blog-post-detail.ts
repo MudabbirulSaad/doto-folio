@@ -1,5 +1,5 @@
 import type { BlogCategory, BlogTag, BlogPost, BlogPostWithRelations } from '@/lib/types/blog'
-import { getHybridRecommendations } from '@/lib/services/recommendation'
+import { getHybridRecommendations } from '@/lib/server/application/blog/recommendations'
 
 export type RawTagRelation = BlogTag | { tag: BlogTag }
 
