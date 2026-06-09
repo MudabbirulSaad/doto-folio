@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,22 +24,15 @@ import {
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import * as LucideIcons from 'lucide-react'
-
-interface Skill {
-    id: string
-    name: string
-    category: 'Frontend' | 'Backend' | 'Database' | 'DevOps' | 'Tools' | 'Other'
-    proficiency: number
-    icon_name: string
-    display_order: number
-}
-
-interface SkillFormData {
-    name: string
-    category: 'Frontend' | 'Backend' | 'Database' | 'DevOps' | 'Tools' | 'Other'
-    proficiency: number
-    icon_name: string
-}
+import { createAdminSkillApiGateway } from '@/lib/client/adapters/http/admin-skills-api'
+import {
+    deleteAdminSkill,
+    emptySkillForm,
+    loadAdminSkills,
+    saveAdminSkill,
+    skillToForm
+} from '@/lib/client/application/admin/skills'
+import type { AdminSkill, AdminSkillFormData } from '@/lib/client/domain/admin-content'
 
 const categories = [
     { value: 'Frontend', label: 'Frontend', icon: Layout, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
@@ -51,19 +44,15 @@ const categories = [
 ]
 
 export default function SkillsManagementPage() {
-    const [skills, setSkills] = useState<Skill[]>([])
+    const [skills, setSkills] = useState<AdminSkill[]>([])
     const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
-    const [editingSkill, setEditingSkill] = useState<Skill | null>(null)
+    const [editingSkill, setEditingSkill] = useState<AdminSkill | null>(null)
     const [saving, setSaving] = useState(false)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+    const gateway = useMemo(() => createAdminSkillApiGateway(), [])
 
-    const [formData, setFormData] = useState<SkillFormData>({
-        name: '',
-        category: 'Frontend',
-        proficiency: 50,
-        icon_name: 'Code2'
-    })
+    const [formData, setFormData] = useState<AdminSkillFormData>(emptySkillForm())
 
     useEffect(() => {
         fetchSkills()
@@ -71,12 +60,11 @@ export default function SkillsManagementPage() {
 
     const fetchSkills = async () => {
         try {
-            const response = await fetch('/api/admin/content/skills')
-            if (response.ok) {
-                const result = await response.json()
-                setSkills(result.data)
+            const result = await loadAdminSkills(gateway)
+            if (result.success) {
+                setSkills(result.skills)
             } else {
-                setMessage({ type: 'error', text: 'Failed to load skills' })
+                setMessage({ type: 'error', text: result.error })
             }
         } catch (error) {
             console.error('Error fetching skills:', error)
@@ -87,56 +75,27 @@ export default function SkillsManagementPage() {
     }
 
     const resetForm = () => {
-        setFormData({
-            name: '',
-            category: 'Frontend',
-            proficiency: 50,
-            icon_name: 'Code2'
-        })
+        setFormData(emptySkillForm())
         setEditingSkill(null)
         setShowForm(false)
     }
 
-    const handleEdit = (skill: Skill) => {
+    const handleEdit = (skill: AdminSkill) => {
         setEditingSkill(skill)
-        setFormData({
-            name: skill.name,
-            category: skill.category,
-            proficiency: skill.proficiency,
-            icon_name: skill.icon_name
-        })
+        setFormData(skillToForm(skill))
         setShowForm(true)
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (!formData.name.trim()) {
-            setMessage({ type: 'error', text: 'Skill name is required' })
-            return
-        }
-
         setSaving(true)
         setMessage(null)
 
         try {
-            const url = editingSkill
-                ? `/api/admin/content/skills/${editingSkill.id}`
-                : '/api/admin/content/skills'
+            const result = await saveAdminSkill(gateway, formData, editingSkill?.id)
 
-            const method = editingSkill ? 'PUT' : 'POST'
-
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            })
-
-            const result = await response.json()
-
-            if (response.ok) {
+            if (result.success) {
                 setMessage({
                     type: 'success',
                     text: editingSkill ? 'Skill updated successfully!' : 'Skill created successfully!'
@@ -144,7 +103,7 @@ export default function SkillsManagementPage() {
                 resetForm()
                 fetchSkills()
             } else {
-                setMessage({ type: 'error', text: result.error || 'Failed to save skill' })
+                setMessage({ type: 'error', text: result.error })
             }
         } catch (error) {
             console.error('Error saving skill:', error)
@@ -154,22 +113,19 @@ export default function SkillsManagementPage() {
         }
     }
 
-    const handleDelete = async (skill: Skill) => {
+    const handleDelete = async (skill: AdminSkill) => {
         if (!confirm(`Are you sure you want to delete "${skill.name}"?`)) {
             return
         }
 
         try {
-            const response = await fetch(`/api/admin/content/skills/${skill.id}`, {
-                method: 'DELETE',
-            })
+            const result = await deleteAdminSkill(gateway, skill.id)
 
-            if (response.ok) {
+            if (result.success) {
                 setMessage({ type: 'success', text: 'Skill deleted successfully!' })
                 fetchSkills()
             } else {
-                const result = await response.json()
-                setMessage({ type: 'error', text: result.error || 'Failed to delete skill' })
+                setMessage({ type: 'error', text: result.error })
             }
         } catch (error) {
             console.error('Error deleting skill:', error)

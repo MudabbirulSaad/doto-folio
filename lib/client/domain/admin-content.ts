@@ -52,3 +52,21 @@ export interface AdminSiteContent {
   footer_copyright: string
   is_published: boolean
 }
+
+export type AdminSkillCategory = 'Frontend' | 'Backend' | 'Database' | 'DevOps' | 'Tools' | 'Other'
+
+export interface AdminSkill {
+  id: string
+  name: string
+  category: AdminSkillCategory
+  proficiency: number
+  icon_name: string
+  display_order: number
+}
+
+export interface AdminSkillFormData {
+  name: string
+  category: AdminSkillCategory
+  proficiency: number
+  icon_name: string
+}

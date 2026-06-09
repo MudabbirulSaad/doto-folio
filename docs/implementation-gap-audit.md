@@ -86,7 +86,6 @@ Several client pages/components still own raw `fetch`, response parsing, validat
 - `app/admin/blog/posts/new/page.tsx`
 - `app/admin/blog/posts/[id]/edit/page.tsx`
 - `app/admin/content/page.tsx`
-- `app/admin/content/skills/page.tsx`
 - `components/hero-section.tsx`
 - `components/seo/dynamic-seo.tsx`
 
@@ -109,6 +108,8 @@ Closed:
 - `tests/client/admin-comments-workflow.test.ts` covers load, delete, reply validation, session requirement, and reply gateway behavior.
 - `app/admin/content/hero-about/page.tsx` no longer owns site-content load/save `fetch` calls. It delegates to `lib/client/application/admin/site-content.ts` and `lib/client/adapters/http/admin-site-content-api.ts`.
 - `tests/client/admin-site-content-workflow.test.ts` covers site-content load/save and gateway failure behavior.
+- `app/admin/content/skills/page.tsx` no longer owns skills list/create/update/delete `fetch` calls. It delegates to `lib/client/application/admin/skills.ts` and `lib/client/adapters/http/admin-skills-api.ts`.
+- `tests/client/admin-skills-workflow.test.ts` covers skills load, form mapping, validation, save, update, and delete behavior.
 
 ### Server application layer still imports legacy services
 
@@ -250,7 +251,8 @@ Some `components/ui/*` files may be intentionally kept as design-system inventor
 - Backend/admin API: present.
 - Admin page: present.
 - Public frontend: static skill categories.
-- Gap: published skill data is not rendered on home page.
+- Public frontend: published skill data is rendered on home page.
+- Admin skills page: list/create/update/delete fetches moved behind client workflow/gateway.
 
 ### Contact methods/social links
 
