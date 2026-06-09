@@ -1,5 +1,4 @@
-// import { NextRequest } from 'next/server' // Not needed with middleware approach
-import { withScopedAuth } from '@/lib/api/middleware'
+import { withScopedAuth, type ApiContext } from '@/lib/api/middleware'
 import { createSuccessResponse } from '@/lib/api/response'
 import type { UpdateBlogPostData } from '@/lib/types/blog'
 import { createAdminBlogPostReadUseCases, createAdminBlogWorkflowUseCases } from '@/lib/server/composition/blog'
@@ -12,7 +11,7 @@ function getPostIdFromRequestUrl(requestUrl: string) {
 }
 
 // GET - Get single post for editing
-async function getPostHandler(context: any) {
+async function getPostHandler(context: ApiContext) {
   try {
     const id = getPostIdFromRequestUrl(context.request.url)
 
@@ -27,7 +26,7 @@ async function getPostHandler(context: any) {
 }
 
 // PUT - Update post
-async function updatePostHandler(context: any) {
+async function updatePostHandler(context: ApiContext) {
   try {
     const id = getPostIdFromRequestUrl(context.request.url)
 
@@ -44,7 +43,7 @@ async function updatePostHandler(context: any) {
 }
 
 // DELETE - Delete post
-async function deletePostHandler(context: any) {
+async function deletePostHandler(context: ApiContext) {
   try {
     const id = getPostIdFromRequestUrl(context.request.url)
 

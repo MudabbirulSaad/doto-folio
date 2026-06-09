@@ -42,6 +42,29 @@ export function BlogFilters({
     return () => clearTimeout(timer)
   }, [searchQuery])
 
+  function updateURL(params: { query?: string; category?: string; tag?: string }) {
+    startTransition(() => {
+      const current = new URLSearchParams(searchParamsSnapshot)
+
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) {
+          current.set(key, value)
+        } else {
+          current.delete(key)
+        }
+      })
+
+      // Reset page when filters change
+      current.delete('page')
+
+      const search = current.toString()
+      const query = search ? `?${search}` : ''
+
+      // Keep query changes shareable without triggering navigation-style page transitions.
+      router.replace(`/blog${query}`, { scroll: false })
+    })
+  }
+
   useEffect(() => {
     // Sync with URL params only when the query value changes.
     setSearchQuery((value) => value === currentQuery ? value : currentQuery)
@@ -107,29 +130,6 @@ export function BlogFilters({
   const handleTagSelect = (tagSlug: string) => {
     const newTag = tagSlug === selectedTag ? undefined : tagSlug
     updateURL({ tag: newTag })
-  }
-
-  const updateURL = (params: { query?: string; category?: string; tag?: string }) => {
-    startTransition(() => {
-      const current = new URLSearchParams(searchParamsSnapshot)
-
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) {
-          current.set(key, value)
-        } else {
-          current.delete(key)
-        }
-      })
-
-      // Reset page when filters change
-      current.delete('page')
-
-      const search = current.toString()
-      const query = search ? `?${search}` : ''
-
-      // Keep query changes shareable without triggering navigation-style page transitions.
-      router.replace(`/blog${query}`, { scroll: false })
-    })
   }
 
   const clearFilters = () => {

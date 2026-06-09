@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 import ReactMarkdown from 'react-markdown'
+import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -20,11 +21,25 @@ interface BlogPostContentProps {
   post: BlogPostWithRelations
 }
 
+type EditorListItem = string | { content?: string }
+
+interface EditorJSBlock {
+  type: string
+  data: {
+    text?: string
+    level?: number
+    style?: 'ordered' | 'unordered'
+    items?: EditorListItem[]
+    code?: string
+    caption?: string
+  }
+}
+
 // Helper function to parse Editor.js content
-function parseEditorJSContent(content: string) {
+function parseEditorJSContent(content: string): EditorJSBlock[] {
   try {
     const parsed = JSON.parse(content)
-    return parsed.blocks || []
+    return Array.isArray(parsed.blocks) ? parsed.blocks : []
   } catch (error) {
     console.error('Error parsing Editor.js content:', error)
     return []
@@ -32,7 +47,7 @@ function parseEditorJSContent(content: string) {
 }
 
 // Helper function to render Editor.js blocks
-function renderEditorJSBlock(block: any, index: number) {
+function renderEditorJSBlock(block: EditorJSBlock, index: number) {
   const { type, data } = block
 
   switch (type) {
@@ -62,7 +77,7 @@ function renderEditorJSBlock(block: any, index: number) {
       const ListTag = data.style === 'ordered' ? 'ol' : 'ul'
       return (
         <ListTag key={index} className={`mb-4 ${data.style === 'ordered' ? 'list-decimal' : 'list-disc'} list-inside space-y-2`}>
-          {data.items.map((item: any, itemIndex: number) => (
+          {(data.items || []).map((item, itemIndex) => (
             <li key={itemIndex} className="text-foreground">
               {typeof item === 'string' ? item : item.content}
             </li>
@@ -146,48 +161,48 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
     }
   }
 
-  const components = {
+  const components: Components = {
     // Headings with anchor links
-    h1: ({ children, ...props }: any) => (
+    h1: ({ children, ...props }) => (
       <h1 className="text-3xl font-bold text-foreground mt-8 mb-4 scroll-mt-20" {...props}>
         {children}
       </h1>
     ),
-    h2: ({ children, ...props }: any) => (
+    h2: ({ children, ...props }) => (
       <h2 className="text-2xl font-bold text-foreground mt-8 mb-4 scroll-mt-20" {...props}>
         {children}
       </h2>
     ),
-    h3: ({ children, ...props }: any) => (
+    h3: ({ children, ...props }) => (
       <h3 className="text-xl font-semibold text-foreground mt-6 mb-3 scroll-mt-20" {...props}>
         {children}
       </h3>
     ),
-    h4: ({ children, ...props }: any) => (
+    h4: ({ children, ...props }) => (
       <h4 className="text-lg font-semibold text-foreground mt-6 mb-3 scroll-mt-20" {...props}>
         {children}
       </h4>
     ),
-    h5: ({ children, ...props }: any) => (
+    h5: ({ children, ...props }) => (
       <h5 className="text-base font-semibold text-foreground mt-4 mb-2 scroll-mt-20" {...props}>
         {children}
       </h5>
     ),
-    h6: ({ children, ...props }: any) => (
+    h6: ({ children, ...props }) => (
       <h6 className="text-sm font-semibold text-foreground mt-4 mb-2 scroll-mt-20" {...props}>
         {children}
       </h6>
     ),
 
     // Paragraphs
-    p: ({ children, ...props }: any) => (
+    p: ({ children, ...props }) => (
       <p className="text-foreground leading-relaxed mb-4" {...props}>
         {children}
       </p>
     ),
 
     // Links
-    a: ({ children, href, ...props }: any) => (
+    a: ({ children, href, ...props }) => (
       <a
         href={href}
         className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
@@ -200,31 +215,31 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
     ),
 
     // Lists
-    ul: ({ children, ...props }: any) => (
+    ul: ({ children, ...props }) => (
       <ul className="list-disc list-inside mb-4 space-y-2 text-foreground" {...props}>
         {children}
       </ul>
     ),
-    ol: ({ children, ...props }: any) => (
+    ol: ({ children, ...props }) => (
       <ol className="list-decimal list-inside mb-4 space-y-2 text-foreground" {...props}>
         {children}
       </ol>
     ),
-    li: ({ children, ...props }: any) => (
+    li: ({ children, ...props }) => (
       <li className="leading-relaxed" {...props}>
         {children}
       </li>
     ),
 
     // Blockquotes
-    blockquote: ({ children, ...props }: any) => (
+    blockquote: ({ children, ...props }) => (
       <blockquote className="border-l-4 border-primary pl-6 py-4 my-8 bg-background/5 backdrop-blur-sm rounded-r-xl italic text-muted-foreground shadow-sm" {...props}>
         {children}
       </blockquote>
     ),
 
     // Code blocks
-    code: ({ node, inline, className, children, ...props }: any) => {
+    code: ({ className, children, ...props }) => {
       const match = /language-(\w+)/.exec(className || '')
       const language = match ? match[1] : ''
 
@@ -241,7 +256,7 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
 
       const codeId = `code-${Math.random().toString(36).substr(2, 9)}`
 
-      if (!inline && match) {
+      if (match) {
         return (
           <div className="relative group my-8 rounded-xl overflow-hidden border border-white/10 shadow-lg bg-[#282c34]">
             <div className="flex items-center justify-between bg-white/5 px-4 py-2 border-b border-white/5">
@@ -280,36 +295,36 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
     },
 
     // Tables
-    table: ({ children, ...props }: any) => (
+    table: ({ children, ...props }) => (
       <div className="table-wrapper overflow-x-auto my-6">
         <table className="w-full border-collapse border border-border rounded-lg" {...props}>
           {children}
         </table>
       </div>
     ),
-    thead: ({ children, ...props }: any) => (
+    thead: ({ children, ...props }) => (
       <thead className="bg-muted/50" {...props}>
         {children}
       </thead>
     ),
-    th: ({ children, ...props }: any) => (
+    th: ({ children, ...props }) => (
       <th className="border border-border px-4 py-2 text-left font-semibold text-foreground" {...props}>
         {children}
       </th>
     ),
-    td: ({ children, ...props }: any) => (
+    td: ({ children, ...props }) => (
       <td className="border border-border px-4 py-2 text-foreground" {...props}>
         {children}
       </td>
     ),
 
     // Horizontal rule
-    hr: ({ ...props }: any) => (
+    hr: ({ ...props }) => (
       <hr className="my-8 border-border" {...props} />
     ),
 
     // Images
-    img: ({ src, alt, ...props }: any) => (
+    img: ({ src, alt, ...props }) => (
       <div className="my-6">
         <img
           src={src}
@@ -337,7 +352,7 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
         {isEditorJS ? (
           // Render Editor.js content
           <div className="space-y-4">
-            {editorBlocks.map((block: any, index: number) =>
+            {editorBlocks.map((block, index) =>
               renderEditorJSBlock(block, index)
             )}
           </div>

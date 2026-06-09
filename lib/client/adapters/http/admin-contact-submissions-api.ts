@@ -14,6 +14,12 @@ interface UpdateReadStatusResponse {
   submissions: Array<{ id: string }>
 }
 
+interface ApiSuccessResponse<T> {
+  success: true
+  data: T
+  message?: string
+}
+
 async function readJson<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => ({}))
 
@@ -45,7 +51,7 @@ export function createAdminContactSubmissionApiGateway(
   return {
     async list(filters) {
       const response = await fetcher(`/api/admin/submissions?${buildSubmissionParams(filters)}`)
-      return (await readJson<SubmissionsResponse>(response)).submissions
+      return (await readJson<ApiSuccessResponse<SubmissionsResponse>>(response)).data.submissions
     },
     async updateReadStatus(submissionIds, isRead, readBy) {
       const response = await fetcher('/api/admin/submissions', {
@@ -59,7 +65,7 @@ export function createAdminContactSubmissionApiGateway(
           readBy
         })
       })
-      return readJson<UpdateReadStatusResponse>(response)
+      return (await readJson<ApiSuccessResponse<UpdateReadStatusResponse>>(response)).data
     },
     async export(format: AdminContactSubmissionExportFormat, filters) {
       const params = buildSubmissionParams(filters)

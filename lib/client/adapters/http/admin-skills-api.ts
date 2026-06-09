@@ -2,22 +2,24 @@ import { createFetchJsonClient, type JsonClient } from '@/lib/client/adapters/ht
 import type { AdminSkillGateway } from '@/lib/client/application/admin/skills'
 import type { AdminSkill, AdminSkillFormData } from '@/lib/client/domain/admin-content'
 
-interface DataResponse<T> {
+interface ApiSuccessResponse<T> {
+  success: true
   data: T
+  message?: string
 }
 
 export function createAdminSkillApiGateway(client: JsonClient = createFetchJsonClient()): AdminSkillGateway {
   return {
     async list() {
-      const response = await client.get<DataResponse<AdminSkill[]>>('/api/admin/content/skills')
+      const response = await client.get<ApiSuccessResponse<AdminSkill[]>>('/api/admin/content/skills')
       return response.data || []
     },
     async create(input: AdminSkillFormData) {
-      const response = await client.post<DataResponse<AdminSkill>>('/api/admin/content/skills', input)
+      const response = await client.post<ApiSuccessResponse<AdminSkill>>('/api/admin/content/skills', input)
       return response.data
     },
     async update(id: string, input: AdminSkillFormData) {
-      const response = await client.put<DataResponse<AdminSkill>>(`/api/admin/content/skills/${id}`, input)
+      const response = await client.put<ApiSuccessResponse<AdminSkill>>(`/api/admin/content/skills/${id}`, input)
       return response.data
     },
     async delete(id: string) {

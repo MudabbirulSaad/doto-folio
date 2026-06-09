@@ -69,6 +69,33 @@ export interface SecurityRequirement {
   in?: 'header' | 'query'
 }
 
+const successEnvelope = (data: Schema): Schema => ({
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    data
+  }
+})
+
+const messageEnvelope = (message: string): Schema => ({
+  type: 'object',
+  properties: {
+    success: { type: 'boolean', example: true },
+    message: { type: 'string', example: message }
+  }
+})
+
+const okJson = (description: string, schema?: Schema): Response => ({
+  description,
+  content: schema
+    ? {
+        'application/json': {
+          schema
+        }
+      }
+    : undefined
+})
+
 // =============================================
 // API DOCUMENTATION DATA
 // =============================================
@@ -185,10 +212,211 @@ export const API_DOCUMENTATION: ApiEndpoint[] = [
     }
   },
   {
+    path: '/api/subscribe',
+    method: 'POST',
+    summary: 'Subscribe to newsletter',
+    description: 'Create or reactivate a newsletter subscription. Rate limited to 5 attempts per 15 minutes.',
+    tags: ['Subscriptions'],
+    rateLimit: {
+      requests: 5,
+      window: '15 minutes'
+    },
+    requestBody: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: ['email'],
+            properties: {
+              name: { type: 'string', maxLength: 100, example: 'Ada Lovelace' },
+              email: { type: 'string', format: 'email', maxLength: 255, example: 'ada@example.com' }
+            }
+          }
+        }
+      }
+    },
+    responses: {
+      '200': okJson('Subscription accepted', messageEnvelope('Successfully subscribed to newsletter!')),
+      '400': { description: 'Validation error' },
+      '409': { description: 'Email is already subscribed' },
+      '429': { description: 'Rate limit exceeded' }
+    }
+  },
+  {
+    path: '/api/health',
+    method: 'GET',
+    summary: 'Check application health',
+    description: 'Returns application, database, environment, and system health details.',
+    tags: ['Health'],
+    responses: {
+      '200': okJson('Health check completed', successEnvelope({
+        type: 'object',
+        properties: {
+          status: { type: 'string', example: 'healthy' }
+        }
+      }))
+    }
+  },
+  {
+    path: '/api/site-content',
+    method: 'GET',
+    summary: 'Get public portfolio content',
+    description: 'Returns published public portfolio content for the homepage sections.',
+    tags: ['Public Content'],
+    responses: {
+      '200': okJson('Published portfolio content retrieved')
+    }
+  },
+  {
+    path: '/api/blog/posts',
+    method: 'GET',
+    summary: 'List public blog posts',
+    description: 'Returns published blog posts with pagination, taxonomy filters, featured filtering, search, and sorting.',
+    tags: ['Blog'],
+    parameters: [
+      { name: 'page', in: 'query', required: false, schema: { type: 'integer', minimum: 1, example: 1 }, description: 'Page number' },
+      { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, example: 9 }, description: 'Posts per page' },
+      { name: 'category', in: 'query', required: false, schema: { type: 'string', example: 'ai' }, description: 'Category slug' },
+      { name: 'tag', in: 'query', required: false, schema: { type: 'string', example: 'nextjs' }, description: 'Tag slug' },
+      { name: 'search', in: 'query', required: false, schema: { type: 'string', example: 'agent' }, description: 'Search query' }
+    ],
+    responses: {
+      '200': okJson('Published blog posts retrieved')
+    }
+  },
+  {
+    path: '/api/blog/posts/{slug}',
+    method: 'GET',
+    summary: 'Get public blog post',
+    description: 'Returns a published blog post by slug.',
+    tags: ['Blog'],
+    parameters: [
+      { name: 'slug', in: 'path', required: true, schema: { type: 'string', example: 'building-agent-access' }, description: 'Blog post slug' }
+    ],
+    responses: {
+      '200': okJson('Blog post retrieved'),
+      '404': { description: 'Post not found' }
+    }
+  },
+  {
+    path: '/api/blog/categories',
+    method: 'GET',
+    summary: 'List public blog categories',
+    description: 'Returns published blog categories with counts.',
+    tags: ['Blog'],
+    responses: {
+      '200': okJson('Blog categories retrieved')
+    }
+  },
+  {
+    path: '/api/agent/public-context',
+    method: 'GET',
+    summary: 'Get public agent context',
+    description: 'Returns public portfolio and blog context for unauthenticated agents.',
+    tags: ['Agent Access'],
+    responses: {
+      '200': okJson('Public agent context retrieved')
+    }
+  },
+  {
+    path: '/api/agent/invitations/claim',
+    method: 'POST',
+    summary: 'Claim agent invitation',
+    description: 'Claims a one-time invite code and returns the bearer token once.',
+    tags: ['Agent Access'],
+    requestBody: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: ['code'],
+            properties: {
+              code: { type: 'string', minLength: 4, example: 'YOUR_INVITE_CODE' }
+            }
+          }
+        }
+      }
+    },
+    responses: {
+      '200': okJson('Agent invitation claimed'),
+      '400': { description: 'Invalid or expired invitation' }
+    }
+  },
+  {
+    path: '/api/agent/access-requests',
+    method: 'POST',
+    summary: 'Request agent access',
+    description: 'Creates a pending access request when no invite code is available.',
+    tags: ['Agent Access'],
+    requestBody: {
+      required: true,
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            required: ['toolName', 'reason', 'requestedScopes'],
+            properties: {
+              agentName: { type: 'string', example: 'Codex' },
+              toolName: { type: 'string', example: 'codex-cli' },
+              reason: { type: 'string', example: 'Help with a portfolio task' },
+              requestedScopes: {
+                type: 'array',
+                items: { type: 'string' },
+                example: ['portfolio:read']
+              }
+            }
+          }
+        }
+      }
+    },
+    responses: {
+      '200': okJson('Agent access request created'),
+      '400': { description: 'Validation error' }
+    }
+  },
+  {
+    path: '/api/agent/me',
+    method: 'GET',
+    summary: 'Inspect agent token',
+    description: 'Returns token identity and scopes for an authenticated agent.',
+    tags: ['Agent Access'],
+    security: [{ type: 'bearer' }],
+    responses: {
+      '200': okJson('Agent token inspected'),
+      '401': { description: 'Missing or invalid bearer token' }
+    }
+  },
+  {
+    path: '/api/agent/instructions',
+    method: 'GET',
+    summary: 'Get private agent instructions',
+    description: 'Returns invite/task instructions and scope-aware guidance for the authenticated agent.',
+    tags: ['Agent Access'],
+    security: [{ type: 'bearer' }],
+    responses: {
+      '200': okJson('Private agent instructions retrieved'),
+      '401': { description: 'Missing or invalid bearer token' }
+    }
+  },
+  {
+    path: '/api/agent/context',
+    method: 'GET',
+    summary: 'Get private agent context',
+    description: 'Returns scope-aware private portfolio context for the authenticated agent.',
+    tags: ['Agent Access'],
+    security: [{ type: 'bearer' }],
+    responses: {
+      '200': okJson('Private agent context retrieved'),
+      '401': { description: 'Missing or invalid bearer token' }
+    }
+  },
+  {
     path: '/api/admin/content/site',
     method: 'GET',
     summary: 'Get site content',
-    description: 'Retrieve site content including hero, about, and footer sections.',
+    description: 'Partial admin CMS documentation. Retrieve site content including hero, about, and footer sections.',
     tags: ['Admin', 'Content'],
     security: [{ type: 'bearer' }],
     responses: {
@@ -224,7 +452,7 @@ export const API_DOCUMENTATION: ApiEndpoint[] = [
     path: '/api/admin/content/projects',
     method: 'GET',
     summary: 'List projects',
-    description: 'Get all projects with their technologies.',
+    description: 'Partial admin CMS documentation. Get all projects with their technologies.',
     tags: ['Admin', 'Projects'],
     security: [{ type: 'bearer' }],
     parameters: [
@@ -309,9 +537,14 @@ export function generateOpenApiSpec(): Record<string, unknown> {
     },
     tags: [
       { name: 'Contact', description: 'Contact form operations' },
-      { name: 'Admin', description: 'Admin operations' },
-      { name: 'Content', description: 'Content management' },
-      { name: 'Projects', description: 'Project management' }
+      { name: 'Subscriptions', description: 'Newsletter subscription operations' },
+      { name: 'Health', description: 'Application health checks' },
+      { name: 'Public Content', description: 'Public portfolio content' },
+      { name: 'Blog', description: 'Public blog reads' },
+      { name: 'Agent Access', description: 'Invite-first scoped agent access' },
+      { name: 'Admin', description: 'Partial admin CMS operations' },
+      { name: 'Content', description: 'Partial content management operations' },
+      { name: 'Projects', description: 'Partial project management operations' }
     ]
   }
 
@@ -352,13 +585,14 @@ export function generateMarkdownDocs(): string {
   markdown += '- Development: `http://localhost:3000`\n\n'
   
   markdown += '## Authentication\n\n'
-  markdown += 'Admin endpoints require Bearer token authentication.\n\n'
+  markdown += 'Admin endpoints require admin session authentication or a scoped agent Bearer token. Agent private endpoints require an agent Bearer token.\n\n'
   
   markdown += '## Rate Limiting\n\n'
   markdown += 'API endpoints are rate limited to prevent abuse:\n\n'
   markdown += '- Contact form: 3 requests per 15 minutes\n'
   markdown += '- Admin endpoints: 60 requests per minute\n'
   markdown += '- Public endpoints: 100 requests per minute\n\n'
+  markdown += 'Current rate limits use an in-memory process-local store. Replace with a distributed store before relying on them for serious production abuse protection.\n\n'
   
   markdown += '## Endpoints\n\n'
   

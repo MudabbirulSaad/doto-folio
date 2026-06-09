@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { createSuccessResponse } from '@/lib/api/response'
 import { authorizeAdminRequest } from '@/lib/auth/api-authorization'
 import { createAdminContactSubmissionUseCases } from '@/lib/server/composition/contact'
-import { createLegacyJsonErrorResponse } from '@/lib/server/adapters/http/legacy-json-response'
+import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 
 function filtersFromRequest(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -18,10 +19,10 @@ export async function GET(request: NextRequest) {
   try {
     await authorizeAdminRequest(request, 'contact-submissions:read')
     const submissions = await createAdminContactSubmissionUseCases().list(filtersFromRequest(request))
-    return NextResponse.json({ submissions })
+    return createSuccessResponse({ submissions })
   } catch (error) {
     console.error('Submissions API error:', error)
-    return createLegacyJsonErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -29,9 +30,9 @@ export async function PATCH(request: NextRequest) {
   try {
     await authorizeAdminRequest(request, 'contact-submissions:update')
     const result = await createAdminContactSubmissionUseCases().updateReadStatus(await request.json())
-    return NextResponse.json(result)
+    return createSuccessResponse(result, 'Submission read status updated')
   } catch (error) {
     console.error('Update submissions API error:', error)
-    return createLegacyJsonErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }

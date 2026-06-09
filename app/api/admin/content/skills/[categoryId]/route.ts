@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { createSuccessResponse } from '@/lib/api/response'
 import { authorizeAdminRequest } from '@/lib/auth/api-authorization'
 import { createSkillContentUseCases } from '@/lib/server/composition/content'
-import { createLegacyJsonErrorResponse } from '@/lib/server/adapters/http/legacy-json-response'
+import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 
 export async function PUT(
   request: NextRequest,
@@ -12,10 +13,10 @@ export async function PUT(
 
     const { categoryId: skillId } = await params
     const skill = await (await createSkillContentUseCases()).updateFlat(skillId, await request.json())
-    return NextResponse.json({ data: skill, message: 'Skill updated successfully' })
+    return createSuccessResponse(skill, 'Skill updated successfully')
   } catch (error) {
     console.error('Error in PUT /api/admin/content/skills/[id]:', error)
-    return createLegacyJsonErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -28,9 +29,9 @@ export async function DELETE(
 
     const { categoryId: skillId } = await params
     await (await createSkillContentUseCases()).delete(skillId)
-    return NextResponse.json({ message: 'Skill deleted successfully' })
+    return createSuccessResponse({ id: skillId }, 'Skill deleted successfully')
   } catch (error) {
     console.error('Error in DELETE /api/admin/content/skills/[id]:', error)
-    return createLegacyJsonErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }

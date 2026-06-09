@@ -2,9 +2,11 @@ import { ApplicationError } from '@/lib/server/domain/errors'
 import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import type {
   AgentAccessRequest,
+  AgentAccessRequestStatus,
   AgentAccessRequestRepository,
   AgentAuditRepository,
   AgentInvitation,
+  AgentInvitationStatus,
   AgentInvitationRepository,
   AgentScope,
   AgentToken,
@@ -15,7 +17,54 @@ function databaseError(message: string, error: { message: string } | null): neve
   throw new ApplicationError('DATABASE_ERROR', message, error ? [error.message] : undefined)
 }
 
-function requestFromRow(row: any): AgentAccessRequest {
+interface AgentAccessRequestRow {
+  id: string
+  agent_name: string
+  tool_name: string
+  reason: string
+  requested_scopes?: AgentScope[] | null
+  approved_scopes?: AgentScope[] | null
+  status: AgentAccessRequestStatus
+  code_hash: string
+  expires_at: string
+  approved_by?: string | null
+  rejected_by?: string | null
+  created_at: string
+  updated_at: string
+}
+
+interface AgentTokenRow {
+  id: string
+  request_id?: string | null
+  invitation_id?: string | null
+  agent_name: string
+  tool_name: string
+  token_hash: string
+  scopes?: AgentScope[] | null
+  expires_at: string | null
+  revoked_at?: string | null
+  last_used_at?: string | null
+  created_at: string
+}
+
+interface AgentInvitationRow {
+  id: string
+  agent_label: string
+  tool_name: string
+  scopes?: AgentScope[] | null
+  instructions_md?: string | null
+  status: AgentInvitationStatus
+  code_hash: string
+  expires_at: string
+  token_expires_at: string | null
+  created_by: string
+  claimed_token_id?: string | null
+  claimed_at?: string | null
+  created_at: string
+  updated_at: string
+}
+
+function requestFromRow(row: AgentAccessRequestRow): AgentAccessRequest {
   return {
     id: row.id,
     agentName: row.agent_name,
@@ -33,7 +82,7 @@ function requestFromRow(row: any): AgentAccessRequest {
   }
 }
 
-function tokenFromRow(row: any): AgentToken {
+function tokenFromRow(row: AgentTokenRow): AgentToken {
   return {
     id: row.id,
     requestId: row.request_id,
@@ -49,7 +98,7 @@ function tokenFromRow(row: any): AgentToken {
   }
 }
 
-function invitationFromRow(row: any): AgentInvitation {
+function invitationFromRow(row: AgentInvitationRow): AgentInvitation {
   return {
     id: row.id,
     agentLabel: row.agent_label,

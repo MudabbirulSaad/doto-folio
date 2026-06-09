@@ -12,7 +12,7 @@
     "test:client": "vitest run",
     "setup:admin": "tsx scripts/setup-admin.ts",
     "setup:content": "tsx scripts/setup-content-management.ts",
-    "lint": "next lint",
+    "lint": "eslint .",
     "api:docs": "tsx -e \"void (async () => { const { generateOpenApiSpec } = await import('./lib/api/documentation.ts'); console.log(JSON.stringify(generateOpenApiSpec(), null, 2)) })()\"",
     "api:health": "curl http://localhost:3000/api/health",
     "api:metrics": "curl -H 'Authorization: Bearer YOUR_TOKEN' http://localhost:3000/api/admin/metrics"

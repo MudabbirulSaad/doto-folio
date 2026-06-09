@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { createSuccessResponse } from '@/lib/api/response'
 import { authorizeAdminRequest } from '@/lib/auth/api-authorization'
 import { createProjectUseCases } from '@/lib/server/composition/content'
-import { createLegacyJsonErrorResponse } from '@/lib/server/adapters/http/legacy-json-response'
+import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 
 export async function GET(
   request: NextRequest,
@@ -12,10 +13,10 @@ export async function GET(
 
     const { id } = await params
     const project = await (await createProjectUseCases()).get(id)
-    return NextResponse.json({ data: project })
+    return createSuccessResponse(project)
   } catch (error) {
     console.error('Error in GET /api/admin/content/projects/[id]:', error)
-    return createLegacyJsonErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -32,13 +33,10 @@ export async function PUT(
     await projects.update(id, body)
     const completeProject = await projects.get(id)
 
-    return NextResponse.json({
-      data: completeProject,
-      message: 'Project updated successfully'
-    })
+    return createSuccessResponse(completeProject, 'Project updated successfully')
   } catch (error) {
     console.error('Error in PUT /api/admin/content/projects/[id]:', error)
-    return createLegacyJsonErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -52,11 +50,9 @@ export async function DELETE(
 
     await (await createProjectUseCases()).delete(id)
 
-    return NextResponse.json({
-      message: 'Project deleted successfully'
-    })
+    return createSuccessResponse({ id }, 'Project deleted successfully')
   } catch (error) {
     console.error('Error in DELETE /api/admin/content/projects/[id]:', error)
-    return createLegacyJsonErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }

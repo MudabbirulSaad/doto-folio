@@ -116,7 +116,9 @@ class RateLimitStore {
   }
 }
 
-// Global store instance
+// Global process-local store instance.
+// This does not coordinate across serverless instances, processes, or restarts.
+// Use a shared store before relying on rate limits for production abuse protection.
 const rateLimitStore = new RateLimitStore()
 
 // =============================================

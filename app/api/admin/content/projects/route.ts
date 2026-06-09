@@ -1,17 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { createSuccessResponse } from '@/lib/api/response'
 import { authorizeAdminRequest } from '@/lib/auth/api-authorization'
 import { createProjectUseCases } from '@/lib/server/composition/content'
-import { createLegacyJsonErrorResponse } from '@/lib/server/adapters/http/legacy-json-response'
+import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 
 export async function GET(request: NextRequest) {
   try {
     await authorizeAdminRequest(request, 'projects:read')
 
     const projects = await (await createProjectUseCases()).list()
-    return NextResponse.json({ data: projects })
+    return createSuccessResponse(projects)
   } catch (error) {
     console.error('Error in GET /api/admin/content/projects:', error)
-    return createLegacyJsonErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -24,12 +25,9 @@ export async function POST(request: NextRequest) {
     const project = await projects.create(body)
     const completeProject = await projects.get(project.id)
 
-    return NextResponse.json({
-      data: completeProject,
-      message: 'Project created successfully'
-    })
+    return createSuccessResponse(completeProject, 'Project created successfully')
   } catch (error) {
     console.error('Error in POST /api/admin/content/projects:', error)
-    return createLegacyJsonErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
