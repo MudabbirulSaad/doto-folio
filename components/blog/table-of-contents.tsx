@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 import { List, ChevronRight } from 'lucide-react'
@@ -15,11 +15,10 @@ interface TableOfContentsProps {
 }
 
 export function TableOfContents({ content, className = '' }: TableOfContentsProps) {
-  const [tocItems, setTocItems] = useState<TOCItem[]>([])
   const [activeId, setActiveId] = useState<string>('')
   const tocRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
+  const tocItems = useMemo(() => {
     // Extract headings from content
     const headingRegex = /^(#{1,6})\s+(.+)$/gm
     const items: TOCItem[] = []
@@ -38,7 +37,7 @@ export function TableOfContents({ content, className = '' }: TableOfContentsProp
       })
     }
 
-    setTocItems(items)
+    return items
   }, [content])
 
   useEffect(() => {

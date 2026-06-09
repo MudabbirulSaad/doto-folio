@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, MessageCircle, Reply } from 'lucide-react'
@@ -26,7 +26,7 @@ export function CommentList({ postId, refreshTrigger }: CommentListProps) {
     const [error, setError] = useState('')
     const [replyingTo, setReplyingTo] = useState<string | null>(null)
 
-    const fetchComments = async () => {
+    const fetchComments = useCallback(async () => {
         setIsLoading(true)
         try {
             setComments(await loadCommentTree(createCommentApiGateway(), postId))
@@ -35,15 +35,15 @@ export function CommentList({ postId, refreshTrigger }: CommentListProps) {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [postId])
 
     useEffect(() => {
         fetchComments()
-    }, [postId, refreshTrigger])
+    }, [fetchComments, refreshTrigger])
 
-    const handleReplySuccess = () => {
+    const handleReplySuccess = async () => {
         setReplyingTo(null)
-        fetchComments() // Refresh to show new reply
+        await fetchComments() // Refresh to show new reply
     }
 
     if (isLoading && comments.length === 0) {
