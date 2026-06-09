@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useCallback, useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -110,13 +110,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const postGateway = useMemo(() => createAdminBlogPostApiGateway(), [])
   const taxonomyGateway = useMemo(() => createAdminBlogTaxonomyApiGateway(), [])
 
-  useEffect(() => {
-    fetchPost()
-    fetchCategories()
-    fetchTags()
-  }, [resolvedParams.id])
-
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     try {
       const postData = await postGateway.getPost(resolvedParams.id)
         setPost(postData)
@@ -205,9 +199,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [postGateway, resolvedParams.id, router])
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const result = await loadAdminBlogCategories(taxonomyGateway)
       if (result.success) {
@@ -216,9 +210,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     } catch (error) {
       console.error('Error fetching categories:', error)
     }
-  }
+  }, [taxonomyGateway])
 
-  const fetchTags = async () => {
+  const fetchTags = useCallback(async () => {
     try {
       const result = await loadAdminBlogTags(taxonomyGateway)
       if (result.success) {
@@ -227,7 +221,13 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     } catch (error) {
       console.error('Error fetching tags:', error)
     }
-  }
+  }, [taxonomyGateway])
+
+  useEffect(() => {
+    fetchPost()
+    fetchCategories()
+    fetchTags()
+  }, [fetchPost, fetchCategories, fetchTags])
 
   const handleTagSelect = (tag: BlogTag) => {
     if (!selectedTags.find(t => t.id === tag.id)) {

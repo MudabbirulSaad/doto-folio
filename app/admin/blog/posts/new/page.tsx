@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useCallback, useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -101,17 +101,7 @@ export default function NewPostPage() {
   const postGateway = useMemo(() => createAdminBlogPostApiGateway(), [])
   const taxonomyGateway = useMemo(() => createAdminBlogTaxonomyApiGateway(), [])
 
-  useEffect(() => {
-    fetchCategories()
-    fetchTags()
-  }, [])
-
-  // Auto-generate slug from title
-  useEffect(() => {
-    setSlug(generateSlug(title))
-  }, [title])
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const result = await loadAdminBlogCategories(taxonomyGateway)
       if (result.success) {
@@ -120,9 +110,9 @@ export default function NewPostPage() {
     } catch (error) {
       console.error('Error fetching categories:', error)
     }
-  }
+  }, [taxonomyGateway])
 
-  const fetchTags = async () => {
+  const fetchTags = useCallback(async () => {
     try {
       const result = await loadAdminBlogTags(taxonomyGateway)
       if (result.success) {
@@ -131,7 +121,17 @@ export default function NewPostPage() {
     } catch (error) {
       console.error('Error fetching tags:', error)
     }
-  }
+  }, [taxonomyGateway])
+
+  useEffect(() => {
+    fetchCategories()
+    fetchTags()
+  }, [fetchCategories, fetchTags])
+
+  // Auto-generate slug from title
+  useEffect(() => {
+    setSlug(generateSlug(title))
+  }, [title])
 
   const createNewCategory = async () => {
     if (!newCategoryName.trim()) return
