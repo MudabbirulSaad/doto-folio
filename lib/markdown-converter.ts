@@ -2,16 +2,64 @@ import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
 import { visit } from 'unist-util-visit'
+import type {
+    Blockquote,
+    Delete,
+    Emphasis,
+    Heading,
+    Image,
+    InlineCode,
+    Link,
+    ListItem,
+    Root,
+    RootContent,
+    Strong,
+    Text
+} from 'mdast'
+
+type MarkdownBlock = Root | RootContent
+type MarkdownTextNode =
+    | Blockquote
+    | Delete
+    | Emphasis
+    | Heading
+    | Image
+    | InlineCode
+    | Link
+    | ListItem
+    | Root
+    | RootContent
+    | Strong
+    | Text
+type MarkdownParentNode = Extract<MarkdownTextNode, { children: MarkdownTextNode[] }>
+
+type EditorBlock =
+    | { type: 'header'; data: { text: string; level: Heading['depth'] } }
+    | { type: 'paragraph'; data: { text: string } }
+    | { type: 'list'; data: { style: 'ordered' | 'unordered'; items: string[] } }
+    | { type: 'code'; data: { code: string; language: string } }
+    | { type: 'quote'; data: { text: string; caption: string; alignment: 'left' } }
+    | { type: 'delimiter'; data: Record<string, never> }
+    | {
+        type: 'image'
+        data: {
+            file: { url: string }
+            caption: string
+            withBorder: false
+            withBackground: false
+            stretched: false
+        }
+    }
 
 export async function markdownToBlocks(markdown: string) {
     const processor = unified()
         .use(remarkParse)
         .use(remarkGfm)
 
-    const tree = processor.parse(markdown)
-    const blocks: any[] = []
+    const tree = processor.parse(markdown) as Root
+    const blocks: EditorBlock[] = []
 
-    visit(tree, (node: any) => {
+    visit(tree, (node: MarkdownBlock) => {
         // Skip root node
         if (node.type === 'root') return
 
@@ -39,7 +87,7 @@ export async function markdownToBlocks(markdown: string) {
                 return 'skip'
 
             case 'list':
-                const items = node.children.map((listItem: any) => {
+                const items = node.children.map((listItem: ListItem) => {
                     // Handle nested content in list items
                     // For simplicity, we'll extract text, but EditorJS list items can be strings
                     return extractText(listItem)
@@ -109,7 +157,11 @@ export async function markdownToBlocks(markdown: string) {
 }
 
 // Helper to extract text from a node and its children, preserving some inline formatting
-function extractText(node: any): string {
+function hasMarkdownChildren(node: MarkdownTextNode): node is MarkdownParentNode {
+    return 'children' in node && Array.isArray(node.children)
+}
+
+function extractText(node: MarkdownTextNode): string {
     if (node.type === 'text') return node.value
     if (node.type === 'inlineCode') return `<code class="inline-code">${node.value}</code>`
     if (node.type === 'strong') return `<b>${node.children.map(extractText).join('')}</b>`
@@ -118,7 +170,7 @@ function extractText(node: any): string {
     if (node.type === 'link') return `<a href="${node.url}">${node.children.map(extractText).join('')}</a>`
     if (node.type === 'image') return `<img src="${node.url}" alt="${node.alt || ''}" />`
 
-    if (node.children) {
+    if (hasMarkdownChildren(node)) {
         return node.children.map(extractText).join('')
     }
 
