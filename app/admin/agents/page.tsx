@@ -136,7 +136,7 @@ function CompactScopeSelector({
         </div>
       )}
 
-      <div className="mt-3 space-y-2">
+      <div className="mt-3 max-h-80 space-y-2 overflow-auto pr-1">
         {groups.map(group => {
           const activeCount = group.scopes.filter(scope => selectedSet.has(scope.value)).length
 
@@ -377,7 +377,7 @@ export default function AdminAgentsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="flex items-center gap-3 text-3xl font-bold text-foreground">
@@ -400,77 +400,80 @@ export default function AdminAgentsPage() {
         </div>
       )}
 
-      <section className="space-y-4">
-        <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-          <Send className="h-5 w-5 text-primary" />
-          Create Invitation
-        </h2>
-        <div className="rounded-md border border-white/10 bg-black/20 p-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input
-              placeholder="Agent label"
-              value={inviteForm.agentLabel}
-              onChange={event => setInviteForm(current => ({ ...current, agentLabel: event.target.value }))}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <Send className="h-4 w-4 text-primary" />
+            Create Invitation
+          </h2>
+          {lastInviteCode && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 border-white/10 bg-white/5"
+              onClick={() => navigator.clipboard?.writeText(`Read ${window.location.origin}/skill.md and join with code ${lastInviteCode}`)}
+            >
+              <Copy className="h-4 w-4" />
+              Copy {lastInviteCode}
+            </Button>
+          )}
+        </div>
+        <div className="grid gap-4 rounded-md border border-white/10 bg-black/20 p-4 lg:grid-cols-[340px_1fr]">
+          <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              <Input
+                placeholder="Agent label"
+                value={inviteForm.agentLabel}
+                onChange={event => setInviteForm(current => ({ ...current, agentLabel: event.target.value }))}
+              />
+              <Input
+                placeholder="Tool name"
+                value={inviteForm.toolName}
+                onChange={event => setInviteForm(current => ({ ...current, toolName: event.target.value }))}
+              />
+              <Input
+                type="number"
+                min="1"
+                placeholder="Invite expiry minutes"
+                value={inviteForm.inviteMinutes}
+                onChange={event => setInviteForm(current => ({ ...current, inviteMinutes: event.target.value }))}
+              />
+              <Input
+                type="number"
+                min="1"
+                placeholder="Token expiry hours"
+                value={inviteForm.tokenHours}
+                disabled={inviteForm.tokenPermanent}
+                onChange={event => setInviteForm(current => ({ ...current, tokenHours: event.target.value }))}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={inviteForm.tokenPermanent}
+                onChange={event => setInviteForm(current => ({ ...current, tokenPermanent: event.target.checked }))}
+              />
+              Permanent token access
+            </label>
+            <Textarea
+              className="min-h-28"
+              placeholder="Task instructions markdown"
+              value={inviteForm.instructionsMd}
+              onChange={event => setInviteForm(current => ({ ...current, instructionsMd: event.target.value }))}
             />
-            <Input
-              placeholder="Tool name"
-              value={inviteForm.toolName}
-              onChange={event => setInviteForm(current => ({ ...current, toolName: event.target.value }))}
-            />
-            <Input
-              type="number"
-              min="1"
-              placeholder="Invite expiry minutes"
-              value={inviteForm.inviteMinutes}
-              onChange={event => setInviteForm(current => ({ ...current, inviteMinutes: event.target.value }))}
-            />
-            <Input
-              type="number"
-              min="1"
-              placeholder="Token expiry hours"
-              value={inviteForm.tokenHours}
-              disabled={inviteForm.tokenPermanent}
-              onChange={event => setInviteForm(current => ({ ...current, tokenHours: event.target.value }))}
-            />
-          </div>
-          <label className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={inviteForm.tokenPermanent}
-              onChange={event => setInviteForm(current => ({ ...current, tokenPermanent: event.target.checked }))}
-            />
-            Permanent token access
-          </label>
-          <Textarea
-            className="mt-4 min-h-32"
-            placeholder="Task instructions markdown"
-            value={inviteForm.instructionsMd}
-            onChange={event => setInviteForm(current => ({ ...current, instructionsMd: event.target.value }))}
-          />
-          <div className="mt-4">
-            <CompactScopeSelector label="Invite" selected={inviteScopes} onChange={setInviteScopes} />
-          </div>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Button onClick={createInvitation} disabled={busyId === 'create-invitation'} className="gap-2">
+            <Button onClick={createInvitation} disabled={busyId === 'create-invitation'} className="w-full gap-2">
               <Send className="h-4 w-4" />
               Create Invite
             </Button>
-            {lastInviteCode && (
-              <Button
-                variant="outline"
-                className="gap-2 border-white/10 bg-white/5"
-                onClick={() => navigator.clipboard?.writeText(`Read ${window.location.origin}/skill.md and join with code ${lastInviteCode}`)}
-              >
-                <Copy className="h-4 w-4" />
-                Copy Invite: {lastInviteCode}
-              </Button>
-            )}
+          </div>
+          <div className="min-w-0">
+            <CompactScopeSelector label="Invite" selected={inviteScopes} onChange={setInviteScopes} />
           </div>
         </div>
       </section>
 
-      <section className="space-y-4">
-        <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+      <section className="space-y-3">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
           <Send className="h-5 w-5 text-primary" />
           Invitations
         </h2>
@@ -520,8 +523,8 @@ export default function AdminAgentsPage() {
         )}
       </section>
 
-      <section className="space-y-4">
-        <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+      <section className="space-y-3">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
           <Bot className="h-5 w-5 text-primary" />
           Pending Requests
         </h2>
@@ -582,8 +585,8 @@ export default function AdminAgentsPage() {
       </section>
 
       {resolvedRequests.length > 0 && (
-        <section className="space-y-4">
-          <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+        <section className="space-y-3">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <CheckCircle className="h-5 w-5 text-primary" />
             Resolved Requests
           </h2>
@@ -602,8 +605,8 @@ export default function AdminAgentsPage() {
         </section>
       )}
 
-      <section className="space-y-4">
-        <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+      <section className="space-y-3">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
           <KeyRound className="h-5 w-5 text-primary" />
           Active Tokens
         </h2>
@@ -624,52 +627,55 @@ export default function AdminAgentsPage() {
                       {token.lastUsedAt ? ` - last used ${formatDate(token.lastUsedAt)}` : ''}
                     </p>
                     <ScopeSummary scopes={token.scopes} />
-                    <div className="mt-4 space-y-3">
-                      <CompactScopeSelector
-                        label={`${token.agentName} token`}
-                        selected={tokenEdits[token.id]?.scopes || token.scopes}
-                        onChange={scopes => setTokenEdits(current => ({
-                          ...current,
-                          [token.id]: {
-                            scopes,
-                            tokenHours: current[token.id]?.tokenHours || tokenHoursFromNow(token.expiresAt),
-                            permanent: current[token.id]?.permanent ?? token.expiresAt === null
-                          }
-                        }))}
-                      />
-                      <div className="grid gap-3 sm:grid-cols-[160px_1fr] sm:items-center">
-                        <Input
-                          type="number"
-                          min="1"
-                          placeholder="Token hours"
-                          value={tokenEdits[token.id]?.tokenHours || tokenHoursFromNow(token.expiresAt)}
-                          disabled={tokenEdits[token.id]?.permanent ?? token.expiresAt === null}
-                          onChange={event => setTokenEdits(current => ({
+                    <details className="mt-3 rounded-md border border-white/10 bg-white/[0.025]">
+                      <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-foreground">Edit access</summary>
+                      <div className="space-y-3 border-t border-white/10 p-3">
+                        <CompactScopeSelector
+                          label={`${token.agentName} token`}
+                          selected={tokenEdits[token.id]?.scopes || token.scopes}
+                          onChange={scopes => setTokenEdits(current => ({
                             ...current,
                             [token.id]: {
-                              scopes: current[token.id]?.scopes || token.scopes,
-                              tokenHours: event.target.value,
+                              scopes,
+                              tokenHours: current[token.id]?.tokenHours || tokenHoursFromNow(token.expiresAt),
                               permanent: current[token.id]?.permanent ?? token.expiresAt === null
                             }
                           }))}
                         />
-                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <input
-                            type="checkbox"
-                            checked={tokenEdits[token.id]?.permanent ?? token.expiresAt === null}
+                        <div className="grid gap-3 sm:grid-cols-[160px_1fr] sm:items-center">
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="Token hours"
+                            value={tokenEdits[token.id]?.tokenHours || tokenHoursFromNow(token.expiresAt)}
+                            disabled={tokenEdits[token.id]?.permanent ?? token.expiresAt === null}
                             onChange={event => setTokenEdits(current => ({
                               ...current,
                               [token.id]: {
                                 scopes: current[token.id]?.scopes || token.scopes,
-                                tokenHours: current[token.id]?.tokenHours || tokenHoursFromNow(token.expiresAt),
-                                permanent: event.target.checked
+                                tokenHours: event.target.value,
+                                permanent: current[token.id]?.permanent ?? token.expiresAt === null
                               }
                             }))}
                           />
-                          Permanent access
-                        </label>
+                          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <input
+                              type="checkbox"
+                              checked={tokenEdits[token.id]?.permanent ?? token.expiresAt === null}
+                              onChange={event => setTokenEdits(current => ({
+                                ...current,
+                                [token.id]: {
+                                  scopes: current[token.id]?.scopes || token.scopes,
+                                  tokenHours: current[token.id]?.tokenHours || tokenHoursFromNow(token.expiresAt),
+                                  permanent: event.target.checked
+                                }
+                              }))}
+                            />
+                            Permanent access
+                          </label>
+                        </div>
                       </div>
-                    </div>
+                    </details>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button
