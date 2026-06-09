@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AdminAgentsPage from '@/app/admin/agents/page'
 import type {
@@ -99,5 +100,24 @@ describe('admin agents page', () => {
     await waitFor(() => {
       expect(screen.getByText(/Agent access tables are missing/)).toBeInTheDocument()
     })
+  })
+
+  it('applies scope templates and clears selected invite scopes', async () => {
+    loadAdminAgentsMock.mockResolvedValue({
+      requests: [],
+      invitations: [],
+      tokens: []
+    })
+    const user = userEvent.setup()
+
+    render(<AdminAgentsPage />)
+
+    expect(await screen.findByText('Selected: Portfolio 1')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Blog writer/i }))
+    expect(screen.getByText('Selected: Blog Posts 3, Blog Taxonomy 5, Blog Tools 2')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Clear invite scopes' }))
+    expect(screen.getByText('Selected: No scopes')).toBeInTheDocument()
   })
 })

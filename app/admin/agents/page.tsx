@@ -16,7 +16,12 @@ import {
   updateAdminAgentTokenAccess
 } from '@/lib/client/application/admin/agents'
 import { createAdminAgentApiGateway } from '@/lib/client/adapters/http/admin-agents-api'
-import { CLIENT_AGENT_SCOPES } from '@/lib/client/domain/admin-agents'
+import {
+  AGENT_SCOPE_TEMPLATES,
+  CLIENT_AGENT_SCOPES,
+  summarizeAgentScopes,
+  toAgentScopeGroups
+} from '@/lib/client/domain/admin-agents'
 import type {
   AdminAgentAccessRequest,
   AdminAgentInvitation,
@@ -56,72 +61,112 @@ function tokenHoursFromNow(expiresAt: string | null) {
   return String(Math.max(1, hours))
 }
 
-function ScopeSelector({
-  request,
-  selected,
-  onChange
-}: {
-  request: AdminAgentAccessRequest
-  selected: ClientAgentScope[]
-  onChange: (scopes: ClientAgentScope[]) => void
-}) {
-  const selectedSet = useMemo(() => new Set(selected), [selected])
-
-  return (
-    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-      {request.requestedScopes.map(scope => (
-        <label
-          key={scope}
-          className="flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-muted-foreground"
-        >
-          <input
-            type="checkbox"
-            checked={selectedSet.has(scope)}
-            onChange={event => {
-              onChange(
-                event.target.checked
-                  ? [...selected, scope]
-                  : selected.filter(item => item !== scope)
-              )
-            }}
-          />
-          <span className="break-all">{scope}</span>
-        </label>
-      ))}
-    </div>
-  )
+function toggleScope(selected: ClientAgentScope[], scope: ClientAgentScope) {
+  return selected.includes(scope)
+    ? selected.filter(item => item !== scope)
+    : [...selected, scope]
 }
 
-function InvitationScopeSelector({
+function intersectScopes(scopes: readonly ClientAgentScope[], available: readonly ClientAgentScope[]) {
+  const availableSet = new Set(available)
+  return scopes.filter(scope => availableSet.has(scope))
+}
+
+function CompactScopeSelector({
+  label,
+  availableScopes = CLIENT_AGENT_SCOPES,
   selected,
-  onChange
+  onChange,
+  templates = true
 }: {
+  label: string
+  availableScopes?: readonly ClientAgentScope[]
   selected: ClientAgentScope[]
   onChange: (scopes: ClientAgentScope[]) => void
+  templates?: boolean
 }) {
   const selectedSet = useMemo(() => new Set(selected), [selected])
+  const groups = useMemo(() => toAgentScopeGroups(availableScopes), [availableScopes])
 
   return (
-    <div className="grid max-h-72 gap-2 overflow-auto rounded-md border border-white/10 bg-black/20 p-3 sm:grid-cols-2 lg:grid-cols-3">
-      {CLIENT_AGENT_SCOPES.map(scope => (
-        <label
-          key={scope}
-          className="flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-muted-foreground"
-        >
-          <input
-            type="checkbox"
-            checked={selectedSet.has(scope)}
-            onChange={event => {
-              onChange(
-                event.target.checked
-                  ? [...selected, scope]
-                  : selected.filter(item => item !== scope)
-              )
-            }}
-          />
-          <span className="break-all">{scope}</span>
-        </label>
-      ))}
+    <div className="rounded-md border border-white/10 bg-white/[0.025] p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+          <p className="text-sm text-foreground">Selected: {summarizeAgentScopes(selected)}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 border-white/10 bg-white/5 px-2 text-xs"
+            onClick={() => onChange([...availableScopes])}
+          >
+            Select all
+          </Button>
+          <Button
+            type="button"
+            aria-label={`Clear ${label.toLowerCase()} scopes`}
+            variant="outline"
+            size="sm"
+            className="h-7 border-white/10 bg-white/5 px-2 text-xs"
+            onClick={() => onChange([])}
+          >
+            Clear
+          </Button>
+        </div>
+      </div>
+
+      {templates && (
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {AGENT_SCOPE_TEMPLATES.map(template => (
+            <Button
+              key={template.id}
+              type="button"
+              variant="outline"
+              size="sm"
+              title={template.description}
+              className="h-7 shrink-0 border-white/10 bg-black/20 px-2 text-xs"
+              onClick={() => onChange(intersectScopes(template.scopes, availableScopes))}
+            >
+              {template.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-3 space-y-2">
+        {groups.map(group => {
+          const activeCount = group.scopes.filter(scope => selectedSet.has(scope.value)).length
+
+          return (
+            <div key={group.id} className="grid gap-2 rounded-md border border-white/10 bg-black/20 p-2 sm:grid-cols-[150px_1fr] sm:items-center">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-foreground">{group.label}</span>
+                <Badge variant="outline" className="border-white/10 text-[10px]">{activeCount}/{group.scopes.length}</Badge>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {group.scopes.map(scope => (
+                  <button
+                    key={scope.value}
+                    type="button"
+                    aria-pressed={selectedSet.has(scope.value)}
+                    title={scope.value}
+                    onClick={() => onChange(toggleScope(selected, scope.value))}
+                    className={`rounded-full border px-2 py-1 text-xs transition-colors ${selectedSet.has(scope.value)
+                      ? 'border-primary/50 bg-primary/15 text-primary'
+                      : 'border-white/10 bg-white/[0.03] text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {scope.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -382,7 +427,7 @@ export default function AdminAgentsPage() {
             onChange={event => setInviteForm(current => ({ ...current, instructionsMd: event.target.value }))}
           />
           <div className="mt-4">
-            <InvitationScopeSelector selected={inviteScopes} onChange={setInviteScopes} />
+            <CompactScopeSelector label="Invite" selected={inviteScopes} onChange={setInviteScopes} />
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button onClick={createInvitation} disabled={busyId === 'create-invitation'} className="gap-2">
@@ -481,8 +526,9 @@ export default function AdminAgentsPage() {
 
                 {request.status === 'pending' && (
                   <>
-                    <ScopeSelector
-                      request={request}
+                    <CompactScopeSelector
+                      label={`${request.agentName} request`}
+                      availableScopes={request.requestedScopes}
                       selected={selectedScopes[request.id] || request.requestedScopes}
                       onChange={scopes => setSelectedScopes(current => ({ ...current, [request.id]: scopes }))}
                     />
@@ -542,7 +588,8 @@ export default function AdminAgentsPage() {
                       ))}
                     </div>
                     <div className="mt-4 space-y-3">
-                      <InvitationScopeSelector
+                      <CompactScopeSelector
+                        label={`${token.agentName} token`}
                         selected={tokenEdits[token.id]?.scopes || token.scopes}
                         onChange={scopes => setTokenEdits(current => ({
                           ...current,
