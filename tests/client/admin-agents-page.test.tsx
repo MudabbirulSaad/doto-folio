@@ -39,12 +39,22 @@ function request(): AdminAgentAccessRequest {
   }
 }
 
+function approvedRequest(): AdminAgentAccessRequest {
+  return {
+    ...request(),
+    id: 'request-approved',
+    agentName: 'Approved Codex',
+    status: 'approved',
+    approvedScopes: ['portfolio:read']
+  }
+}
+
 function invitation(): AdminAgentInvitation {
   return {
     id: 'invitation-1',
     agentLabel: 'Invited Codex',
     toolName: 'codex-cli',
-    scopes: ['portfolio:read'],
+    scopes: ['blog-posts:read', 'blog-posts:create', 'comments:read'],
     instructionsMd: 'Read context.',
     status: 'pending',
     expiresAt: '2026-06-09T00:15:00.000Z',
@@ -64,7 +74,7 @@ function token(): AdminAgentToken {
     invitationId: null,
     agentName: 'Active Codex',
     toolName: 'codex-cli',
-    scopes: ['portfolio:read'],
+    scopes: ['blog-posts:read', 'blog-posts:create', 'comments:read'],
     expiresAt: '2026-06-10T00:00:00.000Z',
     revokedAt: null,
     lastUsedAt: null,
@@ -119,5 +129,21 @@ describe('admin agents page', () => {
 
     await user.click(screen.getByRole('button', { name: 'Clear invite scopes' }))
     expect(screen.getByText('Selected: No scopes')).toBeInTheDocument()
+  })
+
+  it('keeps approved requests out of pending and summarizes record scopes', async () => {
+    loadAdminAgentsMock.mockResolvedValue({
+      requests: [approvedRequest()],
+      invitations: [invitation()],
+      tokens: [token()]
+    })
+
+    render(<AdminAgentsPage />)
+
+    expect(await screen.findByText('No pending agent requests.')).toBeInTheDocument()
+    expect(screen.getByText('Resolved Requests')).toBeInTheDocument()
+    expect(screen.getByText('Approved Codex')).toBeInTheDocument()
+    expect(screen.getAllByText('Blog Posts 2, Comments 1').length).toBeGreaterThan(0)
+    expect(screen.queryByText('blog-posts:create')).not.toBeInTheDocument()
   })
 })

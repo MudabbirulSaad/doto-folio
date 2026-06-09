@@ -171,6 +171,17 @@ function CompactScopeSelector({
   )
 }
 
+function ScopeSummary({ scopes }: { scopes: ClientAgentScope[] }) {
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+      <Badge variant="outline" className="border-white/10 text-xs">
+        {scopes.length} scopes
+      </Badge>
+      <span className="text-muted-foreground">{summarizeAgentScopes(scopes)}</span>
+    </div>
+  )
+}
+
 export default function AdminAgentsPage() {
   const [requests, setRequests] = useState<AdminAgentAccessRequest[]>([])
   const [invitations, setInvitations] = useState<AdminAgentInvitation[]>([])
@@ -194,6 +205,16 @@ export default function AdminAgentsPage() {
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const pendingRequests = requests.filter(request => request.status === 'pending')
+  const resolvedRequests = requests.filter(request => request.status !== 'pending')
+  const pendingInvitations = invitations.filter(invitation => invitation.status === 'pending')
+  const claimedInvitations = invitations.filter(invitation => invitation.status === 'claimed')
+  const closedInvitations = invitations.filter(invitation => invitation.status === 'revoked' || invitation.status === 'expired')
+  const invitationGroups = [
+    { label: 'Pending', invitations: pendingInvitations },
+    { label: 'Claimed', invitations: claimedInvitations },
+    { label: 'Closed', invitations: closedInvitations }
+  ].filter(group => group.invitations.length > 0)
 
   async function refresh() {
     const data = await loadAdminAgents(gateway)
@@ -460,39 +481,40 @@ export default function AdminAgentsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {invitations.map(invitation => (
-              <article key={invitation.id} className="rounded-md border border-white/10 bg-black/20 p-4">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold text-foreground">{invitation.agentLabel}</h3>
-                      <Badge variant="outline" className="border-white/10">{invitation.toolName}</Badge>
-                      <Badge>{invitation.status}</Badge>
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Invite expires {formatDate(invitation.expiresAt)} - token expires {formatDate(invitation.tokenExpiresAt)}
-                      {invitation.claimedAt ? ` - claimed ${formatDate(invitation.claimedAt)}` : ''}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {invitation.scopes.map(scope => (
-                        <Badge key={scope} variant="outline" className="border-white/10 text-xs">
-                          {scope}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  {invitation.status === 'pending' && (
-                    <Button
-                      onClick={() => revokeInvitation(invitation)}
-                      disabled={busyId === invitation.id}
-                      variant="outline"
-                      className="border-red-500/20 text-red-300 hover:bg-red-500/10"
-                    >
-                      Revoke
-                    </Button>
-                  )}
+            {invitationGroups.map(group => (
+              <div key={group.label} className="space-y-2">
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{group.label}</div>
+                <div className="space-y-3">
+                  {group.invitations.map(invitation => (
+                    <article key={invitation.id} className="rounded-md border border-white/10 bg-black/20 p-4">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-foreground">{invitation.agentLabel}</h3>
+                            <Badge variant="outline" className="border-white/10">{invitation.toolName}</Badge>
+                            <Badge>{invitation.status}</Badge>
+                          </div>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            Invite expires {formatDate(invitation.expiresAt)} - token expires {formatDate(invitation.tokenExpiresAt)}
+                            {invitation.claimedAt ? ` - claimed ${formatDate(invitation.claimedAt)}` : ''}
+                          </p>
+                          <ScopeSummary scopes={invitation.scopes} />
+                        </div>
+                        {invitation.status === 'pending' && (
+                          <Button
+                            onClick={() => revokeInvitation(invitation)}
+                            disabled={busyId === invitation.id}
+                            variant="outline"
+                            className="border-red-500/20 text-red-300 hover:bg-red-500/10"
+                          >
+                            Revoke
+                          </Button>
+                        )}
+                      </div>
+                    </article>
+                  ))}
                 </div>
-              </article>
+              </div>
             ))}
           </div>
         )}
@@ -504,13 +526,13 @@ export default function AdminAgentsPage() {
           Pending Requests
         </h2>
 
-        {requests.length === 0 ? (
+        {pendingRequests.length === 0 ? (
           <div className="rounded-md border border-white/10 bg-white/[0.03] p-6 text-muted-foreground">
-            No active agent requests.
+            No pending agent requests.
           </div>
         ) : (
           <div className="space-y-4">
-            {requests.map(request => (
+            {pendingRequests.map(request => (
               <article key={request.id} className="rounded-md border border-white/10 bg-black/20 p-5">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
@@ -559,6 +581,27 @@ export default function AdminAgentsPage() {
         )}
       </section>
 
+      {resolvedRequests.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+            <CheckCircle className="h-5 w-5 text-primary" />
+            Resolved Requests
+          </h2>
+          <div className="divide-y divide-white/10 overflow-hidden rounded-md border border-white/10 bg-black/20">
+            {resolvedRequests.map(request => (
+              <div key={request.id} className="grid gap-2 px-4 py-3 text-sm md:grid-cols-[1fr_auto_auto] md:items-center">
+                <div>
+                  <div className="font-medium text-foreground">{request.agentName}</div>
+                  <div className="text-muted-foreground">{request.toolName} - {request.reason}</div>
+                </div>
+                <Badge variant="outline" className="w-fit border-white/10">{request.status}</Badge>
+                <div className="text-muted-foreground">{formatDate(request.updatedAt)}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="space-y-4">
         <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
           <KeyRound className="h-5 w-5 text-primary" />
@@ -580,13 +623,7 @@ export default function AdminAgentsPage() {
                       {token.toolName} - expires {formatDate(token.expiresAt)}
                       {token.lastUsedAt ? ` - last used ${formatDate(token.lastUsedAt)}` : ''}
                     </p>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {token.scopes.map(scope => (
-                        <Badge key={scope} variant="outline" className="border-white/10 text-xs">
-                          {scope}
-                        </Badge>
-                      ))}
-                    </div>
+                    <ScopeSummary scopes={token.scopes} />
                     <div className="mt-4 space-y-3">
                       <CompactScopeSelector
                         label={`${token.agentName} token`}
