@@ -155,7 +155,7 @@ Commands:
 
 Current verification results:
 
-- `npm test`: 132 passing.
+- `npm test`: passing.
 - `npm run test:client`: 52 passing.
 - `npm run build`: passing.
 - Raw `fetch` scan: only the intentional integration points listed above.
