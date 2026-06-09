@@ -18,3 +18,13 @@ test('audit verification docs avoid stale server test totals', () => {
     )
   }
 })
+
+test('architecture docs include lint in full verification', () => {
+  const content = readFileSync('docs/hexagonal-architecture.md', 'utf8')
+  const fullVerificationLine = content
+    .split(/\r?\n/)
+    .find(line => line.includes('Full verification is'))
+
+  assert.ok(fullVerificationLine, 'docs/hexagonal-architecture.md should describe full verification')
+  assert.match(fullVerificationLine, /`npm run lint`/)
+})

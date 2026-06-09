@@ -56,7 +56,7 @@ Use TDD vertical slices:
 - Adapter contract tests verify table/RPC/auth/email mapping without coupling to application internals.
 - Client workflow/component tests run with `npm run test:client`.
 - Server tests run with `npm test` or `npm run test:server`.
-- Full verification is `npm test`, `npm run test:client`, and `npm run build`.
+- Full verification is `npm run lint`, `npm test`, `npm run test:client`, and `npm run build`.
 
 Legacy modules in `lib/data` may re-export new server modules temporarily to avoid noisy caller churn. New server behavior should be added in `lib/server` first.
 Legacy modules in `lib/services` should be treated as compatibility adapters only. New browser-facing behavior
