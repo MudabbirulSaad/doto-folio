@@ -1,9 +1,13 @@
 declare module '@editorjs/link' {
-  const LinkTool: any
+  import type { ToolConstructable } from '@editorjs/editorjs'
+
+  const LinkTool: ToolConstructable
   export default LinkTool
 }
 
 declare module '@editorjs/embed' {
-  const Embed: any
+  import type { ToolConstructable } from '@editorjs/editorjs'
+
+  const Embed: ToolConstructable
   export default Embed
 }
