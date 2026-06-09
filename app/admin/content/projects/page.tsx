@@ -31,7 +31,7 @@ import {
 import { createAdminProjectApiGateway } from '@/lib/client/adapters/http/admin-projects-api'
 import type { AdminProject, AdminProjectFormData } from '@/lib/client/domain/admin-content'
 
-const statusOptions = [
+const statusOptions: Array<{ value: AdminProject['status']; label: string; color: string }> = [
   { value: 'Planning', label: 'Planning', color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' },
   { value: 'In Development', label: 'In Development', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
   { value: 'Completed', label: 'Completed', color: 'bg-green-500/10 text-green-500 border-green-500/20' },
@@ -251,7 +251,7 @@ export default function ProjectsManagementPage() {
                     <select
                       id="status"
                       value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as AdminProject['status'] })}
                       className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-md text-sm focus:outline-none focus:border-primary/50 text-foreground"
                     >
                       {statusOptions.map(option => (

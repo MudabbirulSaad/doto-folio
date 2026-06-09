@@ -21,6 +21,7 @@ import {
     Terminal,
     Wrench
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import * as LucideIcons from 'lucide-react'
@@ -32,9 +33,9 @@ import {
     saveAdminSkill,
     skillToForm
 } from '@/lib/client/application/admin/skills'
-import type { AdminSkill, AdminSkillFormData } from '@/lib/client/domain/admin-content'
+import type { AdminSkill, AdminSkillCategory, AdminSkillFormData } from '@/lib/client/domain/admin-content'
 
-const categories = [
+const categories: Array<{ value: AdminSkillCategory; label: string; icon: LucideIcon; color: string }> = [
     { value: 'Frontend', label: 'Frontend', icon: Layout, color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
     { value: 'Backend', label: 'Backend', icon: Terminal, color: 'text-green-400 bg-green-500/10 border-green-500/20' },
     { value: 'Database', label: 'Database', icon: Database, color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' },
@@ -135,7 +136,8 @@ export default function SkillsManagementPage() {
 
     // Helper to render dynamic icon
     const renderIcon = (iconName: string, className: string = "w-5 h-5") => {
-        const IconComponent = (LucideIcons as any)[iconName] || LucideIcons.Code2
+        const iconMap = LucideIcons as unknown as Record<string, LucideIcon>
+        const IconComponent = iconMap[iconName] || LucideIcons.Code2
         return <IconComponent className={className} />
     }
 
@@ -241,7 +243,7 @@ export default function SkillsManagementPage() {
                                         <select
                                             id="category"
                                             value={formData.category}
-                                            onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
+                                            onChange={(e) => setFormData({ ...formData, category: e.target.value as AdminSkillCategory })}
                                             className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-md text-sm focus:outline-none focus:border-primary/50 text-foreground"
                                         >
                                             {categories.map(cat => (
