@@ -73,6 +73,36 @@ describe('blog search routing', () => {
     expect(pushMock).not.toHaveBeenCalled()
   })
 
+  it('renders the current query from the URL', () => {
+    currentSearchParams = new URLSearchParams('query=existing')
+
+    renderFilters()
+
+    expect(screen.getByPlaceholderText('Search articles...')).toHaveValue('existing')
+  })
+
+  it('preserves unrelated params and resets page when category changes', () => {
+    currentSearchParams = new URLSearchParams('query=testing&page=3&tag=react')
+
+    renderFilters({
+      categories: [{
+        id: 'category-1',
+        name: 'Architecture',
+        slug: 'architecture',
+        color: '#22c55e',
+        display_order: 1,
+        is_published: true,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z'
+      }]
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filters' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Architecture' }))
+
+    expect(replaceMock).toHaveBeenCalledWith('/blog?query=testing&tag=react&category=architecture', { scroll: false })
+  })
+
   it('clears filters without push navigation', () => {
     renderFilters({
       categories: [{
