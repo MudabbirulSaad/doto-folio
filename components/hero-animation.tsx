@@ -146,14 +146,14 @@ const fragmentShader = `
 
 function NebulaGlass() {
     const mesh = useRef<THREE.Mesh>(null)
-    const { size, gl } = useThree()
+    const { size } = useThree()
 
     // Initialize with default colors, will update from CSS
     const uniforms = useMemo(
         () => ({
             uTime: { value: 0 },
             uMouse: { value: new THREE.Vector2(0.5, 0.5) },
-            uResolution: { value: new THREE.Vector2(size.width, size.height) },
+            uResolution: { value: new THREE.Vector2(1, 1) },
             uColorPrimary: { value: new THREE.Color("#ff3366") },
             uColorSecondary: { value: new THREE.Color("#ffffff") },
         }),
@@ -166,7 +166,6 @@ function NebulaGlass() {
     useEffect(() => {
         // Get computed colors from CSS variables
         const updateColors = () => {
-            const style = getComputedStyle(document.documentElement)
             // Note: OKLCH parsing might not be supported by THREE.Color directly in all versions.
             // We'll try to grab the hex or fallback to known values if needed.
             // For now, let's assume we can get a valid color string or use the defaults.
