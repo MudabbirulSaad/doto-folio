@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useTransition } from 'react'
+import { useCallback, useState, useEffect, useRef, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { gsap } from 'gsap'
 import { Search, Filter, X, Tag, Folder, ChevronDown } from 'lucide-react'
@@ -8,7 +8,68 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import type { BlogFilterProps } from '@/lib/types/blog'
-// import { useDebounce } from '@/lib/hooks/use-debounce' // Assuming this hook exists or I'll implement a simple one inside
+interface SearchFormProps {
+  initialQuery: string
+  isPending: boolean
+  showFilters: boolean
+  onSearch: (query: string) => void
+  onToggleFilters: () => void
+}
+
+function SearchForm({
+  initialQuery,
+  isPending,
+  showFilters,
+  onSearch,
+  onToggleFilters
+}: SearchFormProps) {
+  const [searchQuery, setSearchQuery] = useState(initialQuery)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery !== initialQuery) {
+        onSearch(searchQuery)
+      }
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [initialQuery, onSearch, searchQuery])
+
+  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    onSearch(searchQuery)
+  }
+
+  return (
+    <form onSubmit={handleSearch} className="relative flex items-center">
+      <Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
+      <Input
+        type="text"
+        placeholder="Search articles..."
+        value={searchQuery}
+        onChange={(event) => setSearchQuery(event.target.value)}
+        className="pl-12 pr-32 py-6 text-lg bg-transparent border-none focus-visible:ring-0 placeholder:text-muted-foreground/50"
+      />
+
+      <div className="absolute right-2 flex items-center gap-2">
+        {isPending && (
+          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
+        )}
+        <Button
+          type="button"
+          variant={showFilters ? "secondary" : "ghost"}
+          size="sm"
+          className={`h-9 px-4 rounded-xl transition-all ${showFilters ? 'bg-primary/10 text-primary' : 'hover:bg-white/5'}`}
+          onClick={onToggleFilters}
+        >
+          <Filter className="w-4 h-4 mr-2" />
+          Filters
+          <ChevronDown className={`w-3 h-3 ml-2 transition-transform duration-300 ${showFilters ? 'rotate-180' : ''}`} />
+        </Button>
+      </div>
+    </form>
+  )
+}
 
 export function BlogFilters({
   categories,
@@ -17,7 +78,6 @@ export function BlogFilters({
   selectedTag,
   className = ''
 }: Omit<BlogFilterProps, 'onCategoryChange' | 'onTagChange' | 'onSearch'>) {
-  const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
@@ -27,14 +87,7 @@ export function BlogFilters({
   const containerRef = useRef<HTMLDivElement>(null)
   const filtersContentRef = useRef<HTMLDivElement>(null)
 
-  // Debounce search query
-  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery)
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300)
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-
-  function updateURL(params: { query?: string; category?: string; tag?: string }) {
+  const updateURL = useCallback((params: { query?: string; category?: string; tag?: string }) => {
     startTransition(() => {
       const current = new URLSearchParams(searchParamsSnapshot)
 
@@ -55,20 +108,11 @@ export function BlogFilters({
       // Keep query changes shareable without triggering navigation-style page transitions.
       router.replace(`/blog${query}`, { scroll: false })
     })
-  }
+  }, [router, searchParamsSnapshot, startTransition])
 
-  useEffect(() => {
-    // Sync with URL params only when the query value changes.
-    setSearchQuery((value) => value === currentQuery ? value : currentQuery)
-    setDebouncedQuery((value) => value === currentQuery ? value : currentQuery)
-  }, [currentQuery])
-
-  useEffect(() => {
-    // Effect for debounced search update
-    if (debouncedQuery !== currentQuery) {
-      updateURL({ query: debouncedQuery })
-    }
-  }, [debouncedQuery, currentQuery])
+  const handleQueryChange = useCallback((query: string) => {
+    updateURL({ query })
+  }, [updateURL])
 
   useEffect(() => {
     const container = containerRef.current
@@ -108,12 +152,6 @@ export function BlogFilters({
     }
   }, [showFilters])
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    // Trigger immediate update on enter
-    updateURL({ query: searchQuery })
-  }
-
   const handleCategorySelect = (categorySlug: string) => {
     const newCategory = categorySlug === 'all' ? undefined : categorySlug
     updateURL({ category: newCategory })
@@ -125,14 +163,12 @@ export function BlogFilters({
   }
 
   const clearFilters = () => {
-    setSearchQuery('')
-    setDebouncedQuery('')
     startTransition(() => {
       router.replace('/blog', { scroll: false })
     })
   }
 
-  const hasActiveFilters = selectedCategory || selectedTag || searchQuery
+  const hasActiveFilters = selectedCategory || selectedTag || currentQuery
 
   return (
     <div ref={containerRef} className={`relative z-20 ${className}`}>
@@ -141,33 +177,14 @@ export function BlogFilters({
 
         {/* Top Section: Search & Toggle */}
         <div className="p-2">
-          <form onSubmit={handleSearch} className="relative flex items-center">
-            <Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search articles..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-32 py-6 text-lg bg-transparent border-none focus-visible:ring-0 placeholder:text-muted-foreground/50"
-            />
-
-            <div className="absolute right-2 flex items-center gap-2">
-              {isPending && (
-                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
-              )}
-              <Button
-                type="button"
-                variant={showFilters ? "secondary" : "ghost"}
-                size="sm"
-                className={`h-9 px-4 rounded-xl transition-all ${showFilters ? 'bg-primary/10 text-primary' : 'hover:bg-white/5'}`}
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                Filters
-                <ChevronDown className={`w-3 h-3 ml-2 transition-transform duration-300 ${showFilters ? 'rotate-180' : ''}`} />
-              </Button>
-            </div>
-          </form>
+          <SearchForm
+            key={currentQuery}
+            initialQuery={currentQuery}
+            isPending={isPending}
+            showFilters={showFilters}
+            onSearch={handleQueryChange}
+            onToggleFilters={() => setShowFilters((value) => !value)}
+          />
         </div>
 
         {/* Expandable Filters Section */}
