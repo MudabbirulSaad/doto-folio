@@ -36,6 +36,7 @@ export const CLIENT_AGENT_SCOPES = [
 
 export type ClientAgentScope = typeof CLIENT_AGENT_SCOPES[number]
 export type ClientAgentAccessRequestStatus = 'pending' | 'approved' | 'rejected' | 'expired'
+export type ClientAgentInvitationStatus = 'pending' | 'claimed' | 'expired' | 'revoked'
 
 export interface AdminAgentAccessRequest {
   id: string
@@ -55,11 +56,28 @@ export interface AdminAgentAccessRequest {
 export interface AdminAgentToken {
   id: string
   requestId?: string | null
+  invitationId?: string | null
   agentName: string
   toolName: string
   scopes: ClientAgentScope[]
-  expiresAt: string
+  expiresAt: string | null
   revokedAt?: string | null
   lastUsedAt?: string | null
   createdAt: string
+}
+
+export interface AdminAgentInvitation {
+  id: string
+  agentLabel: string
+  toolName: string
+  scopes: ClientAgentScope[]
+  instructionsMd: string
+  status: ClientAgentInvitationStatus
+  expiresAt: string
+  tokenExpiresAt: string | null
+  createdBy: string
+  claimedTokenId?: string | null
+  claimedAt?: string | null
+  createdAt: string
+  updatedAt: string
 }

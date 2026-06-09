@@ -1,26 +1,81 @@
 # Portfolio Agent Access
 
-This project supports scoped CLI agent access through the portfolio web app.
-Agents must use the Next.js API. Do not request, read, or use Supabase service
-role credentials.
+This project supports invite-first, scoped CLI agent access through the
+portfolio web app. Agents must use the Next.js API routes and must never ask
+for Supabase credentials.
 
-## Request Access
+## Public Entry Point
 
-Create an access request.
+Tell an agent:
+
+```text
+Read https://mudabbirulsaad.com/skill.md and join with code YOUR_INVITE_CODE.
+```
+
+Agents can read public context without authentication:
+
+```bash
+curl "$PORTFOLIO_BASE_URL/api/agent/public-context"
+```
+
+Public context contains public portfolio/blog data only.
+
+## Claim An Invitation
 
 PowerShell on Windows:
+
+```powershell
+$body = @{ code = 'YOUR_INVITE_CODE' } | ConvertTo-Json -Compress
+
+Invoke-RestMethod `
+  -Uri "$PORTFOLIO_BASE_URL/api/agent/invitations/claim" `
+  -Method Post `
+  -ContentType 'application/json' `
+  -Body $body
+```
+
+macOS, Linux, or shells with normal single-quote behavior:
+
+```bash
+curl -X POST "$PORTFOLIO_BASE_URL/api/agent/invitations/claim" \
+  -H "Content-Type: application/json" \
+  -d '{"code":"YOUR_INVITE_CODE"}'
+```
+
+The claim response includes a bearer token only once. Store it only in a local
+ignored file or environment variable:
+
+```bash
+export PORTFOLIO_AGENT_TOKEN="pa_..."
+```
+
+## Inspect Access And Instructions
+
+```bash
+curl "$PORTFOLIO_BASE_URL/api/agent/me" \
+  -H "Authorization: Bearer $PORTFOLIO_AGENT_TOKEN"
+
+curl "$PORTFOLIO_BASE_URL/api/agent/instructions" \
+  -H "Authorization: Bearer $PORTFOLIO_AGENT_TOKEN"
+
+curl "$PORTFOLIO_BASE_URL/api/agent/context" \
+  -H "Authorization: Bearer $PORTFOLIO_AGENT_TOKEN"
+```
+
+`/api/agent/instructions` returns only the private task instructions and
+scope-aware guidance for the granted token.
+
+## Fallback Access Request
+
+If no invite code is available, an agent may request access and wait for admin
+approval.
 
 ```powershell
 $body = @{
   agentName = 'Codex'
   toolName = 'codex-cli'
-  reason = 'Draft and update portfolio blog posts'
-  requestedScopes = @(
-    'portfolio:read',
-    'blog-posts:read',
-    'blog-posts:create',
-    'blog-posts:update'
-  )
+  reason = 'Help with a portfolio task'
+  requestedScopes = @('portfolio:read')
 } | ConvertTo-Json -Compress
 
 Invoke-RestMethod `
@@ -30,54 +85,14 @@ Invoke-RestMethod `
   -Body $body
 ```
 
-macOS, Linux, or shells with normal single-quote behavior:
-
-```bash
-curl -X POST "$PORTFOLIO_BASE_URL/api/agent/access-requests" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "agentName": "Codex",
-    "toolName": "codex-cli",
-    "reason": "Draft and update blog posts",
-    "requestedScopes": ["portfolio:read", "blog-posts:read", "blog-posts:create", "blog-posts:update"]
-  }'
-```
-
-If PowerShell returns `INVALID_JSON`, use the `Invoke-RestMethod` example above instead of `curl.exe -d '{...}'`.
-
-The response includes a short request `code`. Tell the admin this code and wait
-for approval in `/admin/agents`.
-
 Poll for approval:
 
 ```bash
 curl "$PORTFOLIO_BASE_URL/api/agent/access-requests/$REQUEST_CODE"
 ```
 
-When approved, the response includes a bearer token. Store it only in a local
-ignored file or environment variable:
+Agents should use their assigned name when one exists. If no stable name has
+been provided, they may omit `agentName`; the server records the request as
+`Agent`.
 
-```bash
-export PORTFOLIO_AGENT_TOKEN="pa_..."
-```
-
-## Inspect Access
-
-```bash
-curl "$PORTFOLIO_BASE_URL/api/agent/me" \
-  -H "Authorization: Bearer $PORTFOLIO_AGENT_TOKEN"
-```
-
-## Load Context
-
-```bash
-curl "$PORTFOLIO_BASE_URL/api/agent/context" \
-  -H "Authorization: Bearer $PORTFOLIO_AGENT_TOKEN"
-```
-
-The context endpoint returns public portfolio/blog context, granted scopes, and
-API metadata. Hidden drafts, comments, contact submissions, metrics, and other
-admin-only data are not included unless the agent explicitly has matching read
-scopes and calls the relevant API.
-
-See `docs/agent-access.md` for the full scope map.
+See `docs/agent-access.md` for the admin model and scope map.

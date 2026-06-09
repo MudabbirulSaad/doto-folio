@@ -4,11 +4,8 @@ import { createInvalidJsonResponse, createSuccessResponse, createValidationError
 import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 import { createAgentAccessUseCases } from '@/lib/server/composition/agent-access'
 
-const AccessRequestSchema = z.object({
-  agentName: z.string().min(2).optional(),
-  toolName: z.string().min(2),
-  reason: z.string().min(5),
-  requestedScopes: z.array(z.string()).min(1)
+const ClaimInvitationSchema = z.object({
+  code: z.string().min(4)
 })
 
 export async function POST(request: NextRequest) {
@@ -20,13 +17,13 @@ export async function POST(request: NextRequest) {
       return createInvalidJsonResponse()
     }
 
-    const parsed = AccessRequestSchema.safeParse(body)
+    const parsed = ClaimInvitationSchema.safeParse(body)
     if (!parsed.success) {
       return createValidationErrorResponse(parsed.error.issues.map(issue => issue.message))
     }
 
-    const result = await createAgentAccessUseCases().createRequest(parsed.data)
-    return createSuccessResponse(result, 'Agent access request created')
+    const result = await createAgentAccessUseCases().claimInvitation(parsed.data.code)
+    return createSuccessResponse(result, 'Agent invitation claimed')
   } catch (error) {
     return createApplicationOrInternalErrorResponse(error)
   }

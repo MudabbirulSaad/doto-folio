@@ -1,18 +1,21 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { createInvalidJsonResponse, createSuccessResponse, createValidationErrorResponse } from '@/lib/api/response'
+import { requireAdminAuth } from '@/lib/auth/server'
 import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 import { createAgentAccessUseCases } from '@/lib/server/composition/agent-access'
 
-const AccessRequestSchema = z.object({
-  agentName: z.string().min(2).optional(),
-  toolName: z.string().min(2),
-  reason: z.string().min(5),
-  requestedScopes: z.array(z.string()).min(1)
+const UpdateTokenAccessSchema = z.object({
+  scopes: z.array(z.string()).min(1),
+  expiresAt: z.string().datetime().nullable()
 })
 
-export async function POST(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    const admin = await requireAdminAuth()
     let body: unknown
     try {
       body = await request.json()
@@ -20,13 +23,20 @@ export async function POST(request: NextRequest) {
       return createInvalidJsonResponse()
     }
 
-    const parsed = AccessRequestSchema.safeParse(body)
+    const parsed = UpdateTokenAccessSchema.safeParse(body)
     if (!parsed.success) {
       return createValidationErrorResponse(parsed.error.issues.map(issue => issue.message))
     }
 
-    const result = await createAgentAccessUseCases().createRequest(parsed.data)
-    return createSuccessResponse(result, 'Agent access request created')
+    const { id } = await params
+    const token = await createAgentAccessUseCases().updateTokenAccess({
+      id,
+      scopes: parsed.data.scopes,
+      expiresAt: parsed.data.expiresAt,
+      adminUserId: admin.id
+    })
+
+    return createSuccessResponse(token, 'Agent token access updated')
   } catch (error) {
     return createApplicationOrInternalErrorResponse(error)
   }

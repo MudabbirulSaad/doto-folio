@@ -38,6 +38,7 @@ export const AGENT_SCOPES = [
 
 export type AgentScope = typeof AGENT_SCOPES[number]
 export type AgentAccessRequestStatus = 'pending' | 'approved' | 'rejected' | 'expired'
+export type AgentInvitationStatus = 'pending' | 'claimed' | 'expired' | 'revoked'
 export type AgentActorType = 'agent' | 'admin' | 'system'
 
 export interface AgentAccessRequest {
@@ -59,11 +60,12 @@ export interface AgentAccessRequest {
 export interface AgentToken {
   id: string
   requestId?: string | null
+  invitationId?: string | null
   agentName: string
   toolName: string
   tokenHash: string
   scopes: AgentScope[]
-  expiresAt: string
+  expiresAt: string | null
   revokedAt?: string | null
   lastUsedAt?: string | null
   createdAt: string
@@ -72,10 +74,28 @@ export interface AgentToken {
 export interface AuthenticatedAgent {
   id: string
   requestId?: string | null
+  invitationId?: string | null
   agentName: string
   toolName: string
   scopes: AgentScope[]
+  expiresAt: string | null
+}
+
+export interface AgentInvitation {
+  id: string
+  agentLabel: string
+  toolName: string
+  scopes: AgentScope[]
+  instructionsMd: string
+  status: AgentInvitationStatus
+  codeHash: string
   expiresAt: string
+  tokenExpiresAt: string | null
+  createdBy: string
+  claimedTokenId?: string | null
+  claimedAt?: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export interface AgentAccessRequestRepository {
@@ -98,17 +118,40 @@ export interface AgentAccessRequestRepository {
   markExpired(id: string): Promise<AgentAccessRequest>
 }
 
+export interface AgentInvitationRepository {
+  create(input: {
+    agentLabel: string
+    toolName: string
+    scopes: AgentScope[]
+    instructionsMd: string
+    codeHash: string
+    expiresAt: string
+    tokenExpiresAt: string | null
+    createdBy: string
+  }): Promise<AgentInvitation>
+  findByCodeHash(codeHash: string): Promise<AgentInvitation | null>
+  findById(id: string): Promise<AgentInvitation | null>
+  findByTokenId(tokenId: string): Promise<AgentInvitation | null>
+  listActive(): Promise<AgentInvitation[]>
+  markClaimed(id: string, input: { claimedTokenId: string; claimedAt: string }): Promise<AgentInvitation>
+  markExpired(id: string): Promise<AgentInvitation>
+  revoke(id: string): Promise<AgentInvitation>
+}
+
 export interface AgentTokenRepository {
   create(input: {
     requestId?: string | null
+    invitationId?: string | null
     agentName: string
     toolName: string
     tokenHash: string
     scopes: AgentScope[]
-    expiresAt: string
+    expiresAt: string | null
   }): Promise<AgentToken>
   findByTokenHash(tokenHash: string): Promise<AgentToken | null>
+  findById(id: string): Promise<AgentToken | null>
   listActive(nowIso: string): Promise<AgentToken[]>
+  updateAccess(id: string, input: { scopes: AgentScope[]; expiresAt: string | null }): Promise<AgentToken>
   revoke(id: string, revokedAt: string): Promise<AgentToken>
   touchLastUsed(id: string, lastUsedAt: string): Promise<void>
 }
@@ -120,6 +163,7 @@ export interface AgentAuditRepository {
     result: 'success' | 'failure'
     agentTokenId?: string | null
     accessRequestId?: string | null
+    invitationId?: string | null
     adminUserId?: string | null
     scope?: AgentScope | null
     route?: string | null
@@ -146,6 +190,7 @@ export interface PortfolioContextReader {
 
 export interface AgentAccessDependencies {
   requests: AgentAccessRequestRepository
+  invitations: AgentInvitationRepository
   tokens: AgentTokenRepository
   audit: AgentAuditRepository
   hasher: TokenHasher
@@ -183,6 +228,11 @@ function redactRequest(request: AgentAccessRequest) {
   return safeRequest
 }
 
+function redactInvitation(invitation: AgentInvitation) {
+  const { codeHash: _codeHash, ...safeInvitation } = invitation
+  return safeInvitation
+}
+
 function redactToken(token: AgentToken) {
   const { tokenHash: _tokenHash, ...safeToken } = token
   return safeToken
@@ -191,13 +241,13 @@ function redactToken(token: AgentToken) {
 export async function createAgentAccessRequest(
   deps: AgentAccessDependencies,
   input: {
-    agentName: string
+    agentName?: string
     toolName: string
     reason: string
     requestedScopes: string[]
   }
 ) {
-  const agentName = input.agentName.trim()
+  const agentName = input.agentName?.trim() || 'Agent'
   const toolName = input.toolName.trim()
   const reason = input.reason.trim()
 
@@ -262,6 +312,7 @@ export async function pollAgentAccessRequest(deps: AgentAccessDependencies, code
     toolName: request.toolName,
     tokenHash,
     scopes: request.approvedScopes,
+    invitationId: null,
     expiresAt
   })
 
@@ -284,6 +335,139 @@ export async function pollAgentAccessRequest(deps: AgentAccessDependencies, code
 export async function listAgentAccessRequests(deps: AgentAccessDependencies) {
   const requests = await deps.requests.listActive()
   return requests.map(redactRequest)
+}
+
+export async function createAgentInvitation(
+  deps: AgentAccessDependencies,
+  input: {
+    agentLabel: string
+    toolName: string
+    scopes: string[]
+    instructionsMd?: string
+    adminUserId: string
+    inviteExpiresAt?: string
+    tokenExpiresAt?: string | null
+  }
+) {
+  const agentLabel = input.agentLabel.trim()
+  const toolName = input.toolName.trim()
+  const instructionsMd = (input.instructionsMd || '').trim()
+
+  if (agentLabel.length < 2) throw new ApplicationError('VALIDATION_ERROR', 'Agent label is required')
+  if (toolName.length < 2) throw new ApplicationError('VALIDATION_ERROR', 'Tool name is required')
+
+  const scopes = normalizeAgentScopes(input.scopes)
+  const now = deps.clock.now()
+  const expiresAt = input.inviteExpiresAt || new Date(now.getTime() + REQUEST_TTL_MS).toISOString()
+  const tokenExpiresAt = input.tokenExpiresAt === null ? null : input.tokenExpiresAt || new Date(now.getTime() + TOKEN_TTL_MS).toISOString()
+
+  if (new Date(expiresAt).getTime() <= now.getTime()) {
+    throw new ApplicationError('VALIDATION_ERROR', 'Invitation expiry must be in the future')
+  }
+  if (tokenExpiresAt && new Date(tokenExpiresAt).getTime() <= now.getTime()) {
+    throw new ApplicationError('VALIDATION_ERROR', 'Token expiry must be in the future')
+  }
+
+  const code = deps.generator.accessCode()
+  const codeHash = await deps.hasher.hash(code)
+  const invitation = await deps.invitations.create({
+    agentLabel,
+    toolName,
+    scopes,
+    instructionsMd,
+    codeHash,
+    expiresAt,
+    tokenExpiresAt,
+    createdBy: input.adminUserId
+  })
+
+  await deps.audit.record({
+    actorType: 'admin',
+    action: 'agent_invitation.created',
+    result: 'success',
+    invitationId: invitation.id,
+    adminUserId: input.adminUserId,
+    metadata: { agentLabel, toolName, scopes }
+  })
+
+  return {
+    invitation: redactInvitation(invitation),
+    code,
+    expiresAt
+  }
+}
+
+export async function listAgentInvitations(deps: AgentAccessDependencies) {
+  const invitations = await deps.invitations.listActive()
+  return invitations.map(redactInvitation)
+}
+
+export async function revokeAgentInvitation(
+  deps: AgentAccessDependencies,
+  input: { id: string; adminUserId: string }
+) {
+  const invitation = await deps.invitations.findById(input.id)
+  if (!invitation) throw new ApplicationError('NOT_FOUND', 'Agent invitation was not found')
+  if (invitation.status !== 'pending') {
+    throw new ApplicationError('VALIDATION_ERROR', `Invitation is already ${invitation.status}`)
+  }
+
+  const revoked = await deps.invitations.revoke(input.id)
+  await deps.audit.record({
+    actorType: 'admin',
+    action: 'agent_invitation.revoked',
+    result: 'success',
+    invitationId: input.id,
+    adminUserId: input.adminUserId
+  })
+
+  return redactInvitation(revoked)
+}
+
+export async function claimAgentInvitation(deps: AgentAccessDependencies, code: string) {
+  const codeHash = await deps.hasher.hash(code.trim())
+  const invitation = await deps.invitations.findByCodeHash(codeHash)
+  const now = deps.clock.now()
+
+  if (!invitation) throw new ApplicationError('NOT_FOUND', 'Agent invitation was not found')
+  if (invitation.status !== 'pending') {
+    throw new ApplicationError('VALIDATION_ERROR', `Invitation is already ${invitation.status}`)
+  }
+  if (new Date(invitation.expiresAt).getTime() <= now.getTime()) {
+    const expired = await deps.invitations.markExpired(invitation.id)
+    return { invitation: redactInvitation(expired), token: null, tokenRecord: null }
+  }
+
+  const token = deps.generator.bearerToken()
+  const tokenHash = await deps.hasher.hash(token)
+  const issued = await deps.tokens.create({
+    requestId: null,
+    invitationId: invitation.id,
+    agentName: invitation.agentLabel,
+    toolName: invitation.toolName,
+    tokenHash,
+    scopes: invitation.scopes,
+    expiresAt: invitation.tokenExpiresAt
+  })
+  const claimed = await deps.invitations.markClaimed(invitation.id, {
+    claimedTokenId: issued.id,
+    claimedAt: now.toISOString()
+  })
+
+  await deps.audit.record({
+    actorType: 'agent',
+    action: 'agent_invitation.claimed',
+    result: 'success',
+    agentTokenId: issued.id,
+    invitationId: invitation.id,
+    metadata: { scopes: issued.scopes }
+  })
+
+  return {
+    invitation: redactInvitation(claimed),
+    token,
+    tokenRecord: redactToken(issued)
+  }
 }
 
 export async function approveAgentAccessRequest(
@@ -355,7 +539,7 @@ export async function authenticateAgentToken(
   const token = await deps.tokens.findByTokenHash(tokenHash)
   const nowIso = deps.clock.now().toISOString()
 
-  if (!token || token.revokedAt || new Date(token.expiresAt).getTime() <= new Date(nowIso).getTime()) {
+  if (!token || token.revokedAt || (token.expiresAt && new Date(token.expiresAt).getTime() <= new Date(nowIso).getTime())) {
     await deps.audit.record({
       actorType: 'agent',
       action: 'agent_token.authenticate',
@@ -383,6 +567,7 @@ export async function authenticateAgentToken(
   return {
     id: token.id,
     requestId: token.requestId,
+    invitationId: token.invitationId,
     agentName: token.agentName,
     toolName: token.toolName,
     scopes: token.scopes,
@@ -393,6 +578,41 @@ export async function authenticateAgentToken(
 export async function listAgentTokens(deps: AgentAccessDependencies) {
   const tokens = await deps.tokens.listActive(deps.clock.now().toISOString())
   return tokens.map(redactToken)
+}
+
+export async function updateAgentTokenAccess(
+  deps: AgentAccessDependencies,
+  input: {
+    id: string
+    scopes: string[]
+    expiresAt: string | null
+    adminUserId: string
+  }
+) {
+  const token = await deps.tokens.findById(input.id)
+  if (!token) throw new ApplicationError('NOT_FOUND', 'Agent token was not found')
+  if (token.revokedAt) throw new ApplicationError('VALIDATION_ERROR', 'Revoked tokens cannot be updated')
+
+  const scopes = normalizeAgentScopes(input.scopes)
+  if (input.expiresAt && new Date(input.expiresAt).getTime() <= deps.clock.now().getTime()) {
+    throw new ApplicationError('VALIDATION_ERROR', 'Token expiry must be in the future')
+  }
+
+  const updated = await deps.tokens.updateAccess(input.id, {
+    scopes,
+    expiresAt: input.expiresAt
+  })
+
+  await deps.audit.record({
+    actorType: 'admin',
+    action: 'agent_token.access.updated',
+    result: 'success',
+    agentTokenId: input.id,
+    adminUserId: input.adminUserId,
+    metadata: { scopes, expiresAt: input.expiresAt }
+  })
+
+  return redactToken(updated)
 }
 
 export async function revokeAgentToken(
@@ -421,5 +641,81 @@ export async function getAgentContext(
     agent,
     scopes: agent.scopes,
     context
+  }
+}
+
+function instructionSections(scopes: AgentScope[]) {
+  const granted = new Set(scopes)
+  const sections: string[] = []
+
+  if (granted.has('blog-posts:read') || granted.has('blog-posts:create') || granted.has('blog-posts:update') || granted.has('blog-posts:delete')) {
+    sections.push(`## Blog Posts
+- Use only blog post endpoints covered by granted scopes.
+- Prefer draft changes unless the human explicitly asks to publish.
+- Required scopes: blog-posts:read/create/update/delete.`)
+  }
+  if (granted.has('blog-taxonomy:read') || granted.has('blog-categories:create') || granted.has('blog-tags:create')) {
+    sections.push(`## Blog Taxonomy
+- Read categories and tags before assigning them.
+- Create, update, or delete taxonomy only when the matching category/tag scope is granted.`)
+  }
+  if (granted.has('projects:read') || granted.has('projects:create') || granted.has('projects:update') || granted.has('projects:delete')) {
+    sections.push(`## Projects
+- Manage portfolio projects only within granted project scopes.
+- Do not delete projects unless the human explicitly asks.`)
+  }
+  if (granted.has('skills:read') || granted.has('skills:create') || granted.has('skills:update') || granted.has('skills:delete')) {
+    sections.push(`## Skills
+- Manage skills only within granted skill scopes.
+- Keep names, categories, and publication state consistent with existing content.`)
+  }
+  if (granted.has('comments:read') || granted.has('comments:delete')) {
+    sections.push(`## Comments
+- Delete spam or abusive comments only.
+- Summarize deleted comments and reasons after moderation.`)
+  }
+  if (granted.has('contact-submissions:read') || granted.has('contact-submissions:update') || granted.has('contact-submissions:export')) {
+    sections.push(`## Contact Submissions
+- Treat submissions as private admin data.
+- Export only when explicitly requested by the human admin.`)
+  }
+  if (granted.has('site-content:update') || granted.has('contact-content:create')) {
+    sections.push(`## Site Content
+- Keep public-facing copy concise and consistent with the current portfolio tone.
+- Avoid replacing unrelated fields while updating a single content area.`)
+  }
+  if (granted.has('metrics:read') || granted.has('content-overview:read')) {
+    sections.push(`## Read-Only Admin Insights
+- Use metrics and overview data for summaries and recommendations only.
+- Do not infer hidden permissions from read-only access.`)
+  }
+
+  return sections
+}
+
+export async function getAgentInstructions(
+  deps: AgentAccessDependencies,
+  bearerToken: string
+) {
+  const agent = await authenticateAgentToken(deps, bearerToken)
+  const invitation = agent.invitationId ? await deps.invitations.findByTokenId(agent.id) : null
+  const sections = instructionSections(agent.scopes)
+
+  return {
+    agent,
+    scopes: agent.scopes,
+    taskInstructions: invitation?.instructionsMd || '',
+    instructionsMd: [
+      '# Private Agent Instructions',
+      '',
+      'Follow only the instructions and scopes returned by this authenticated endpoint.',
+      '',
+      invitation?.instructionsMd ? `## Admin Task\n${invitation.instructionsMd}` : '',
+      ...sections,
+      '## Safety Rules',
+      '- Confirm granted scopes with `/api/agent/me` before admin changes.',
+      '- Do not use Supabase credentials.',
+      '- Do not perform destructive actions unless explicitly requested by the human admin and covered by scope.'
+    ].filter(Boolean).join('\n\n')
   }
 }

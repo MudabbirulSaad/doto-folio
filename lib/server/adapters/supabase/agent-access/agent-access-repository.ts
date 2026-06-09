@@ -4,6 +4,8 @@ import type {
   AgentAccessRequest,
   AgentAccessRequestRepository,
   AgentAuditRepository,
+  AgentInvitation,
+  AgentInvitationRepository,
   AgentScope,
   AgentToken,
   AgentTokenRepository
@@ -35,6 +37,7 @@ function tokenFromRow(row: any): AgentToken {
   return {
     id: row.id,
     requestId: row.request_id,
+    invitationId: row.invitation_id,
     agentName: row.agent_name,
     toolName: row.tool_name,
     tokenHash: row.token_hash,
@@ -43,6 +46,25 @@ function tokenFromRow(row: any): AgentToken {
     revokedAt: row.revoked_at,
     lastUsedAt: row.last_used_at,
     createdAt: row.created_at
+  }
+}
+
+function invitationFromRow(row: any): AgentInvitation {
+  return {
+    id: row.id,
+    agentLabel: row.agent_label,
+    toolName: row.tool_name,
+    scopes: row.scopes || [],
+    instructionsMd: row.instructions_md || '',
+    status: row.status,
+    codeHash: row.code_hash,
+    expiresAt: row.expires_at,
+    tokenExpiresAt: row.token_expires_at,
+    createdBy: row.created_by,
+    claimedTokenId: row.claimed_token_id,
+    claimedAt: row.claimed_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
   }
 }
 
@@ -148,6 +170,117 @@ export function createSupabaseAgentAccessRequestRepository(
   }
 }
 
+export function createSupabaseAgentInvitationRepository(
+  supabase: SupabaseDataClient
+): AgentInvitationRepository {
+  return {
+    async create(input) {
+      const { data, error } = await supabase
+        .from('agent_invitations')
+        .insert({
+          agent_label: input.agentLabel,
+          tool_name: input.toolName,
+          scopes: input.scopes,
+          instructions_md: input.instructionsMd,
+          status: 'pending',
+          code_hash: input.codeHash,
+          expires_at: input.expiresAt,
+          token_expires_at: input.tokenExpiresAt,
+          created_by: input.createdBy
+        })
+        .select()
+        .single()
+
+      if (error || !data) databaseError('Failed to create agent invitation', error)
+      return invitationFromRow(data)
+    },
+
+    async findByCodeHash(codeHash) {
+      const { data, error } = await supabase
+        .from('agent_invitations')
+        .select()
+        .eq('code_hash', codeHash)
+        .maybeSingle()
+
+      if (error) databaseError('Failed to find agent invitation', error)
+      return data ? invitationFromRow(data) : null
+    },
+
+    async findById(id) {
+      const { data, error } = await supabase
+        .from('agent_invitations')
+        .select()
+        .eq('id', id)
+        .maybeSingle()
+
+      if (error) databaseError('Failed to find agent invitation', error)
+      return data ? invitationFromRow(data) : null
+    },
+
+    async findByTokenId(tokenId) {
+      const { data, error } = await supabase
+        .from('agent_invitations')
+        .select()
+        .eq('claimed_token_id', tokenId)
+        .maybeSingle()
+
+      if (error) databaseError('Failed to find agent invitation by token', error)
+      return data ? invitationFromRow(data) : null
+    },
+
+    async listActive() {
+      const { data, error } = await supabase
+        .from('agent_invitations')
+        .select()
+        .in('status', ['pending', 'claimed'])
+        .order('created_at', { ascending: false })
+
+      if (error) databaseError('Failed to list agent invitations', error)
+      return (data || []).map(invitationFromRow)
+    },
+
+    async markClaimed(id, input) {
+      const { data, error } = await supabase
+        .from('agent_invitations')
+        .update({
+          status: 'claimed',
+          claimed_token_id: input.claimedTokenId,
+          claimed_at: input.claimedAt
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error || !data) databaseError('Failed to claim agent invitation', error)
+      return invitationFromRow(data)
+    },
+
+    async markExpired(id) {
+      const { data, error } = await supabase
+        .from('agent_invitations')
+        .update({ status: 'expired' })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error || !data) databaseError('Failed to expire agent invitation', error)
+      return invitationFromRow(data)
+    },
+
+    async revoke(id) {
+      const { data, error } = await supabase
+        .from('agent_invitations')
+        .update({ status: 'revoked' })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error || !data) databaseError('Failed to revoke agent invitation', error)
+      return invitationFromRow(data)
+    }
+  }
+}
+
 export function createSupabaseAgentTokenRepository(
   supabase: SupabaseDataClient
 ): AgentTokenRepository {
@@ -157,6 +290,7 @@ export function createSupabaseAgentTokenRepository(
         .from('agent_tokens')
         .insert({
           request_id: input.requestId,
+          invitation_id: input.invitationId,
           agent_name: input.agentName,
           tool_name: input.toolName,
           token_hash: input.tokenHash,
@@ -181,16 +315,42 @@ export function createSupabaseAgentTokenRepository(
       return data ? tokenFromRow(data) : null
     },
 
+    async findById(id) {
+      const { data, error } = await supabase
+        .from('agent_tokens')
+        .select()
+        .eq('id', id)
+        .maybeSingle()
+
+      if (error) databaseError('Failed to find agent token', error)
+      return data ? tokenFromRow(data) : null
+    },
+
     async listActive(nowIso) {
       const { data, error } = await supabase
         .from('agent_tokens')
         .select()
         .is('revoked_at', null)
-        .gt('expires_at', nowIso)
+        .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
         .order('created_at', { ascending: false })
 
       if (error) databaseError('Failed to list agent tokens', error)
       return (data || []).map(tokenFromRow)
+    },
+
+    async updateAccess(id, input) {
+      const { data, error } = await supabase
+        .from('agent_tokens')
+        .update({
+          scopes: input.scopes,
+          expires_at: input.expiresAt
+        })
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error || !data) databaseError('Failed to update agent token access', error)
+      return tokenFromRow(data)
     },
 
     async revoke(id, revokedAt) {
@@ -229,6 +389,7 @@ export function createSupabaseAgentAuditRepository(
           result: event.result,
           agent_token_id: event.agentTokenId || null,
           access_request_id: event.accessRequestId || null,
+          invitation_id: event.invitationId || null,
           admin_user_id: event.adminUserId || null,
           scope: event.scope || null,
           route: event.route || null,

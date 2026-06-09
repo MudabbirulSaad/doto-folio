@@ -2,6 +2,7 @@ import { createFetchJsonClient, type JsonClient } from '@/lib/client/adapters/ht
 import type { AdminAgentGateway } from '@/lib/client/application/admin/agents'
 import type {
   AdminAgentAccessRequest,
+  AdminAgentInvitation,
   AdminAgentToken,
   ClientAgentScope
 } from '@/lib/client/domain/admin-agents'
@@ -14,6 +15,28 @@ export function createAdminAgentApiGateway(client: JsonClient = createFetchJsonC
   return {
     async listRequests() {
       const response = await client.get<DataResponse<AdminAgentAccessRequest[]>>('/api/admin/agents/access-requests')
+      return response.data
+    },
+
+    async listInvitations() {
+      const response = await client.get<DataResponse<AdminAgentInvitation[]>>('/api/admin/agents/invitations')
+      return response.data
+    },
+
+    async createInvitation(input) {
+      const response = await client.post<DataResponse<{
+        invitation: AdminAgentInvitation
+        code: string
+        expiresAt: string
+      }>>('/api/admin/agents/invitations', input)
+      return response.data
+    },
+
+    async revokeInvitation(id: string) {
+      const response = await client.post<DataResponse<AdminAgentInvitation>>(
+        `/api/admin/agents/invitations/${id}/revoke`,
+        {}
+      )
       return response.data
     },
 
@@ -35,6 +58,14 @@ export function createAdminAgentApiGateway(client: JsonClient = createFetchJsonC
 
     async listTokens() {
       const response = await client.get<DataResponse<AdminAgentToken[]>>('/api/admin/agents/tokens')
+      return response.data
+    },
+
+    async updateTokenAccess(id: string, input) {
+      const response = await client.put<DataResponse<AdminAgentToken>>(
+        `/api/admin/agents/tokens/${id}`,
+        input
+      )
       return response.data
     },
 

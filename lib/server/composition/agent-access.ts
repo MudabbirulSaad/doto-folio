@@ -5,18 +5,25 @@ import {
   approveAgentAccessRequest,
   authenticateAgentToken,
   createAgentAccessRequest,
+  claimAgentInvitation,
+  createAgentInvitation,
+  getAgentInstructions,
   getAgentContext,
   listAgentAccessRequests,
+  listAgentInvitations,
   listAgentTokens,
   pollAgentAccessRequest,
   rejectAgentAccessRequest,
+  revokeAgentInvitation,
   revokeAgentToken,
+  updateAgentTokenAccess,
   type AgentAccessDependencies,
   type AgentScope
 } from '@/lib/server/application/agent-access/agent-access'
 import {
   createSupabaseAgentAccessRequestRepository,
   createSupabaseAgentAuditRepository,
+  createSupabaseAgentInvitationRepository,
   createSupabaseAgentTokenRepository
 } from '@/lib/server/adapters/supabase/agent-access/agent-access-repository'
 import { createPublicPortfolioContentUseCase } from '@/lib/server/composition/content'
@@ -74,11 +81,30 @@ function createPortfolioContextReader() {
   }
 }
 
+export async function readPublicAgentContext() {
+  const portfolio = await (await createPublicPortfolioContentUseCase())()
+  const listBlogPosts = createServiceRolePublicBlogListingUseCase()
+  const taxonomy = createServiceRolePublicBlogTaxonomyUseCases()
+
+  const [blog, categories] = await Promise.all([
+    listBlogPosts({ page: 1, limit: 10 }, { defaultLimit: 10, maxLimit: 10, tagLimit: 6 }),
+    taxonomy.categoriesWithCounts()
+  ])
+
+  return {
+    portfolio,
+    blog,
+    categories,
+    note: 'This context contains public portfolio and blog data only. Claim an admin invitation before making privileged changes.'
+  }
+}
+
 export function createAgentAccessDependencies(): AgentAccessDependencies {
   const supabase = createAdminClient()
 
   return {
     requests: createSupabaseAgentAccessRequestRepository(supabase),
+    invitations: createSupabaseAgentInvitationRepository(supabase),
     tokens: createSupabaseAgentTokenRepository(supabase),
     audit: createSupabaseAgentAuditRepository(supabase),
     hasher: createTokenHasher(),
@@ -96,6 +122,12 @@ export function createAgentAccessUseCases() {
       createAgentAccessRequest(deps, input),
     pollRequest: (code: string) => pollAgentAccessRequest(deps, code),
     listRequests: () => listAgentAccessRequests(deps),
+    createInvitation: (input: Parameters<typeof createAgentInvitation>[1]) =>
+      createAgentInvitation(deps, input),
+    listInvitations: () => listAgentInvitations(deps),
+    revokeInvitation: (input: Parameters<typeof revokeAgentInvitation>[1]) =>
+      revokeAgentInvitation(deps, input),
+    claimInvitation: (code: string) => claimAgentInvitation(deps, code),
     approveRequest: (input: Parameters<typeof approveAgentAccessRequest>[1]) =>
       approveAgentAccessRequest(deps, input),
     rejectRequest: (input: Parameters<typeof rejectAgentAccessRequest>[1]) =>
@@ -105,6 +137,9 @@ export function createAgentAccessUseCases() {
     listTokens: () => listAgentTokens(deps),
     revokeToken: (input: Parameters<typeof revokeAgentToken>[1]) =>
       revokeAgentToken(deps, input),
-    getContext: (token: string) => getAgentContext(deps, token)
+    updateTokenAccess: (input: Parameters<typeof updateAgentTokenAccess>[1]) =>
+      updateAgentTokenAccess(deps, input),
+    getContext: (token: string) => getAgentContext(deps, token),
+    getInstructions: (token: string) => getAgentInstructions(deps, token)
   }
 }

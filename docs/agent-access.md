@@ -1,8 +1,9 @@
 # Agent Access
 
-Agent access is a device-code style flow for CLI tools such as Codex, Claude
-Code, Gemini CLI, Hermes, and OpenClaw. The agent requests scopes, the human
-admin approves from the web app, and the agent receives a scoped bearer token.
+Agent access is invite-first for CLI tools such as Codex, Claude Code, Gemini
+CLI, Hermes, and OpenClaw. Public portfolio context is open. Privileged admin
+work requires a scoped bearer token issued from an admin-created one-time
+invitation, with the existing access-request flow kept as fallback.
 
 Agents authenticate with:
 
@@ -12,17 +13,48 @@ Authorization: Bearer pa_...
 
 Human admin sessions continue to use Supabase auth cookies.
 
-## Flow
+## Flows
+
+Preferred invite flow:
+
+1. Admin opens `/admin/agents`.
+2. Admin creates an invitation with agent label, tool name, scopes, expiry, and task markdown.
+3. Admin tells the agent: `Read https://mudabbirulsaad.com/skill.md and join with code ...`.
+4. Agent claims `POST /api/agent/invitations/claim`.
+5. Agent stores the returned token locally.
+6. Agent calls `/api/agent/me`, `/api/agent/instructions`, and `/api/agent/context`.
+
+Fallback request flow:
 
 1. Agent creates `POST /api/agent/access-requests`.
-2. Agent shows the returned request code to the admin.
-3. Admin opens `/admin/agents`, narrows or approves scopes, then approves.
-4. Agent polls `GET /api/agent/access-requests/[code]`.
-5. Agent stores the returned token in a local ignored credential store.
-6. Agent calls `GET /api/agent/me` and `GET /api/agent/context` to verify access.
+2. Admin approves or narrows scopes in `/admin/agents`.
+3. Agent polls `GET /api/agent/access-requests/[code]`.
 
-Raw request codes and raw tokens are not stored by the app. Server storage uses
-hashes only.
+Raw invite codes, request codes, and bearer tokens are never stored. Server
+storage uses hashes only.
+
+Admins can edit active tokens at any time from `/admin/agents`: add or remove
+scopes, set a new expiry duration, make access permanent, or revoke access.
+
+## Public And Private Surfaces
+
+Public:
+
+- `GET /skill.md`
+- `GET /api/agent/public-context`
+
+Private agent:
+
+- `GET /api/agent/me`
+- `GET /api/agent/context`
+- `GET /api/agent/instructions`
+
+Admin:
+
+- `GET/POST /api/admin/agents/invitations`
+- `POST /api/admin/agents/invitations/[id]/revoke`
+- Existing request approval and token revocation routes.
+- `PUT /api/admin/agents/tokens/[id]` to update active token scopes and expiry.
 
 ## Scopes
 
@@ -68,13 +100,14 @@ Admin operations:
 - `contact-submissions:export`
 - `metrics:read`
 
-Agent management is human-admin only in v1.
+Agent management remains human-admin only.
 
 ## Safety Rules
 
 - Never use Supabase credentials from an agent.
-- Request only the scopes needed for the current task.
+- Public `/skill.md` must not expose admin endpoint examples or the full scope catalog.
+- Request or invite only the scopes needed for the current task.
+- Use a stable agent name when available; otherwise the request flow accepts a generic `Agent` label.
 - Prefer draft blog changes before publishing.
-- Do not delete content unless the user explicitly asked for deletion and the
-  token has the matching delete scope.
+- Do not delete content unless the user explicitly asked for deletion and the token has the matching delete scope.
 - Re-check `/api/agent/me` when an API returns `401` or `403`.

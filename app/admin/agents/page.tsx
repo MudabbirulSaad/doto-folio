@@ -1,18 +1,25 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Bot, CheckCircle, KeyRound, Loader2, ShieldCheck, XCircle } from 'lucide-react'
+import { Bot, CheckCircle, Copy, KeyRound, Loader2, Send, ShieldCheck, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   approveAdminAgentRequest,
+  createAdminAgentInvitation,
   loadAdminAgents,
   rejectAdminAgentRequest,
-  revokeAdminAgentToken
+  revokeAdminAgentInvitation,
+  revokeAdminAgentToken,
+  updateAdminAgentTokenAccess
 } from '@/lib/client/application/admin/agents'
 import { createAdminAgentApiGateway } from '@/lib/client/adapters/http/admin-agents-api'
+import { CLIENT_AGENT_SCOPES } from '@/lib/client/domain/admin-agents'
 import type {
   AdminAgentAccessRequest,
+  AdminAgentInvitation,
   AdminAgentToken,
   ClientAgentScope
 } from '@/lib/client/domain/admin-agents'
@@ -23,18 +30,30 @@ function messageForLoadError(error: unknown) {
   const message = error instanceof Error ? error.message : 'Failed to load agent access'
   const lower = message.toLowerCase()
 
-  if (lower.includes('agent_access_requests') || lower.includes('agent_tokens') || lower.includes('agent_audit_events')) {
-    return 'Agent access tables are missing. Apply supabase/migrations/20260609_agent_access.sql, then refresh this page.'
+  if (
+    lower.includes('agent_access_requests') ||
+    lower.includes('agent_invitations') ||
+    lower.includes('agent_tokens') ||
+    lower.includes('agent_audit_events')
+  ) {
+    return 'Agent access tables are missing. Apply supabase/migrations/20260609_agent_access.sql and supabase/migrations/20260609_agent_invitations.sql, then refresh this page.'
   }
 
   return message
 }
 
-function formatDate(value: string) {
+function formatDate(value: string | null) {
+  if (!value) return 'Permanent'
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: 'medium',
     timeStyle: 'short'
   }).format(new Date(value))
+}
+
+function tokenHoursFromNow(expiresAt: string | null) {
+  if (!expiresAt) return '24'
+  const hours = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (60 * 60 * 1000))
+  return String(Math.max(1, hours))
 }
 
 function ScopeSelector({
@@ -73,10 +92,60 @@ function ScopeSelector({
   )
 }
 
+function InvitationScopeSelector({
+  selected,
+  onChange
+}: {
+  selected: ClientAgentScope[]
+  onChange: (scopes: ClientAgentScope[]) => void
+}) {
+  const selectedSet = useMemo(() => new Set(selected), [selected])
+
+  return (
+    <div className="grid max-h-72 gap-2 overflow-auto rounded-md border border-white/10 bg-black/20 p-3 sm:grid-cols-2 lg:grid-cols-3">
+      {CLIENT_AGENT_SCOPES.map(scope => (
+        <label
+          key={scope}
+          className="flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-muted-foreground"
+        >
+          <input
+            type="checkbox"
+            checked={selectedSet.has(scope)}
+            onChange={event => {
+              onChange(
+                event.target.checked
+                  ? [...selected, scope]
+                  : selected.filter(item => item !== scope)
+              )
+            }}
+          />
+          <span className="break-all">{scope}</span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
 export default function AdminAgentsPage() {
   const [requests, setRequests] = useState<AdminAgentAccessRequest[]>([])
+  const [invitations, setInvitations] = useState<AdminAgentInvitation[]>([])
   const [tokens, setTokens] = useState<AdminAgentToken[]>([])
   const [selectedScopes, setSelectedScopes] = useState<Record<string, ClientAgentScope[]>>({})
+  const [inviteForm, setInviteForm] = useState({
+    agentLabel: '',
+    toolName: 'codex-cli',
+    instructionsMd: '',
+    inviteMinutes: '15',
+    tokenHours: '24',
+    tokenPermanent: false
+  })
+  const [inviteScopes, setInviteScopes] = useState<ClientAgentScope[]>(['portfolio:read'])
+  const [tokenEdits, setTokenEdits] = useState<Record<string, {
+    scopes: ClientAgentScope[]
+    tokenHours: string
+    permanent: boolean
+  }>>({})
+  const [lastInviteCode, setLastInviteCode] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -84,7 +153,16 @@ export default function AdminAgentsPage() {
   async function refresh() {
     const data = await loadAdminAgents(gateway)
     setRequests(data.requests)
+    setInvitations(data.invitations)
     setTokens(data.tokens)
+    setTokenEdits(Object.fromEntries(data.tokens.map(token => [
+      token.id,
+      {
+        scopes: token.scopes,
+        tokenHours: tokenHoursFromNow(token.expiresAt),
+        permanent: token.expiresAt === null
+      }
+    ])))
     setSelectedScopes(current => {
       const next = { ...current }
       data.requests.forEach(request => {
@@ -115,6 +193,76 @@ export default function AdminAgentsPage() {
     }
 
     setMessage({ type: 'success', text: 'Agent request approved' })
+    await refresh()
+  }
+
+  async function createInvitation() {
+    setBusyId('create-invitation')
+    setMessage(null)
+    const now = new Date()
+    const inviteExpiresAt = new Date(now.getTime() + Number(inviteForm.inviteMinutes || 15) * 60 * 1000).toISOString()
+    const tokenExpiresAt = inviteForm.tokenPermanent
+      ? null
+      : new Date(now.getTime() + Number(inviteForm.tokenHours || 24) * 60 * 60 * 1000).toISOString()
+    const result = await createAdminAgentInvitation(gateway, {
+      agentLabel: inviteForm.agentLabel,
+      toolName: inviteForm.toolName,
+      instructionsMd: inviteForm.instructionsMd,
+      scopes: inviteScopes,
+      inviteExpiresAt,
+      tokenExpiresAt
+    })
+    setBusyId(null)
+
+    if (!result.success) {
+      setMessage({ type: 'error', text: result.error })
+      return
+    }
+
+    setLastInviteCode(result.value.code)
+    setInviteForm(current => ({ ...current, agentLabel: '', instructionsMd: '' }))
+    setMessage({ type: 'success', text: 'Agent invitation created' })
+    await refresh()
+  }
+
+  async function updateTokenAccess(token: AdminAgentToken) {
+    const edit = tokenEdits[token.id]
+    if (!edit) return
+
+    setBusyId(`token-access-${token.id}`)
+    setMessage(null)
+    const expiresAt = edit.permanent
+      ? null
+      : new Date(Date.now() + Number(edit.tokenHours || 24) * 60 * 60 * 1000).toISOString()
+    const result = await updateAdminAgentTokenAccess(gateway, token.id, {
+      scopes: edit.scopes,
+      expiresAt
+    })
+    setBusyId(null)
+
+    if (!result.success) {
+      setMessage({ type: 'error', text: result.error })
+      return
+    }
+
+    setMessage({ type: 'success', text: 'Agent token access updated' })
+    await refresh()
+  }
+
+  async function revokeInvitation(invitation: AdminAgentInvitation) {
+    if (!confirm(`Revoke invitation for ${invitation.agentLabel}?`)) return
+
+    setBusyId(invitation.id)
+    setMessage(null)
+    const result = await revokeAdminAgentInvitation(gateway, invitation.id)
+    setBusyId(null)
+
+    if (!result.success) {
+      setMessage({ type: 'error', text: result.error })
+      return
+    }
+
+    setMessage({ type: 'success', text: 'Agent invitation revoked' })
     await refresh()
   }
 
@@ -181,6 +329,125 @@ export default function AdminAgentsPage() {
           {message.text}
         </div>
       )}
+
+      <section className="space-y-4">
+        <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+          <Send className="h-5 w-5 text-primary" />
+          Create Invitation
+        </h2>
+        <div className="rounded-md border border-white/10 bg-black/20 p-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input
+              placeholder="Agent label"
+              value={inviteForm.agentLabel}
+              onChange={event => setInviteForm(current => ({ ...current, agentLabel: event.target.value }))}
+            />
+            <Input
+              placeholder="Tool name"
+              value={inviteForm.toolName}
+              onChange={event => setInviteForm(current => ({ ...current, toolName: event.target.value }))}
+            />
+            <Input
+              type="number"
+              min="1"
+              placeholder="Invite expiry minutes"
+              value={inviteForm.inviteMinutes}
+              onChange={event => setInviteForm(current => ({ ...current, inviteMinutes: event.target.value }))}
+            />
+            <Input
+              type="number"
+              min="1"
+              placeholder="Token expiry hours"
+              value={inviteForm.tokenHours}
+              disabled={inviteForm.tokenPermanent}
+              onChange={event => setInviteForm(current => ({ ...current, tokenHours: event.target.value }))}
+            />
+          </div>
+          <label className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={inviteForm.tokenPermanent}
+              onChange={event => setInviteForm(current => ({ ...current, tokenPermanent: event.target.checked }))}
+            />
+            Permanent token access
+          </label>
+          <Textarea
+            className="mt-4 min-h-32"
+            placeholder="Task instructions markdown"
+            value={inviteForm.instructionsMd}
+            onChange={event => setInviteForm(current => ({ ...current, instructionsMd: event.target.value }))}
+          />
+          <div className="mt-4">
+            <InvitationScopeSelector selected={inviteScopes} onChange={setInviteScopes} />
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button onClick={createInvitation} disabled={busyId === 'create-invitation'} className="gap-2">
+              <Send className="h-4 w-4" />
+              Create Invite
+            </Button>
+            {lastInviteCode && (
+              <Button
+                variant="outline"
+                className="gap-2 border-white/10 bg-white/5"
+                onClick={() => navigator.clipboard?.writeText(`Read ${window.location.origin}/skill.md and join with code ${lastInviteCode}`)}
+              >
+                <Copy className="h-4 w-4" />
+                Copy Invite: {lastInviteCode}
+              </Button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+          <Send className="h-5 w-5 text-primary" />
+          Invitations
+        </h2>
+
+        {invitations.length === 0 ? (
+          <div className="rounded-md border border-white/10 bg-white/[0.03] p-6 text-muted-foreground">
+            No active agent invitations.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {invitations.map(invitation => (
+              <article key={invitation.id} className="rounded-md border border-white/10 bg-black/20 p-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold text-foreground">{invitation.agentLabel}</h3>
+                      <Badge variant="outline" className="border-white/10">{invitation.toolName}</Badge>
+                      <Badge>{invitation.status}</Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Invite expires {formatDate(invitation.expiresAt)} - token expires {formatDate(invitation.tokenExpiresAt)}
+                      {invitation.claimedAt ? ` - claimed ${formatDate(invitation.claimedAt)}` : ''}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {invitation.scopes.map(scope => (
+                        <Badge key={scope} variant="outline" className="border-white/10 text-xs">
+                          {scope}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  {invitation.status === 'pending' && (
+                    <Button
+                      onClick={() => revokeInvitation(invitation)}
+                      disabled={busyId === invitation.id}
+                      variant="outline"
+                      className="border-red-500/20 text-red-300 hover:bg-red-500/10"
+                    >
+                      Revoke
+                    </Button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="space-y-4">
         <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
@@ -270,15 +537,70 @@ export default function AdminAgentsPage() {
                         </Badge>
                       ))}
                     </div>
+                    <div className="mt-4 space-y-3">
+                      <InvitationScopeSelector
+                        selected={tokenEdits[token.id]?.scopes || token.scopes}
+                        onChange={scopes => setTokenEdits(current => ({
+                          ...current,
+                          [token.id]: {
+                            scopes,
+                            tokenHours: current[token.id]?.tokenHours || tokenHoursFromNow(token.expiresAt),
+                            permanent: current[token.id]?.permanent ?? token.expiresAt === null
+                          }
+                        }))}
+                      />
+                      <div className="grid gap-3 sm:grid-cols-[160px_1fr] sm:items-center">
+                        <Input
+                          type="number"
+                          min="1"
+                          placeholder="Token hours"
+                          value={tokenEdits[token.id]?.tokenHours || tokenHoursFromNow(token.expiresAt)}
+                          disabled={tokenEdits[token.id]?.permanent ?? token.expiresAt === null}
+                          onChange={event => setTokenEdits(current => ({
+                            ...current,
+                            [token.id]: {
+                              scopes: current[token.id]?.scopes || token.scopes,
+                              tokenHours: event.target.value,
+                              permanent: current[token.id]?.permanent ?? token.expiresAt === null
+                            }
+                          }))}
+                        />
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={tokenEdits[token.id]?.permanent ?? token.expiresAt === null}
+                            onChange={event => setTokenEdits(current => ({
+                              ...current,
+                              [token.id]: {
+                                scopes: current[token.id]?.scopes || token.scopes,
+                                tokenHours: current[token.id]?.tokenHours || tokenHoursFromNow(token.expiresAt),
+                                permanent: event.target.checked
+                              }
+                            }))}
+                          />
+                          Permanent access
+                        </label>
+                      </div>
+                    </div>
                   </div>
-                  <Button
-                    onClick={() => revoke(token)}
-                    disabled={busyId === token.id}
-                    variant="outline"
-                    className="border-red-500/20 text-red-300 hover:bg-red-500/10"
-                  >
-                    Revoke
-                  </Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      onClick={() => updateTokenAccess(token)}
+                      disabled={busyId === `token-access-${token.id}`}
+                      variant="outline"
+                      className="border-white/10 bg-white/5"
+                    >
+                      Save Access
+                    </Button>
+                    <Button
+                      onClick={() => revoke(token)}
+                      disabled={busyId === token.id}
+                      variant="outline"
+                      className="border-red-500/20 text-red-300 hover:bg-red-500/10"
+                    >
+                      Revoke
+                    </Button>
+                  </div>
                 </div>
               </article>
             ))}
