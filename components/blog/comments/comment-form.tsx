@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3'
 import { Send, Mail, Loader2, LogOut, User, KeyRound, CheckCircle2 } from 'lucide-react'
+import type { Session, User as SupabaseUser } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -31,7 +32,7 @@ type AuthState = 'idle' | 'awaiting_code' | 'authenticated'
 
 export function CommentForm({ postId, onCommentPosted, parentId, onCancelReply }: CommentFormProps) {
     const [authState, setAuthState] = useState<AuthState>('idle')
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<SupabaseUser | null>(null)
 
     // Form States
     const [email, setEmail] = useState('')
@@ -101,7 +102,7 @@ export function CommentForm({ postId, onCommentPosted, parentId, onCancelReply }
 
             toast.success('Verified successfully!')
             // Session is handled by onAuthStateChange, but we can force update
-            await setCurrentSession(result.session as any)
+            await setCurrentSession(result.session as Session)
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Verification failed')
         } finally {
@@ -254,7 +255,7 @@ export function CommentForm({ postId, onCommentPosted, parentId, onCancelReply }
                     </motion.form>
                 )}
 
-                {authState === 'authenticated' && (
+                {authState === 'authenticated' && user && (
                     <motion.form
                         key="authenticated"
                         initial={{ opacity: 0, y: 10 }}
