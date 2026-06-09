@@ -1,5 +1,9 @@
-import type { PublicBlogListingRepository } from '@/lib/server/application/blog/public-blog-listing'
+import type {
+  PublicBlogListingRepository,
+  PublicBlogPostRecord
+} from '@/lib/server/application/blog/public-blog-listing'
 import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
+import type { BlogCategory, BlogTag } from '@/lib/types/blog'
 
 export function createSupabasePublicBlogListingRepository(
   supabase: SupabaseDataClient
@@ -24,7 +28,10 @@ export function createSupabasePublicBlogListingRepository(
             )
           )
         `)
-        .eq('status', 'published')
+        .eq('status', 'published') as {
+          data: PublicBlogPostRecord[] | null
+          error: { message: string } | null
+        }
 
       if (error) {
         throw new Error(`Failed to fetch blog posts: ${error.message}`)
@@ -36,7 +43,10 @@ export function createSupabasePublicBlogListingRepository(
       const { data, error } = await supabase
         .from('blog_categories')
         .select('*')
-        .order('name')
+        .order('name') as {
+          data: BlogCategory[] | null
+          error: { message: string } | null
+        }
 
       if (error) {
         throw new Error(`Failed to fetch blog categories: ${error.message}`)
@@ -49,7 +59,10 @@ export function createSupabasePublicBlogListingRepository(
         .from('blog_tags')
         .select('*')
         .order('usage_count', { ascending: false })
-        .limit(limit)
+        .limit(limit) as {
+          data: BlogTag[] | null
+          error: { message: string } | null
+        }
 
       if (error) {
         throw new Error(`Failed to fetch blog tags: ${error.message}`)

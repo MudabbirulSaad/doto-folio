@@ -6,8 +6,8 @@ type SupabaseAuthDataClient = SupabaseDataClient & { auth: SupabaseAuthClient }
 export function createSupabaseCurrentAdminUser(supabase: SupabaseAuthDataClient): CurrentAdminUserPort {
   return {
     async getUser() {
-      const { data: { user }, error } = await supabase.auth.getUser()
-      return { user, error }
+      const { data, error } = await supabase.auth.getUser()
+      return { user: data?.user || null, error }
     }
   }
 }

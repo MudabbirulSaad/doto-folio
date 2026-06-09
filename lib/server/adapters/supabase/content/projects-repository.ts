@@ -1,6 +1,6 @@
 import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
-import type { ProjectRepository } from '@/lib/server/application/content/projects'
+import type { ProjectContent, ProjectRepository } from '@/lib/server/application/content/projects'
 
 export function createSupabaseProjectRepository(supabase: SupabaseDataClient): ProjectRepository {
   return {
@@ -15,7 +15,10 @@ export function createSupabaseProjectRepository(supabase: SupabaseDataClient): P
           display_order
         )
       `)
-        .order('display_order', { ascending: true })
+        .order('display_order', { ascending: true }) as {
+          data: ProjectContent[] | null
+          error: { message: string } | null
+        }
 
       if (error) throw new ApplicationError('DATABASE_ERROR', 'Failed to fetch projects', [error.message])
       return data || []
@@ -33,7 +36,7 @@ export function createSupabaseProjectRepository(supabase: SupabaseDataClient): P
         )
       `)
         .eq('id', id)
-        .single()
+        .single<ProjectContent>()
 
       if (error) return null
       return data
@@ -45,7 +48,7 @@ export function createSupabaseProjectRepository(supabase: SupabaseDataClient): P
         .select('display_order')
         .order('display_order', { ascending: false })
         .limit(1)
-        .single()
+        .single<{ display_order?: number | null }>()
 
       return data?.display_order || 0
     },
@@ -55,9 +58,10 @@ export function createSupabaseProjectRepository(supabase: SupabaseDataClient): P
         .from('projects')
         .insert(data)
         .select()
-        .single()
+        .single<ProjectContent>()
 
       if (error) throw new ApplicationError('DATABASE_ERROR', 'Failed to create project', [error.message])
+      if (!project) throw new ApplicationError('DATABASE_ERROR', 'Failed to create project', ['No project returned'])
       return project
     },
 
@@ -67,7 +71,7 @@ export function createSupabaseProjectRepository(supabase: SupabaseDataClient): P
         .update(data)
         .eq('id', id)
         .select()
-        .single()
+        .single<ProjectContent>()
 
       if (error) throw new ApplicationError('DATABASE_ERROR', 'Failed to update project', [error.message])
     },

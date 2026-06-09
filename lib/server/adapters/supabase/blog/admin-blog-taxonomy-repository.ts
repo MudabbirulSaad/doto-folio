@@ -17,7 +17,10 @@ export function createSupabaseAdminBlogTaxonomyRepository(supabase: SupabaseData
       const { data, error } = await supabase
         .from('blog_categories')
         .select('*')
-        .order('display_order', { ascending: true })
+        .order('display_order', { ascending: true }) as {
+          data: BlogCategory[] | null
+          error: { message?: string } | null
+        }
       if (error) databaseError('Failed to fetch categories', error)
       return data || []
     },
@@ -26,7 +29,10 @@ export function createSupabaseAdminBlogTaxonomyRepository(supabase: SupabaseData
       const { data, error } = await supabase
         .from('blog_tags')
         .select('*')
-        .order('usage_count', { ascending: false })
+        .order('usage_count', { ascending: false }) as {
+          data: BlogTag[] | null
+          error: { message?: string } | null
+        }
       if (error) databaseError('Failed to fetch tags', error)
       return data || []
     },

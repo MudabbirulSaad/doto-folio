@@ -1,5 +1,9 @@
-import type { SupabaseAuthClient, SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
-import type { AdminCommentAuthor, AdminCommentRepository } from '@/lib/server/application/comments/admin-comments'
+import type { SupabaseAuthClient, SupabaseAuthUser, SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
+import type {
+  AdminCommentAuthor,
+  AdminCommentRecord,
+  AdminCommentRepository
+} from '@/lib/server/application/comments/admin-comments'
 
 type SupabaseAdminDataClient = SupabaseDataClient & {
   auth: SupabaseAuthClient & { admin: NonNullable<SupabaseAuthClient['admin']> }
@@ -14,7 +18,10 @@ export function createSupabaseAdminCommentRepository(supabaseAdmin: SupabaseAdmi
         *,
         post:blog_posts(title, slug)
       `)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }) as {
+          data: AdminCommentRecord[] | null
+          error: { message: string } | null
+        }
 
       if (error) throw error
       return comments || []
@@ -29,11 +36,15 @@ export function createSupabaseAdminCommentRepository(supabaseAdmin: SupabaseAdmi
 
       const userMap = new Map<string, AdminCommentAuthor>()
       const users = data?.users || []
-      users.forEach((user: any) => {
+      users.forEach((user: SupabaseAuthUser) => {
         userMap.set(user.id, {
-          name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Anonymous',
+          name: typeof user.user_metadata?.full_name === 'string'
+            ? user.user_metadata.full_name
+            : user.email?.split('@')[0] || 'Anonymous',
           email: user.email,
-          avatar: user.user_metadata?.avatar_url
+          avatar: typeof user.user_metadata?.avatar_url === 'string'
+            ? user.user_metadata.avatar_url
+            : undefined
         })
       })
 

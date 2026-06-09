@@ -1,5 +1,4 @@
 import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
-import type { BlogPost } from '@/lib/types/blog'
 import {
   normalizeBlogPost,
   type BlogPostDetailRepository,
@@ -37,7 +36,7 @@ export function createSupabaseBlogPostDetailRepository(supabase: SupabaseDataCli
         .select(BLOG_POST_SELECT)
         .eq('slug', slug)
         .eq('status', 'published')
-        .maybeSingle()
+        .maybeSingle<BlogPostRaw>()
 
       if (error) throw new Error(`Failed to fetch blog post: ${error.message}`)
       return data || null
@@ -49,13 +48,16 @@ export function createSupabaseBlogPostDetailRepository(supabase: SupabaseDataCli
         .select(BLOG_POST_SELECT)
         .eq('status', 'published')
         .neq('id', currentPostId)
-        .order('published_at', { ascending: false })
+        .order('published_at', { ascending: false }) as {
+          data: BlogPostRaw[] | null
+          error: { message: string } | null
+        }
 
       if (error) throw new Error(`Failed to fetch posts for recommendations: ${error.message}`)
       return data || []
     },
 
-    async findRelatedPosts(post, limit: number): Promise<BlogPost[]> {
+    async findRelatedPosts(post, limit: number) {
       let query = supabase
         .from('blog_posts')
         .select(RELATED_POST_SELECT)
@@ -67,13 +69,16 @@ export function createSupabaseBlogPostDetailRepository(supabase: SupabaseDataCli
         query = query.eq('category_id', post.category_id)
       }
 
-      const { data: categoryPosts, error: categoryError } = await query.order('published_at', { ascending: false })
+      const { data: categoryPosts, error: categoryError } = await query.order('published_at', { ascending: false }) as {
+        data: BlogPostRaw[] | null
+        error: { message: string } | null
+      }
       if (categoryError) throw new Error(`Failed to fetch related posts: ${categoryError.message}`)
 
       let relatedPosts = categoryPosts || []
 
       if (relatedPosts.length < limit) {
-        const excludedIds = relatedPosts.map((relatedPost: BlogPost) => relatedPost.id)
+        const excludedIds = relatedPosts.map(relatedPost => relatedPost.id)
         const exclusionFilter = excludedIds.length > 0 ? `(${excludedIds.join(',')})` : null
         let relatedPostsQuery = supabase
           .from('blog_posts')
@@ -87,7 +92,10 @@ export function createSupabaseBlogPostDetailRepository(supabase: SupabaseDataCli
 
         const { data: morePosts, error: moreError } = await relatedPostsQuery
           .order('view_count', { ascending: false })
-          .limit(limit - relatedPosts.length)
+          .limit(limit - relatedPosts.length) as {
+            data: BlogPostRaw[] | null
+            error: { message: string } | null
+          }
 
         if (moreError) throw new Error(`Failed to fetch related posts: ${moreError.message}`)
 
@@ -106,7 +114,7 @@ export function createSupabaseBlogPostDetailRepository(supabase: SupabaseDataCli
         .select('id, view_count')
         .eq('slug', slug)
         .eq('status', 'published')
-        .maybeSingle()
+        .maybeSingle<{ id: string; view_count: number }>()
 
       if (error) {
         return null

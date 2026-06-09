@@ -6,7 +6,8 @@ type SupabaseAuthDataClient = SupabaseDataClient & { auth: SupabaseAuthClient }
 export function createSupabaseCommenterAuthenticator(supabaseAdmin: SupabaseAuthDataClient): CommenterAuthenticator {
   return {
     async authenticate(token) {
-      const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+      const { data, error } = await supabaseAdmin.auth.getUser(token)
+      const user = data?.user || null
       if (error || !user) return null
       return { id: user.id }
     }

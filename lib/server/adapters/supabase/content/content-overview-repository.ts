@@ -48,7 +48,7 @@ export function createSupabaseAdminContentOverviewRepository(supabase: SupabaseD
       const { data } = await supabase
         .from('site_content')
         .select('is_published')
-        .single()
+        .single<{ is_published?: boolean | null }>()
 
       return data?.is_published || false
     }

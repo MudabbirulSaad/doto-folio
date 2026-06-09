@@ -4,10 +4,22 @@ import type { AuthDelivery } from '@/lib/server/application/auth/auth-flows'
 
 type SupabaseAuthDataClient = SupabaseDataClient & { auth: SupabaseAuthClient }
 
+interface SupabaseOtpOptions {
+  shouldCreateUser: boolean
+  data?: {
+    full_name: string
+  }
+}
+
+interface SupabaseVerifyOtpData {
+  session: unknown
+  user: unknown
+}
+
 export function createSupabaseAuthDelivery(supabase: SupabaseAuthDataClient): AuthDelivery {
   return {
     async sendOtp(email, options) {
-      const otpOptions: any = { shouldCreateUser: true }
+      const otpOptions: SupabaseOtpOptions = { shouldCreateUser: true }
       if (options.name) {
         otpOptions.data = { full_name: options.name }
       }
@@ -29,8 +41,11 @@ export function createSupabaseAuthDelivery(supabase: SupabaseAuthDataClient): Au
     },
 
     async verifyOtp(email, token) {
-      const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
-      if (error) {
+      const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' }) as {
+        data: SupabaseVerifyOtpData | null
+        error: { message: string } | null
+      }
+      if (error || !data) {
         throw new ApplicationError('UNAUTHORIZED', 'Invalid or expired code')
       }
 

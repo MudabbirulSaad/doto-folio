@@ -1,11 +1,12 @@
-import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
+import type { SupabaseDataClient, SupabaseQuery } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
 import type {
+  ContactSubmissionAdminRecord,
   ContactSubmissionAdminRepository,
   ContactSubmissionFilters
 } from '@/lib/server/application/contact/admin-submissions'
 
-function applySubmissionFilters(query: any, filters: ContactSubmissionFilters & { now: Date }) {
+function applySubmissionFilters(query: SupabaseQuery, filters: ContactSubmissionFilters & { now: Date }) {
   let filteredQuery = query
 
   if (filters.search) {
@@ -45,7 +46,10 @@ export function createSupabaseContactSubmissionAdminRepository(supabase: Supabas
         filters
       )
 
-      const { data, error } = await query
+      const { data, error } = await query as {
+        data: ContactSubmissionAdminRecord[] | null
+        error: { message: string } | null
+      }
       if (error) {
         throw new ApplicationError('DATABASE_ERROR', 'Failed to fetch submissions', [error.message])
       }
@@ -58,7 +62,10 @@ export function createSupabaseContactSubmissionAdminRepository(supabase: Supabas
         .from('contact_submissions')
         .update(data)
         .in('id', submissionIds)
-        .select()
+        .select() as {
+          data: ContactSubmissionAdminRecord[] | null
+          error: { message: string } | null
+        }
 
       if (error) {
         throw new ApplicationError('DATABASE_ERROR', 'Failed to update submissions', [error.message])

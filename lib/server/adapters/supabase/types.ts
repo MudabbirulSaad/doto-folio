@@ -1,10 +1,10 @@
-export interface SupabaseResult<T = any> {
+export interface SupabaseResult<T = unknown> {
   data: T | null
   error: { message: string; code?: string } | null
   count?: number | null
 }
 
-export interface SupabaseQuery extends PromiseLike<SupabaseResult> {
+export interface SupabaseQuery extends PromiseLike<SupabaseResult<unknown>> {
   select(columns?: string, options?: unknown): SupabaseQuery
   insert(value: unknown): SupabaseQuery
   update(value: unknown): SupabaseQuery
@@ -23,20 +23,32 @@ export interface SupabaseQuery extends PromiseLike<SupabaseResult> {
   order(column: string, options?: unknown): SupabaseQuery
   range(from: number, to: number): SupabaseQuery
   limit(value: number): SupabaseQuery
-  single<T = any>(): Promise<SupabaseResult<T>>
-  maybeSingle<T = any>(): Promise<SupabaseResult<T>>
+  single<T = unknown>(): Promise<SupabaseResult<T>>
+  maybeSingle<T = unknown>(): Promise<SupabaseResult<T>>
+}
+
+export interface SupabaseAuthUser {
+  id: string
+  email?: string
+  user_metadata?: Record<string, unknown>
+  [key: string]: unknown
+}
+
+export interface SupabaseAuthSessionResult {
+  session: unknown
+  user: SupabaseAuthUser | null
 }
 
 export interface SupabaseAuthClient {
   signInWithOtp(input: unknown): Promise<SupabaseResult>
-  verifyOtp(input: unknown): Promise<SupabaseResult>
+  verifyOtp(input: unknown): Promise<SupabaseResult<SupabaseAuthSessionResult>>
   signOut(): Promise<SupabaseResult>
-  getUser(input?: unknown): Promise<SupabaseResult>
+  getUser(input?: unknown): Promise<SupabaseResult<{ user: SupabaseAuthUser | null }>>
   admin?: {
-    getUserById(id: string): Promise<SupabaseResult>
-    listUsers(input?: unknown): Promise<SupabaseResult<{ users: any[] }>>
-    createUser(input: unknown): Promise<SupabaseResult>
-    updateUserById(id: string, input: unknown): Promise<SupabaseResult>
+    getUserById(id: string): Promise<SupabaseResult<{ user: SupabaseAuthUser | null }>>
+    listUsers(input?: unknown): Promise<SupabaseResult<{ users: SupabaseAuthUser[] }>>
+    createUser(input: unknown): Promise<SupabaseResult<{ user: SupabaseAuthUser | null }>>
+    updateUserById(id: string, input: unknown): Promise<SupabaseResult<{ user: SupabaseAuthUser | null }>>
   }
 }
 

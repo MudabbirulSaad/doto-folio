@@ -1,8 +1,14 @@
 import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
-import type { SkillContentRepository } from '@/lib/server/application/content/skills'
+import type {
+  CategorySkillContent,
+  FlatSkillContent,
+  SkillContentRepository
+} from '@/lib/server/application/content/skills'
 
 type SkillRow = Record<string, unknown>
+type IdRow = { id: string }
+type DisplayOrderRow = { display_order?: number | null }
 
 function databaseError(message: string, error: { message?: string }): never {
   throw new ApplicationError('DATABASE_ERROR', message, error.message ? [error.message] : [message])
@@ -64,15 +70,28 @@ function categoryTitleFromSkill(skill: SkillRow) {
   return String(skill.category || 'Other')
 }
 
-function mapCategorySkill(skill: SkillRow) {
-  const category = categoryTitleFromSkill(skill)
+function skillFromRow(skill: SkillRow, overrides: Partial<FlatSkillContent> = {}): FlatSkillContent {
   return {
     ...skill,
+    id: String(skill.id),
+    name: String(skill.name),
+    category: String(skill.category || 'Other'),
+    proficiency: Number(skill.proficiency || 60),
+    icon_name: String(skill.icon_name || iconForSkill(skill)),
+    display_order: Number(skill.display_order || 0),
+    is_published: skill.is_published !== false,
+    ...overrides
+  }
+}
+
+function mapCategorySkill(skill: SkillRow): FlatSkillContent {
+  const category = categoryTitleFromSkill(skill)
+  return skillFromRow(skill, {
     category,
     proficiency: proficiencyFromLevel(skill.level),
     icon_name: iconForSkill({ ...skill, category }),
     is_published: skill.is_published !== false
-  }
+  })
 }
 
 function defaultDescription(data: Record<string, unknown>) {
@@ -87,7 +106,7 @@ async function findOrCreateCategoryId(supabase: SupabaseDataClient, title: unkno
     .from('skill_categories')
     .select('id')
     .eq('title', categoryTitle)
-    .maybeSingle()
+    .maybeSingle<IdRow>()
 
   if (existing?.id && !existingError) return existing.id
 
@@ -96,7 +115,7 @@ async function findOrCreateCategoryId(supabase: SupabaseDataClient, title: unkno
     .select('display_order')
     .order('display_order', { ascending: false })
     .limit(1)
-    .maybeSingle()
+    .maybeSingle<DisplayOrderRow>()
 
   const { data: created, error: createError } = await supabase
     .from('skill_categories')
@@ -106,9 +125,10 @@ async function findOrCreateCategoryId(supabase: SupabaseDataClient, title: unkno
       is_published: true
     })
     .select('id')
-    .single()
+    .single<IdRow>()
 
   if (createError) databaseError('Failed to create skill category', createError)
+  if (!created) databaseError('Failed to create skill category', { message: 'No category returned' })
   return created.id
 }
 
@@ -116,7 +136,10 @@ async function listCategoryBackedSkills(supabase: SupabaseDataClient) {
   const { data, error } = await supabase
     .from('skills')
     .select('id, name, level, description, display_order, is_published, created_at, updated_at, skill_categories(title)')
-    .order('display_order', { ascending: true })
+    .order('display_order', { ascending: true }) as {
+      data: SkillRow[] | null
+      error: { message?: string; code?: string } | null
+    }
 
   if (error) databaseError('Failed to fetch skills', error)
   return ((data || []) as SkillRow[]).map(mapCategorySkill)
@@ -135,10 +158,11 @@ async function createCategoryBackedSkill(supabase: SupabaseDataClient, data: Rec
       is_published: data.is_published !== false
     })
     .select('id, name, level, description, display_order, is_published, created_at, updated_at, skill_categories(title)')
-    .single()
+    .single<SkillRow>()
 
   if (error) databaseError('Failed to create skill', error)
-  return mapCategorySkill(skill as SkillRow)
+  if (!skill) databaseError('Failed to create skill', { message: 'No skill returned' })
+  return mapCategorySkill(skill)
 }
 
 export function createSupabaseSkillContentRepository(supabase: SupabaseDataClient): SkillContentRepository {
@@ -147,7 +171,10 @@ export function createSupabaseSkillContentRepository(supabase: SupabaseDataClien
       const { data, error } = await supabase
         .from('skills')
         .select('id, name, category, proficiency, icon_name, display_order, is_published, created_at, updated_at')
-        .order('display_order', { ascending: true })
+        .order('display_order', { ascending: true }) as {
+          data: FlatSkillContent[] | null
+          error: { message?: string; code?: string } | null
+        }
       if (error) {
         if (!isMissingColumnError(error)) {
           databaseError('Failed to fetch skills', error)
@@ -156,14 +183,17 @@ export function createSupabaseSkillContentRepository(supabase: SupabaseDataClien
         const { data: legacyData, error: legacyError } = await supabase
           .from('skills')
           .select('id, name, category, proficiency, icon_name, display_order, created_at, updated_at')
-          .order('display_order', { ascending: true })
+          .order('display_order', { ascending: true }) as {
+            data: SkillRow[] | null
+            error: { message?: string; code?: string } | null
+          }
         if (legacyError) {
           if (isMissingColumnError(legacyError)) {
             return listCategoryBackedSkills(supabase)
           }
           databaseError('Failed to fetch skills', legacyError)
         }
-        return ((legacyData || []) as SkillRow[]).map(skill => ({ ...skill, is_published: true }))
+        return (legacyData || []).map(skill => skillFromRow(skill, { is_published: true }))
       }
       return data || []
     },
@@ -174,7 +204,7 @@ export function createSupabaseSkillContentRepository(supabase: SupabaseDataClien
         .select('display_order')
         .order('display_order', { ascending: false })
         .limit(1)
-        .maybeSingle()
+        .maybeSingle<DisplayOrderRow>()
       return data?.display_order || 0
     },
 
@@ -183,8 +213,9 @@ export function createSupabaseSkillContentRepository(supabase: SupabaseDataClien
         .from('skills')
         .insert(data)
         .select()
-        .single()
+        .single<FlatSkillContent>()
       if (error) return createCategoryBackedSkill(supabase, data)
+      if (!skill) databaseError('Failed to create skill', { message: 'No skill returned' })
       return skill
     },
 
@@ -194,7 +225,7 @@ export function createSupabaseSkillContentRepository(supabase: SupabaseDataClien
         .update(data)
         .eq('id', id)
         .select()
-        .single()
+        .single<FlatSkillContent>()
       if (error) {
         const categoryId = await findOrCreateCategoryId(supabase, data.category)
         const { data: categorySkill, error: categoryError } = await supabase
@@ -207,11 +238,13 @@ export function createSupabaseSkillContentRepository(supabase: SupabaseDataClien
           })
           .eq('id', id)
           .select('id, name, level, description, display_order, is_published, created_at, updated_at, skill_categories(title)')
-          .single()
+          .single<SkillRow>()
 
         if (categoryError) databaseError('Failed to update skill', categoryError)
-        return mapCategorySkill(categorySkill as SkillRow)
+        if (!categorySkill) databaseError('Failed to update skill', { message: 'No skill returned' })
+        return mapCategorySkill(categorySkill)
       }
+      if (!skill) databaseError('Failed to update skill', { message: 'No skill returned' })
       return skill
     },
 
@@ -228,7 +261,7 @@ export function createSupabaseSkillContentRepository(supabase: SupabaseDataClien
         .from('skill_categories')
         .select('id')
         .eq('id', id)
-        .single()
+        .single<IdRow>()
       return Boolean(data && !error)
     },
 
@@ -239,7 +272,7 @@ export function createSupabaseSkillContentRepository(supabase: SupabaseDataClien
         .eq('category_id', categoryId)
         .order('display_order', { ascending: false })
         .limit(1)
-        .single()
+        .single<DisplayOrderRow>()
       return data?.display_order || 0
     },
 
@@ -248,8 +281,9 @@ export function createSupabaseSkillContentRepository(supabase: SupabaseDataClien
         .from('skills')
         .insert(data)
         .select()
-        .single()
+        .single<CategorySkillContent>()
       if (error) databaseError('Failed to create skill', error)
+      if (!skill) databaseError('Failed to create skill', { message: 'No skill returned' })
       return skill
     }
   }

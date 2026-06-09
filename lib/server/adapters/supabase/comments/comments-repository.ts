@@ -1,5 +1,5 @@
-import type { SupabaseAuthClient, SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
-import type { CommentAuthor, CommentRepository } from '@/lib/server/application/comments/comments'
+import type { SupabaseAuthClient, SupabaseAuthUser, SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
+import type { CommentAuthor, CommentRecord, CommentRepository } from '@/lib/server/application/comments/comments'
 
 type SupabaseAdminDataClient = SupabaseDataClient & {
   auth: SupabaseAuthClient & { admin: NonNullable<SupabaseAuthClient['admin']> }
@@ -18,7 +18,10 @@ export function createSupabaseCommentRepository(supabaseAdmin: SupabaseAdminData
         parent_id
       `)
         .eq('post_id', postId)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: true }) as {
+          data: CommentRecord[] | null
+          error: { message: string } | null
+        }
 
       if (error) throw error
       return data || []
@@ -29,11 +32,15 @@ export function createSupabaseCommentRepository(supabaseAdmin: SupabaseAdminData
       const userMap = new Map<string, CommentAuthor>()
 
       if (users?.users) {
-        users.users.forEach((user: any) => {
+        users.users.forEach((user: SupabaseAuthUser) => {
           userMap.set(user.id, {
-            email: user.email,
-            name: user.user_metadata?.full_name || (user.email ? user.email.split('@')[0] : 'Anonymous'),
-            avatar: user.user_metadata?.avatar_url
+            email: user.email || '',
+            name: typeof user.user_metadata?.full_name === 'string'
+              ? user.user_metadata.full_name
+              : user.email ? user.email.split('@')[0] : 'Anonymous',
+            avatar: typeof user.user_metadata?.avatar_url === 'string'
+              ? user.user_metadata.avatar_url
+              : undefined
           })
         })
       }
@@ -46,7 +53,7 @@ export function createSupabaseCommentRepository(supabaseAdmin: SupabaseAdminData
         .from('blog_posts')
         .select('allow_comments')
         .eq('id', postId)
-        .single()
+        .single<{ allow_comments?: boolean | null }>()
 
       if (error || !post) return null
       return post
@@ -57,10 +64,10 @@ export function createSupabaseCommentRepository(supabaseAdmin: SupabaseAdminData
         .from('blog_comments')
         .insert(data)
         .select()
-        .single()
+        .single<Record<string, unknown>>()
 
       if (error) throw error
-      return comment
+      return comment || {}
     }
   }
 }

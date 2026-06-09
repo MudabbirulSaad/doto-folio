@@ -1,7 +1,10 @@
 import type { SupabaseAuthClient, SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import type {
   AdminDashboardRepository,
-  DashboardAuthor
+  DashboardActivityRecord,
+  DashboardAuthor,
+  DashboardRecentComment,
+  DashboardRecentSubmission
 } from '@/lib/server/application/admin/dashboard'
 
 interface DashboardAdminUser {
@@ -11,6 +14,14 @@ interface DashboardAdminUser {
     full_name?: string
     avatar_url?: string
   }
+}
+
+interface DashboardPostViewRow {
+  view_count: number | null
+}
+
+interface DashboardCommentUserRow {
+  user_id: string | null
 }
 
 type DashboardAdminClient = SupabaseDataClient & {
@@ -44,8 +55,10 @@ export function createSupabaseAdminDashboardRepository(
     },
 
     async getPostViewCounts() {
-      const { data } = await supabase.from('blog_posts').select('view_count')
-      return (data || []).map((post: any) => post.view_count)
+      const { data } = await supabase.from('blog_posts').select('view_count') as {
+        data: DashboardPostViewRow[] | null
+      }
+      return (data || []).map(post => post.view_count)
     },
 
     async listRecentComments() {
@@ -53,7 +66,7 @@ export function createSupabaseAdminDashboardRepository(
         .from('blog_comments')
         .select('*, post:blog_posts(title, slug)')
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(5) as { data: DashboardRecentComment[] | null }
 
       return data || []
     },
@@ -63,7 +76,7 @@ export function createSupabaseAdminDashboardRepository(
         .from('contact_submissions')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(5) as { data: DashboardRecentSubmission[] | null }
 
       return data || []
     },
@@ -81,21 +94,21 @@ export function createSupabaseAdminDashboardRepository(
     },
 
     async listAllCommentUserIds() {
-      const { data } = await supabase.from('blog_comments').select('user_id')
-      return (data || []).map((comment: any) => comment.user_id)
+      const { data } = await supabase.from('blog_comments').select('user_id') as {
+        data: DashboardCommentUserRow[] | null
+      }
+      return (data || []).map(comment => comment.user_id)
     },
 
     async listActivitySince(since) {
-      const [viewsResult, commentsResult] = await Promise.all([
-        supabase
-          .from('blog_views')
-          .select('created_at')
-          .gte('created_at', since.toISOString()),
-        supabase
-          .from('blog_comments')
-          .select('created_at')
-          .gte('created_at', since.toISOString())
-      ])
+      const viewsResult = await supabase
+        .from('blog_views')
+        .select('created_at')
+        .gte('created_at', since.toISOString()) as { data: DashboardActivityRecord[] | null }
+      const commentsResult = await supabase
+        .from('blog_comments')
+        .select('created_at')
+        .gte('created_at', since.toISOString()) as { data: DashboardActivityRecord[] | null }
 
       return {
         views: viewsResult.data || [],

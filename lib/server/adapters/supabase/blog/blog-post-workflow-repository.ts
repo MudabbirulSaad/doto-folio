@@ -2,8 +2,17 @@ import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import {
   BlogPostWorkflowError,
   uniqueValues,
+  type BlogPostForLifecycle,
+  type BlogPostWorkflowRecord,
   type BlogPostWorkflowRepository
 } from '@/lib/server/application/blog/blog-post-workflow'
+
+type BlogPostDeleteRow = {
+  id: string
+  title: string
+  category_id?: string | null
+  tags?: Array<{ tag_id: string }>
+}
 
 function throwDatabaseError(action: string, error: { message?: string } | null | undefined): never {
   throw new BlogPostWorkflowError(
@@ -25,7 +34,7 @@ export function createSupabaseBlogPostWorkflowRepository(supabase: SupabaseDataC
         query = query.neq('id', excludeId)
       }
 
-      const { data, error } = await query.maybeSingle()
+      const { data, error } = await query.maybeSingle<{ id: string }>()
       if (error) throwDatabaseError('Failed to check slug uniqueness', error)
       return data || null
     },
@@ -35,7 +44,7 @@ export function createSupabaseBlogPostWorkflowRepository(supabase: SupabaseDataC
         .from('blog_posts')
         .select('id, slug, category_id, status, published_at')
         .eq('id', id)
-        .maybeSingle()
+        .maybeSingle<BlogPostForLifecycle>()
 
       if (error) throwDatabaseError('Failed to fetch post', error)
       return data || null
@@ -51,7 +60,7 @@ export function createSupabaseBlogPostWorkflowRepository(supabase: SupabaseDataC
           tags:blog_post_tags(tag_id)
         `)
         .eq('id', id)
-        .maybeSingle()
+        .maybeSingle<BlogPostDeleteRow>()
 
       if (error) throwDatabaseError('Failed to fetch post', error)
       if (!data) return null
@@ -69,9 +78,10 @@ export function createSupabaseBlogPostWorkflowRepository(supabase: SupabaseDataC
         .from('blog_posts')
         .insert(data)
         .select()
-        .single()
+        .single<BlogPostWorkflowRecord>()
 
       if (error) throwDatabaseError('Failed to create post', error)
+      if (!post) throwDatabaseError('Failed to create post', { message: 'No post returned' })
       return post
     },
 
@@ -81,9 +91,10 @@ export function createSupabaseBlogPostWorkflowRepository(supabase: SupabaseDataC
         .update(data)
         .eq('id', id)
         .select()
-        .single()
+        .single<BlogPostWorkflowRecord>()
 
       if (error) throwDatabaseError('Failed to update post', error)
+      if (!post) throwDatabaseError('Failed to update post', { message: 'No post returned' })
       return post
     },
 
@@ -100,10 +111,13 @@ export function createSupabaseBlogPostWorkflowRepository(supabase: SupabaseDataC
       const { data, error } = await supabase
         .from('blog_post_tags')
         .select('tag_id')
-        .eq('post_id', id)
+        .eq('post_id', id) as {
+          data: Array<{ tag_id: string }> | null
+          error: { message?: string } | null
+        }
 
       if (error) throwDatabaseError('Failed to fetch post tags', error)
-      return data?.map((tag: { tag_id: string }) => tag.tag_id) || []
+      return data?.map(tag => tag.tag_id) || []
     },
 
     async replacePostTags(id, tagIds) {

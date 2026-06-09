@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { createSupabaseSkillContentRepository } from '../lib/server/adapters/supabase/content/skills-repository'
+import type { SupabaseDataClient } from '../lib/server/adapters/supabase/types'
 
 type QueryResult = {
   data: unknown
@@ -57,7 +58,7 @@ test('skills repository falls back when older skills table has no published colu
     }
   ])
 
-  const repository = createSupabaseSkillContentRepository(client as any)
+  const repository = createSupabaseSkillContentRepository(client as unknown as SupabaseDataClient)
   const skills = await repository.listFlatSkills()
 
   assert.deepEqual(selects, [

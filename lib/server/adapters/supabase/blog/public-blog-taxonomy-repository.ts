@@ -1,6 +1,10 @@
 import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
-import type { BlogTaxonomyRepository } from '@/lib/server/application/blog/public-blog-taxonomy'
+import type {
+  BlogTaxonomyRepository,
+  CategoryWithRawCount
+} from '@/lib/server/application/blog/public-blog-taxonomy'
+import type { BlogCategory, BlogPost, BlogTag } from '@/lib/types/blog'
 
 const POST_SELECT = `
   *,
@@ -33,7 +37,10 @@ export function createSupabaseBlogTaxonomyRepository(supabase: SupabaseDataClien
         posts:blog_posts(count)
       `)
         .eq('blog_posts.status', 'published')
-        .order('name')
+        .order('name') as {
+          data: CategoryWithRawCount[] | null
+          error: { message: string } | null
+        }
 
       if (error) {
         throw new ApplicationError('DATABASE_ERROR', 'Failed to fetch blog categories', [error.message])
@@ -47,7 +54,7 @@ export function createSupabaseBlogTaxonomyRepository(supabase: SupabaseDataClien
         .from('blog_categories')
         .select('*')
         .eq('slug', slug)
-        .single()
+        .single<BlogCategory>()
 
       if (error || !data) return null
       return data
@@ -58,7 +65,7 @@ export function createSupabaseBlogTaxonomyRepository(supabase: SupabaseDataClien
         .from('blog_tags')
         .select('*')
         .eq('slug', slug)
-        .single()
+        .single<BlogTag>()
 
       if (error || !data) return null
       return data
@@ -72,7 +79,10 @@ export function createSupabaseBlogTaxonomyRepository(supabase: SupabaseDataClien
         .eq('category_id', categoryId)
         .eq('status', 'published')
         .order('published_at', { ascending: false })
-        .range(offset, offset + limit - 1)
+        .range(offset, offset + limit - 1) as {
+          data: BlogPost[] | null
+          error: { message: string } | null
+        }
 
       if (postsError) {
         throw new ApplicationError('DATABASE_ERROR', 'Failed to fetch category posts', [postsError.message])
@@ -95,13 +105,16 @@ export function createSupabaseBlogTaxonomyRepository(supabase: SupabaseDataClien
       const { data, error } = await supabase
         .from('blog_post_tags')
         .select('post_id')
-        .eq('tag_id', tagId)
+        .eq('tag_id', tagId) as {
+          data: Array<{ post_id: string }> | null
+          error: { message: string } | null
+        }
 
       if (error) {
         throw new ApplicationError('DATABASE_ERROR', 'Failed to fetch tag relations', [error.message])
       }
 
-      return data?.map((relation: { post_id: string }) => relation.post_id) || []
+      return data?.map(relation => relation.post_id) || []
     },
 
     async getPublishedPostsByIds(postIds, page, limit) {
@@ -112,7 +125,10 @@ export function createSupabaseBlogTaxonomyRepository(supabase: SupabaseDataClien
         .in('id', postIds)
         .eq('status', 'published')
         .order('published_at', { ascending: false })
-        .range(offset, offset + limit - 1)
+        .range(offset, offset + limit - 1) as {
+          data: BlogPost[] | null
+          error: { message: string } | null
+        }
 
       if (postsError) {
         throw new ApplicationError('DATABASE_ERROR', 'Failed to fetch posts', [postsError.message])

@@ -17,7 +17,7 @@ export function createSupabaseContactSubmissionRepository(supabase: SupabaseData
         .from('contact_submissions')
         .insert(submissionData)
         .select()
-        .single()
+        .single<Record<string, unknown>>()
 
       if (error) {
         throw new ApplicationError(
@@ -27,7 +27,7 @@ export function createSupabaseContactSubmissionRepository(supabase: SupabaseData
         )
       }
 
-      return data
+      return data || {}
     }
   }
 }

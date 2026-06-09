@@ -16,7 +16,7 @@ export function createSupabaseSiteContentRepository(supabase: SupabaseDataClient
         .from('site_content')
         .select(PUBLIC_SITE_CONTENT_SELECT)
         .eq('is_published', true)
-        .single()
+        .single<Record<string, unknown>>()
 
       if (error?.code === 'PGRST116') return null
       if (error) databaseError('Failed to fetch site content', error)
@@ -27,7 +27,7 @@ export function createSupabaseSiteContentRepository(supabase: SupabaseDataClient
       const { data, error } = await supabase
         .from('site_content')
         .select('*')
-        .single()
+        .single<Record<string, unknown>>()
       if (error) databaseError('Failed to fetch site content', error)
       return data
     },
@@ -36,7 +36,7 @@ export function createSupabaseSiteContentRepository(supabase: SupabaseDataClient
       const { data } = await supabase
         .from('site_content')
         .select('id')
-        .single()
+        .single<{ id: string }>()
       return Boolean(data)
     },
 
@@ -45,8 +45,9 @@ export function createSupabaseSiteContentRepository(supabase: SupabaseDataClient
         .from('site_content')
         .update(data)
         .select()
-        .single()
+        .single<Record<string, unknown>>()
       if (error) databaseError('Failed to update site content', error)
+      if (!content) databaseError('Failed to update site content', { message: 'No site content returned' })
       return content
     },
 
@@ -55,8 +56,9 @@ export function createSupabaseSiteContentRepository(supabase: SupabaseDataClient
         .from('site_content')
         .insert(data)
         .select()
-        .single()
+        .single<Record<string, unknown>>()
       if (error) databaseError('Failed to update site content', error)
+      if (!content) databaseError('Failed to update site content', { message: 'No site content returned' })
       return content
     }
   }

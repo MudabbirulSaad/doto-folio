@@ -135,7 +135,7 @@ export function createSupabaseAgentAccessRequestRepository(
           expires_at: input.expiresAt
         })
         .select()
-        .single()
+        .single<AgentAccessRequestRow>()
 
       if (error || !data) databaseError('Failed to create agent access request', error)
       return requestFromRow(data)
@@ -146,7 +146,7 @@ export function createSupabaseAgentAccessRequestRepository(
         .from('agent_access_requests')
         .select()
         .eq('code_hash', codeHash)
-        .maybeSingle()
+        .maybeSingle<AgentAccessRequestRow>()
 
       if (error) databaseError('Failed to find agent access request', error)
       return data ? requestFromRow(data) : null
@@ -157,7 +157,7 @@ export function createSupabaseAgentAccessRequestRepository(
         .from('agent_access_requests')
         .select()
         .in('status', ['pending', 'approved'])
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }) as { data: AgentAccessRequestRow[] | null; error: { message: string } | null }
 
       if (error) databaseError('Failed to list agent access requests', error)
       return (data || []).map(requestFromRow)
@@ -168,7 +168,7 @@ export function createSupabaseAgentAccessRequestRepository(
         .from('agent_access_requests')
         .select()
         .eq('id', id)
-        .maybeSingle()
+        .maybeSingle<AgentAccessRequestRow>()
 
       if (error) databaseError('Failed to find agent access request', error)
       return data ? requestFromRow(data) : null
@@ -184,7 +184,7 @@ export function createSupabaseAgentAccessRequestRepository(
         })
         .eq('id', id)
         .select()
-        .single()
+        .single<AgentAccessRequestRow>()
 
       if (error || !data) databaseError('Failed to approve agent access request', error)
       return requestFromRow(data)
@@ -199,7 +199,7 @@ export function createSupabaseAgentAccessRequestRepository(
         })
         .eq('id', id)
         .select()
-        .single()
+        .single<AgentAccessRequestRow>()
 
       if (error || !data) databaseError('Failed to reject agent access request', error)
       return requestFromRow(data)
@@ -211,7 +211,7 @@ export function createSupabaseAgentAccessRequestRepository(
         .update({ status: 'expired' })
         .eq('id', id)
         .select()
-        .single()
+        .single<AgentAccessRequestRow>()
 
       if (error || !data) databaseError('Failed to expire agent access request', error)
       return requestFromRow(data)
@@ -238,7 +238,7 @@ export function createSupabaseAgentInvitationRepository(
           created_by: input.createdBy
         })
         .select()
-        .single()
+        .single<AgentInvitationRow>()
 
       if (error || !data) databaseError('Failed to create agent invitation', error)
       return invitationFromRow(data)
@@ -249,7 +249,7 @@ export function createSupabaseAgentInvitationRepository(
         .from('agent_invitations')
         .select()
         .eq('code_hash', codeHash)
-        .maybeSingle()
+        .maybeSingle<AgentInvitationRow>()
 
       if (error) databaseError('Failed to find agent invitation', error)
       return data ? invitationFromRow(data) : null
@@ -260,7 +260,7 @@ export function createSupabaseAgentInvitationRepository(
         .from('agent_invitations')
         .select()
         .eq('id', id)
-        .maybeSingle()
+        .maybeSingle<AgentInvitationRow>()
 
       if (error) databaseError('Failed to find agent invitation', error)
       return data ? invitationFromRow(data) : null
@@ -271,7 +271,7 @@ export function createSupabaseAgentInvitationRepository(
         .from('agent_invitations')
         .select()
         .eq('claimed_token_id', tokenId)
-        .maybeSingle()
+        .maybeSingle<AgentInvitationRow>()
 
       if (error) databaseError('Failed to find agent invitation by token', error)
       return data ? invitationFromRow(data) : null
@@ -282,7 +282,7 @@ export function createSupabaseAgentInvitationRepository(
         .from('agent_invitations')
         .select()
         .in('status', ['pending', 'claimed'])
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }) as { data: AgentInvitationRow[] | null; error: { message: string } | null }
 
       if (error) databaseError('Failed to list agent invitations', error)
       return (data || []).map(invitationFromRow)
@@ -298,7 +298,7 @@ export function createSupabaseAgentInvitationRepository(
         })
         .eq('id', id)
         .select()
-        .single()
+        .single<AgentInvitationRow>()
 
       if (error || !data) databaseError('Failed to claim agent invitation', error)
       return invitationFromRow(data)
@@ -310,7 +310,7 @@ export function createSupabaseAgentInvitationRepository(
         .update({ status: 'expired' })
         .eq('id', id)
         .select()
-        .single()
+        .single<AgentInvitationRow>()
 
       if (error || !data) databaseError('Failed to expire agent invitation', error)
       return invitationFromRow(data)
@@ -322,7 +322,7 @@ export function createSupabaseAgentInvitationRepository(
         .update({ status: 'revoked' })
         .eq('id', id)
         .select()
-        .single()
+        .single<AgentInvitationRow>()
 
       if (error || !data) databaseError('Failed to revoke agent invitation', error)
       return invitationFromRow(data)
@@ -347,7 +347,7 @@ export function createSupabaseAgentTokenRepository(
           expires_at: input.expiresAt
         })
         .select()
-        .single()
+        .single<AgentTokenRow>()
 
       if (error || !data) databaseError('Failed to create agent token', error)
       return tokenFromRow(data)
@@ -358,7 +358,7 @@ export function createSupabaseAgentTokenRepository(
         .from('agent_tokens')
         .select()
         .eq('token_hash', tokenHash)
-        .maybeSingle()
+        .maybeSingle<AgentTokenRow>()
 
       if (error) databaseError('Failed to find agent token', error)
       return data ? tokenFromRow(data) : null
@@ -369,7 +369,7 @@ export function createSupabaseAgentTokenRepository(
         .from('agent_tokens')
         .select()
         .eq('id', id)
-        .maybeSingle()
+        .maybeSingle<AgentTokenRow>()
 
       if (error) databaseError('Failed to find agent token', error)
       return data ? tokenFromRow(data) : null
@@ -381,7 +381,7 @@ export function createSupabaseAgentTokenRepository(
         .select()
         .is('revoked_at', null)
         .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }) as { data: AgentTokenRow[] | null; error: { message: string } | null }
 
       if (error) databaseError('Failed to list agent tokens', error)
       return (data || []).map(tokenFromRow)
@@ -396,7 +396,7 @@ export function createSupabaseAgentTokenRepository(
         })
         .eq('id', id)
         .select()
-        .single()
+        .single<AgentTokenRow>()
 
       if (error || !data) databaseError('Failed to update agent token access', error)
       return tokenFromRow(data)
@@ -408,7 +408,7 @@ export function createSupabaseAgentTokenRepository(
         .update({ revoked_at: revokedAt })
         .eq('id', id)
         .select()
-        .single()
+        .single<AgentTokenRow>()
 
       if (error || !data) databaseError('Failed to revoke agent token', error)
       return tokenFromRow(data)

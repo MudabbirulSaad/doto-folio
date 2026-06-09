@@ -125,10 +125,11 @@ async function setupAdmin() {
       return
     }
 
-    if (data.user) {
+    const user = data?.user || null
+    if (user) {
       console.log('Admin user created successfully!')
       console.log(`Email: ${adminEmail}`)
-      console.log(`User ID: ${data.user.id}`)
+      console.log(`User ID: ${user.id}`)
       console.log('\nAdmin setup complete!')
       console.log('\nYou can now login at: http://localhost:3000/admin/login')
       console.log('\nIMPORTANT: Change the default password after first login!')

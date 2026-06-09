@@ -1,6 +1,9 @@
 import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import { ApplicationError } from '@/lib/server/domain/errors'
-import type { AdminBlogPostRepository } from '@/lib/server/application/blog/admin-blog-posts'
+import type {
+  AdminBlogPostRecord,
+  AdminBlogPostRepository
+} from '@/lib/server/application/blog/admin-blog-posts'
 
 const ADMIN_POST_SELECT = `
   *,
@@ -44,7 +47,10 @@ export function createSupabaseAdminBlogPostRepository(supabase: SupabaseDataClie
         .from('blog_posts')
         .select('*', { count: 'exact', head: true })
 
-      const { data: posts, error } = await query.range(offset, offset + params.limit - 1)
+      const { data: posts, error } = await query.range(offset, offset + params.limit - 1) as {
+        data: AdminBlogPostRecord[] | null
+        error: { message: string } | null
+      }
 
       if (error) {
         throw new ApplicationError('DATABASE_ERROR', 'Failed to fetch posts', [error.message])
@@ -61,7 +67,7 @@ export function createSupabaseAdminBlogPostRepository(supabase: SupabaseDataClie
         .from('blog_posts')
         .select(ADMIN_POST_SELECT)
         .eq('id', id)
-        .single()
+        .single<AdminBlogPostRecord>()
 
       if (error || !post) return null
       return post
