@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useCallback, useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -60,22 +60,7 @@ export default function TagsPage() {
   const [slug, setSlug] = useState('')
   const [description, setDescription] = useState('')
 
-  useEffect(() => {
-    fetchTags()
-  }, [])
-
-  // Auto-generate slug from name
-  useEffect(() => {
-    if (name && !editingTag) {
-      const generatedSlug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-      setSlug(generatedSlug)
-    }
-  }, [name, editingTag])
-
-  const fetchTags = async () => {
+  const fetchTags = useCallback(async () => {
     try {
       const result = await loadAdminBlogTags(gateway)
       if (result.success) {
@@ -88,7 +73,22 @@ export default function TagsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [gateway])
+
+  useEffect(() => {
+    fetchTags()
+  }, [fetchTags])
+
+  // Auto-generate slug from name
+  useEffect(() => {
+    if (name && !editingTag) {
+      const generatedSlug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+      setSlug(generatedSlug)
+    }
+  }, [name, editingTag])
 
   const resetForm = () => {
     setName('')

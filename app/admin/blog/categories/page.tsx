@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useCallback, useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -60,22 +60,7 @@ export default function CategoriesPage() {
   const [color, setColor] = useState('#3b82f6')
   const [displayOrder, setDisplayOrder] = useState(0)
 
-  useEffect(() => {
-    fetchCategories()
-  }, [])
-
-  // Auto-generate slug from name
-  useEffect(() => {
-    if (name && !editingCategory) {
-      const generatedSlug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-      setSlug(generatedSlug)
-    }
-  }, [name, editingCategory])
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const result = await loadAdminBlogCategories(gateway)
       if (result.success) {
@@ -88,7 +73,22 @@ export default function CategoriesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [gateway])
+
+  useEffect(() => {
+    fetchCategories()
+  }, [fetchCategories])
+
+  // Auto-generate slug from name
+  useEffect(() => {
+    if (name && !editingCategory) {
+      const generatedSlug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
+      setSlug(generatedSlug)
+    }
+  }, [name, editingCategory])
 
   const resetForm = () => {
     setName('')

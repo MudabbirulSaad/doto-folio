@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useCallback, useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -34,11 +34,7 @@ export default function CommentsManagementPage() {
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
     const gateway = useMemo(() => createAdminCommentApiGateway(), [])
 
-    useEffect(() => {
-        fetchComments()
-    }, [])
-
-    const fetchComments = async () => {
+    const fetchComments = useCallback(async () => {
         try {
             const result = await loadAdminComments(gateway)
             if (result.success) {
@@ -49,7 +45,11 @@ export default function CommentsManagementPage() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [gateway])
+
+    useEffect(() => {
+        fetchComments()
+    }, [fetchComments])
 
     const handleDelete = async (commentId: string) => {
         if (!confirm('Are you sure you want to delete this comment?')) return
@@ -87,7 +87,7 @@ export default function CommentsManagementPage() {
                 setMessage({ type: 'success', text: 'Reply posted successfully' })
                 setReplyContent('')
                 setReplyingTo(null)
-                fetchComments()
+                await fetchComments()
             } else {
                 setMessage({ type: 'error', text: result.error })
             }

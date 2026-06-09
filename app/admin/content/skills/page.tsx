@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useCallback, useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -55,11 +55,7 @@ export default function SkillsManagementPage() {
 
     const [formData, setFormData] = useState<AdminSkillFormData>(emptySkillForm())
 
-    useEffect(() => {
-        fetchSkills()
-    }, [])
-
-    const fetchSkills = async () => {
+    const fetchSkills = useCallback(async () => {
         try {
             const result = await loadAdminSkills(gateway)
             if (result.success) {
@@ -73,7 +69,11 @@ export default function SkillsManagementPage() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [gateway])
+
+    useEffect(() => {
+        fetchSkills()
+    }, [fetchSkills])
 
     const resetForm = () => {
         setFormData(emptySkillForm())
@@ -102,7 +102,7 @@ export default function SkillsManagementPage() {
                     text: editingSkill ? 'Skill updated successfully!' : 'Skill created successfully!'
                 })
                 resetForm()
-                fetchSkills()
+                await fetchSkills()
             } else {
                 setMessage({ type: 'error', text: result.error })
             }
@@ -124,7 +124,7 @@ export default function SkillsManagementPage() {
 
             if (result.success) {
                 setMessage({ type: 'success', text: 'Skill deleted successfully!' })
-                fetchSkills()
+                await fetchSkills()
             } else {
                 setMessage({ type: 'error', text: result.error })
             }
