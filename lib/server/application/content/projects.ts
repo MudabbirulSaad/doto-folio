@@ -1,15 +1,26 @@
 import { ApplicationError } from '@/lib/server/domain/errors'
+import type { PublicProject, PublicProjectTechnology } from '@/lib/server/application/content/public-portfolio'
 
-const VALID_PROJECT_STATUSES = ['Planning', 'In Development', 'Completed', 'On Hold']
+const VALID_PROJECT_STATUSES = ['Planning', 'In Development', 'Completed', 'On Hold'] as const
+
+export type ProjectStatus = typeof VALID_PROJECT_STATUSES[number]
+export type ProjectTechnology = PublicProjectTechnology & { project_id?: string }
+export type ProjectContent = PublicProject & {
+  created_at?: string
+  updated_at?: string
+  is_featured?: boolean
+}
+export type ProjectCreateData = Omit<ProjectContent, 'id' | 'project_technologies'>
+export type ProjectUpdateData = Partial<ProjectCreateData> & { updated_at: string }
 
 export interface ProjectRepository {
-  listProjects(): Promise<any[]>
-  getProject(id: string): Promise<any | null>
+  listProjects(): Promise<ProjectContent[]>
+  getProject(id: string): Promise<ProjectContent | null>
   getLastDisplayOrder(): Promise<number>
-  createProject(data: Record<string, unknown>): Promise<any>
-  updateProject(id: string, data: Record<string, unknown>): Promise<void>
+  createProject(data: ProjectCreateData): Promise<ProjectContent>
+  updateProject(id: string, data: ProjectUpdateData): Promise<void>
   deleteProject(id: string): Promise<void>
-  replaceTechnologies(projectId: string, technologies: Array<{ technology_name: string; display_order: number }>): Promise<void>
+  replaceTechnologies(projectId: string, technologies: ProjectTechnology[]): Promise<void>
 }
 
 export interface ProjectInput {
@@ -22,21 +33,31 @@ export interface ProjectInput {
   technologies?: string[]
 }
 
-function sortProjectTechnologies(project: any) {
+function sortProjectTechnologies(project: ProjectContent): ProjectContent {
   return {
     ...project,
-    project_technologies: project.project_technologies?.sort(
-      (a: { display_order: number }, b: { display_order: number }) => a.display_order - b.display_order
+    project_technologies: [...(project.project_technologies || [])].sort(
+      (a, b) => a.display_order - b.display_order
     ) || []
   }
 }
 
-function assertValidProject(input: ProjectInput) {
+function isProjectStatus(status: string): status is ProjectStatus {
+  return VALID_PROJECT_STATUSES.includes(status as ProjectStatus)
+}
+
+type ValidProjectInput = ProjectInput & {
+  title: string
+  description: string
+  status: ProjectStatus
+}
+
+function assertValidProject(input: ProjectInput): asserts input is ValidProjectInput {
   if (!input.title || !input.description || !input.status) {
     throw new ApplicationError('VALIDATION_ERROR', 'Title, description, and status are required')
   }
 
-  if (!VALID_PROJECT_STATUSES.includes(input.status)) {
+  if (!isProjectStatus(input.status)) {
     throw new ApplicationError('VALIDATION_ERROR', 'Invalid status')
   }
 }
@@ -67,8 +88,8 @@ export async function createProject(repository: ProjectRepository, input: Projec
   assertValidProject(input)
   const nextDisplayOrder = (await repository.getLastDisplayOrder()) + 1
   const project = await repository.createProject({
-    title: input.title,
-    description: input.description,
+    title: input.title!,
+    description: input.description!,
     status: input.status,
     display_order: input.display_order || nextDisplayOrder,
     is_featured: input.is_featured || false,
@@ -85,8 +106,8 @@ export async function createProject(repository: ProjectRepository, input: Projec
 export async function updateProject(repository: ProjectRepository, id: string, input: ProjectInput, options: { now?: () => Date } = {}) {
   assertValidProject(input)
   await repository.updateProject(id, {
-    title: input.title,
-    description: input.description,
+    title: input.title!,
+    description: input.description!,
     status: input.status,
     display_order: input.display_order,
     is_featured: input.is_featured || false,

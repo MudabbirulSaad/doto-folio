@@ -5,13 +5,24 @@ import {
   createProject,
   listProjects,
   updateProject,
+  type ProjectContent,
   type ProjectRepository
 } from '../lib/server/application/content/projects'
 
-function projectRepository(): ProjectRepository & { projects: Record<string, any>; technologies: Record<string, string[]> } {
+function projectRepository(): ProjectRepository & { projects: Record<string, ProjectContent>; technologies: Record<string, string[]> } {
   return {
     projects: {
-      'project-1': { id: 'project-1', title: 'One', project_technologies: [{ technology_name: 'B', display_order: 2 }, { technology_name: 'A', display_order: 1 }] }
+      'project-1': {
+        id: 'project-1',
+        title: 'One',
+        description: 'Description',
+        status: 'Completed',
+        display_order: 1,
+        project_technologies: [
+          { technology_name: 'B', display_order: 2 },
+          { technology_name: 'A', display_order: 1 }
+        ]
+      }
     },
     technologies: {},
     async listProjects() {
@@ -42,7 +53,7 @@ function projectRepository(): ProjectRepository & { projects: Record<string, any
 test('listProjects sorts technologies by display order', async () => {
   const projects = await listProjects(projectRepository())
 
-  assert.deepEqual(projects[0].project_technologies.map((technology: any) => technology.technology_name), ['A', 'B'])
+  assert.deepEqual(projects[0].project_technologies?.map(technology => technology.technology_name), ['A', 'B'])
 })
 
 test('createProject validates fields, assigns next display order, and stores technologies', async () => {
