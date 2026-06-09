@@ -41,6 +41,12 @@ const RATE_LIMIT_CONFIGS = {
     maxRequests: 10, // 10 requests per minute
     skipSuccessfulRequests: false,
     skipFailedRequests: false
+  },
+  subscription: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    maxRequests: 5, // 5 subscription attempts per 15 minutes
+    skipSuccessfulRequests: false,
+    skipFailedRequests: false
   }
 } as const
 
