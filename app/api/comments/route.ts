@@ -19,9 +19,11 @@ import { createApplicationErrorResponse } from '@/lib/server/adapters/http/error
 const PostCommentSchema = z.object({
     postId: z.string().uuid(),
     content: z.string().min(1, 'Comment cannot be empty').max(1000, 'Comment is too long'),
-    userId: z.string().uuid(),
+    userId: z.string().uuid().optional(),
     parentId: z.string().uuid().optional()
 })
+
+type CommentUseCases = Pick<ReturnType<typeof createCommentUseCases>, 'create'>
 
 export async function GET(request: NextRequest) {
     const startTime = Date.now()
@@ -44,7 +46,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-export async function POST(request: NextRequest) {
+export async function handlePostComment(request: NextRequest, commentUseCases: CommentUseCases) {
     const startTime = Date.now()
     const origin = request.headers.get('origin') || undefined
 
@@ -70,7 +72,13 @@ export async function POST(request: NextRequest) {
         }
 
         const token = authHeader.replace('Bearer ', '')
-        const comment = await createCommentUseCases().create(token, { postId, content, userId, parentId })
+        const commentInput = {
+            postId,
+            content,
+            ...(userId ? { userId } : {}),
+            ...(parentId ? { parentId } : {})
+        }
+        const comment = await commentUseCases.create(token, commentInput)
 
         logApiRequest('POST', '/api/comments', 200, Date.now() - startTime)
         return createSuccessResponse(comment, 'Comment posted successfully')
@@ -86,4 +94,8 @@ export async function POST(request: NextRequest) {
         logApiError(error as Error, { method: 'POST', path: '/api/comments' })
         return createInternalErrorResponse('Failed to post comment')
     }
+}
+
+export async function POST(request: NextRequest) {
+    return handlePostComment(request, createCommentUseCases())
 }
