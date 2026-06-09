@@ -11,7 +11,6 @@ import {
     AlertCircle,
     CheckCircle,
     Clock,
-    User,
     ExternalLink
 } from 'lucide-react'
 import Link from 'next/link'

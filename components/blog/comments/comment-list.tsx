@@ -30,7 +30,7 @@ export function CommentList({ postId, refreshTrigger }: CommentListProps) {
         setIsLoading(true)
         try {
             setComments(await loadCommentTree(createCommentApiGateway(), postId))
-        } catch (err) {
+        } catch {
             setError('Failed to load comments')
         } finally {
             setIsLoading(false)
@@ -78,7 +78,7 @@ export function CommentList({ postId, refreshTrigger }: CommentListProps) {
             </h3>
 
             <div className="space-y-6">
-                {comments.map((comment, index) => (
+                {comments.map((comment) => (
                     <CommentItem
                         key={comment.id}
                         comment={comment}

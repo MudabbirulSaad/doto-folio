@@ -12,7 +12,6 @@ import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism'
 import { Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ReadingProgress } from './reading-progress'
-import { TableOfContents } from './table-of-contents'
 import type { BlogPostWithRelations } from '@/lib/types/blog'
 
 gsap.registerPlugin(ScrollTrigger)
