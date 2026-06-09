@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import test from 'node:test'
 
 function readEnvTemplate(path: string) {
@@ -13,7 +13,9 @@ function readEnvTemplate(path: string) {
 }
 
 test('env templates document public app url fallback', () => {
-  for (const path of ['.env.example', '.env.sample']) {
-    assert.ok(readEnvTemplate(path).has('NEXT_PUBLIC_APP_URL'), `${path} should document NEXT_PUBLIC_APP_URL`)
-  }
+  assert.ok(readEnvTemplate('.env.example').has('NEXT_PUBLIC_APP_URL'), '.env.example should document NEXT_PUBLIC_APP_URL')
+})
+
+test('.env.example is the canonical tracked env template', () => {
+  assert.equal(existsSync('.env.sample'), false)
 })
