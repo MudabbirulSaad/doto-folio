@@ -1,9 +1,9 @@
 -- Add parent_id to blog_comments for nested replies
 ALTER TABLE blog_comments 
-ADD COLUMN parent_id UUID REFERENCES blog_comments(id) ON DELETE CASCADE;
+ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES blog_comments(id) ON DELETE CASCADE;
 
 -- Add index for performance
-CREATE INDEX idx_blog_comments_parent_id ON blog_comments(parent_id);
+CREATE INDEX IF NOT EXISTS idx_blog_comments_parent_id ON blog_comments(parent_id);
 
 -- Update RLS policies to allow reading replies
 DROP POLICY IF EXISTS "Comments are viewable by everyone" ON blog_comments;

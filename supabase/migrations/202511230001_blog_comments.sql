@@ -17,18 +17,22 @@ add column if not exists allow_comments boolean default true;
 alter table public.blog_comments enable row level security;
 
 -- Policies for blog_comments
+drop policy if exists "Comments are viewable by everyone" on public.blog_comments;
 create policy "Comments are viewable by everyone"
   on public.blog_comments for select
   using (true);
 
+drop policy if exists "Authenticated users can insert comments" on public.blog_comments;
 create policy "Authenticated users can insert comments"
   on public.blog_comments for insert
   with check (auth.role() = 'authenticated');
 
+drop policy if exists "Users can update their own comments" on public.blog_comments;
 create policy "Users can update their own comments"
   on public.blog_comments for update
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can delete their own comments" on public.blog_comments;
 create policy "Users can delete their own comments"
   on public.blog_comments for delete
   using (auth.uid() = user_id);
