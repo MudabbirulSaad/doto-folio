@@ -2,13 +2,13 @@
 
 Current branch: `main`
 
-Scope: backend and frontend wiring gaps after the hexagonal refactor, with special attention to unused/unwired code and public frontend sections that still render static content while backend/admin data exists.
+Status: closed for the implementation gaps found during this audit. The only remaining direct `fetch` calls are intentional integration points listed below.
 
-## High Priority Gaps
+## Closed Gaps
 
-### Public portfolio content is only partially wired to backend data
+### Public Portfolio Content Wiring
 
-Status: Closed in public portfolio wiring slice.
+Status: Closed.
 
 Evidence:
 
@@ -18,44 +18,15 @@ Evidence:
 - `npm run test:client`
 - `npm run build`
 
-- `components/hero-section.tsx` fetches `/api/site-content` and uses `hero_*` fields.
-- `components/about-section.tsx` is still fully static even though `site_content` exposes:
-  - `about_title`
-  - `about_intro`
-  - `about_description`
-  - `about_personal`
-  - `education_title`
-  - `education_degree`
-  - `education_field`
-  - `education_institution`
-  - `approach_title`
-  - `approach_description`
-- `components/contact-section.tsx` is still fully static even though backend/admin data exists for:
-  - `site_content.contact_title`
-  - `site_content.contact_description`
-  - `site_content.contact_opportunities_title`
-  - `site_content.contact_opportunities_description`
-  - `contact_methods`
-  - `social_links`
-- `components/footer-section.tsx` is still static even though `site_content` exposes:
-  - `footer_brand_name`
-  - `footer_brand_description`
-  - `footer_location`
-  - `footer_university`
-  - `footer_field`
-  - `footer_copyright`
-- `components/projects-section.tsx` renders a local `projectPlaceholders` array even though project management and Supabase-backed project use cases exist.
-- `components/skills-section.tsx` renders a local `skillCategories` array even though skill management and Supabase-backed skill use cases exist.
+Closed changes:
 
-Recommended fix:
+- `app/page.tsx` loads public portfolio content server-side through `createPublicPortfolioContentUseCase`.
+- `components/about-section.tsx`, `components/contact-section.tsx`, `components/footer-section.tsx`, `components/projects-section.tsx`, and `components/skills-section.tsx` render backend-managed published content.
+- Fallback defaults live in server application/composition instead of local UI placeholder arrays.
 
-1. Add public/server composition use cases for published projects, published skills, contact methods, social links, and site content.
-2. Fetch those from `app/page.tsx` server-side and pass data into presentational sections.
-3. Keep fallback/default content inside application use cases, not inside UI components.
+### Admin Content Navigation
 
-### Content dashboard links to missing admin pages
-
-Status: Closed in admin content route slice.
+Status: Closed.
 
 Evidence:
 
@@ -65,237 +36,126 @@ Evidence:
 - `npm run test:client`
 - `npm run build`
 
-`app/admin/content/page.tsx` links to pages that do not exist:
+Closed changes:
 
-- `/admin/content/contact` -> missing `app/admin/content/contact/page.tsx`
-- `/admin/content/settings` -> missing `app/admin/content/settings/page.tsx`
+- `/admin/content/contact` now exists.
+- The unreal `/admin/content/settings` dashboard card was removed.
+- Dashboard content links resolve to implemented pages.
 
-The backend has `app/api/admin/content/contact/route.ts`, and the dashboard displays contact/social counts, so at least the contact page is clearly an unfinished implementation.
+### Frontend Hexagonal Workflows
 
-Recommended fix:
-
-1. Implement `/admin/content/contact` with list/create/edit/delete flows for contact methods and social links.
-2. Either implement `/admin/content/settings` or remove/rename the dashboard card until settings are real.
-
-### Client hexagonal refactor is incomplete
-
-Several client pages/components still own raw `fetch`, response parsing, validation, mutation workflows, and UI messages directly:
-
-- `app/admin/content/page.tsx`
-- `components/hero-section.tsx`
-- `components/seo/dynamic-seo.tsx`
-
-Existing client application coverage is partial:
-
-- `lib/client/application/admin/projects.ts` covers project form helpers and save/delete behavior.
-- `lib/client/application/admin/blog-posts.ts` only covers filtering, summary, and delete. It does not cover post create/update, category/tag creation, markdown conversion, URL metadata fetch, or edit-page workflows.
-
-Recommended fix:
-
-1. Create missing `lib/client/application` workflows and `lib/client/adapters/http` gateways.
-2. Move page-level request parsing and API envelope handling out of components.
-3. Add behavior tests before each extraction.
-
-Closed:
-
-- `components/admin/contact-submissions-table.tsx` no longer owns contact submission list/update/export `fetch` calls. It delegates to `lib/client/application/admin/contact-submissions.ts` and `lib/client/adapters/http/admin-contact-submissions-api.ts`.
-- `tests/client/admin-contact-submissions-workflow.test.ts` covers load, read-status update, export, and gateway failure behavior.
-- `app/admin/comments/page.tsx` no longer owns admin comments list/delete/reply `fetch` calls. It delegates to `lib/client/application/admin/comments.ts` and `lib/client/adapters/http/admin-comments-api.ts`.
-- `tests/client/admin-comments-workflow.test.ts` covers load, delete, reply validation, session requirement, and reply gateway behavior.
-- `app/admin/content/hero-about/page.tsx` no longer owns site-content load/save `fetch` calls. It delegates to `lib/client/application/admin/site-content.ts` and `lib/client/adapters/http/admin-site-content-api.ts`.
-- `tests/client/admin-site-content-workflow.test.ts` covers site-content load/save and gateway failure behavior.
-- `app/admin/content/skills/page.tsx` no longer owns skills list/create/update/delete `fetch` calls. It delegates to `lib/client/application/admin/skills.ts` and `lib/client/adapters/http/admin-skills-api.ts`.
-- `tests/client/admin-skills-workflow.test.ts` covers skills load, form mapping, validation, save, update, and delete behavior.
-- `app/admin/blog/categories/page.tsx` and `app/admin/blog/tags/page.tsx` no longer own taxonomy list/create/update/delete `fetch` calls. They delegate to `lib/client/application/admin/blog-taxonomy.ts` and `createAdminBlogTaxonomyApiGateway`.
-- `tests/client/admin-blog-taxonomy-workflow.test.ts` covers category/tag load, form mapping, validation, save, update, and delete behavior.
-- `app/admin/blog/posts/new/page.tsx` and `app/admin/blog/posts/[id]/edit/page.tsx` no longer own post/category/tag HTTP fetches. They delegate create/update/delete to `lib/client/application/admin/blog-posts.ts`, taxonomy reads/creates to `lib/client/application/admin/blog-taxonomy.ts`, and keep editor/browser state in the page.
-- `tests/client/admin-blog-posts-workflow.test.ts` covers post create/update validation and gateway calls.
-
-### Server application layer still imports legacy services
-
-`lib/server/application/blog/blog-post-detail.ts` imports `getHybridRecommendations` from `@/lib/services/recommendation`.
-
-This violates the architecture rule that server application modules must not import legacy `lib/services/**` contracts.
-
-Recommended fix:
-
-1. Move recommendation logic into `lib/server/application/blog` or `lib/server/domain`.
-2. Or inject it through a recommendation port if the algorithm should remain replaceable.
-3. Remove or repurpose `lib/services/recommendation.ts` after callers are migrated.
-
-### Supabase adapter typing remains incomplete
-
-Examples:
-
-- `lib/server/adapters/supabase/blog/public-blog-listing-repository.ts` defines `from(table: string): any`.
-- `lib/server/adapters/supabase/admin/dashboard-repository.ts` accepts `adminClient: any` and maps untyped users/posts/comments.
-- Shared `lib/server/adapters/supabase/types.ts` still defaults `SupabaseResult<T = any>`.
-
-Recommended fix:
-
-1. Add narrow interfaces for the specific query/auth operations used by each adapter.
-2. Replace adapter-level `any` with typed result rows.
-3. Add adapter contract tests for the newly typed operations.
-
-### API route thinness is inconsistent
-
-Status: Closed across backend editor tools and submission export slices.
+Status: Closed for audited admin/public pages.
 
 Evidence:
 
-- `tests/blog-editor-tools.test.ts`
-- `tests/admin-submissions.test.ts`
-- `npm test`
+- `tests/client/admin-content-overview-workflow.test.ts`
+- `tests/client/admin-contact-submissions-workflow.test.ts`
+- `tests/client/admin-comments-workflow.test.ts`
+- `tests/client/admin-site-content-workflow.test.ts`
+- `tests/client/admin-skills-workflow.test.ts`
+- `tests/client/admin-blog-taxonomy-workflow.test.ts`
+- `tests/client/admin-blog-posts-workflow.test.ts`
+- `tests/client/admin-recaptcha-workflow.test.ts`
 - `npm run test:client`
 - `npm run build`
 
-Routes that still own application logic:
+Closed changes:
 
-- None currently listed in this section.
+- Admin content overview delegates to `lib/client/application/admin/content-overview.ts` and `lib/client/adapters/http/admin-content-overview-api.ts`.
+- Contact submissions table delegates list/update/export to `lib/client/application/admin/contact-submissions.ts` and `lib/client/adapters/http/admin-contact-submissions-api.ts`.
+- Admin comments delegates list/delete/reply to `lib/client/application/admin/comments.ts` and `lib/client/adapters/http/admin-comments-api.ts`.
+- Hero/about content delegates load/save to `lib/client/application/admin/site-content.ts` and `lib/client/adapters/http/admin-site-content-api.ts`.
+- Admin skills delegates list/create/update/delete to `lib/client/application/admin/skills.ts` and `lib/client/adapters/http/admin-skills-api.ts`.
+- Blog categories/tags delegate list/create/update/delete to `lib/client/application/admin/blog-taxonomy.ts` and `createAdminBlogTaxonomyApiGateway`.
+- Blog post create/edit delegates post create/update/delete to `lib/client/application/admin/blog-posts.ts` and taxonomy reads/creates to `lib/client/application/admin/blog-taxonomy.ts`.
+- Admin login delegates reCAPTCHA verification to `lib/client/application/admin/recaptcha.ts` and `lib/client/adapters/http/admin-recaptcha-api.ts`.
 
-Closed:
+### Backend Application Seams
 
-- `app/api/admin/blog/fetch-url/route.ts` now delegates URL validation and metadata extraction to `lib/server/application/blog/editor-tools.ts`, with the route injecting the HTTP fetcher.
-- `app/api/admin/blog/convert-markdown/route.ts` now delegates markdown-to-EditorJS conversion to `lib/server/application/blog/editor-tools.ts`.
-- `app/api/admin/submissions/export/route.ts` now delegates CSV/JSON/HTML formatting to `exportContactSubmissions` in `lib/server/application/contact/admin-submissions.ts`.
+Status: Closed for audited seams.
 
-Recommended fix:
+Evidence:
 
-1. Keep new admin API utilities on this route-thin pattern.
+- `tests/architecture-boundaries.test.ts`
+- `tests/blog-editor-tools.test.ts`
+- `tests/admin-submissions.test.ts`
+- `tests/admin-comments-auth.test.ts`
+- `tests/supabase-adapters.test.ts`
+- `tests/admin-dashboard.test.ts`
+- `npm test`
 
-## Medium Priority Gaps
+Closed changes:
 
-### Admin API authentication conventions are split
+- Blog recommendation logic moved out of `lib/services` into `lib/server/application/blog/recommendations.ts`.
+- Server application modules are guarded against `@/lib/services` imports.
+- Supabase adapter `any` seams for audited adapters were replaced with narrow client interfaces and boundary tests.
+- Markdown conversion and URL metadata extraction moved into `lib/server/application/blog/editor-tools.ts`.
+- Contact submission CSV/JSON/HTML export formatting moved into `lib/server/application/contact/admin-submissions.ts`.
+- Admin comment deletion now has a real authenticated `DELETE /api/admin/comments?id=...` path backed by `deleteAdminComment`.
 
-Status: Partially closed in public blog composition slice.
+### Legacy Pass-Through Cleanup
+
+Status: Closed for audited `lib/data` blog pass-throughs and unwired one-off UI utilities.
+
+Evidence:
+
+- `tests/architecture-boundaries.test.ts`
+- `rg -n "@/lib/data|lib/data|BlogServerData"`
+- `npm test`
+- `npm run build`
+
+Closed changes:
+
+- `app/blog/page.tsx` no longer imports `lib/data/blog-server.ts`.
+- Obsolete blog `lib/data/*` pass-throughs were removed.
+- App routes are guarded against `@/lib/data` imports.
+- Unreferenced one-off utilities `components/blog/mobile-stay-updated.tsx` and `components/utils/email-protection.tsx` were removed after import searches found no callers.
+
+Retained reusable inventory:
+
+- `lib/api/documentation.ts` is retained because `package.json` exposes the `api:docs` script through it.
+- `components/ui/form.tsx`, `components/ui/navigation-menu.tsx`, and `components/ui/sheet.tsx` are retained as reusable shadcn-style UI primitives, not feature-specific dead code.
+
+### Public Blog API Boundary
+
+Status: Closed for audited server component reads.
 
 Evidence:
 
 - `tests/architecture-boundaries.test.ts`
 - `npm test`
-- `npm run test:client`
 - `npm run build`
 
-`proxy.ts` says admin API authentication is handled by `withAuth` in each route, but admin API routes currently use a mixture of:
+Closed changes:
 
-- `withAuth`
-- `requireAdminAuth`
-- `getCurrentAdminUser`
-- unauthenticated public-ish GET handlers under `/api/admin/content/*`
+- `app/blog/category/[slug]/page.tsx` and `app/blog/tag/[slug]/page.tsx` use server composition directly instead of fetching this app's own `/api/blog/*` endpoints over HTTP.
+- Boundary tests guard against `app/blog` server pages using `NEXT_PUBLIC_SITE_URL` plus `/api/blog/*` internal HTTP calls.
 
-Examples:
+## Intentional Integration Points
 
-- `app/api/admin/content/projects/route.ts` has unauthenticated `GET` and authenticated `POST`.
-- `app/api/admin/content/skills/route.ts` has unauthenticated `GET` and authenticated `POST`.
-- `app/api/admin/content/contact/route.ts` has unauthenticated `GET` and authenticated `POST`.
+The final raw `fetch` scan intentionally leaves these calls:
 
-This may be intentional for public content reads, but the `/api/admin/*` namespace and proxy comment make the contract unclear.
+- `lib/server/adapters/http/recaptcha-human-verifier.ts`: external Google reCAPTCHA adapter.
+- `app/api/admin/blog/fetch-url/route.ts`: route injects `fetch` into the URL metadata application use case.
+- `lib/auth/admin.ts`: browser auth helper calls `/api/auth/logout`; this is an auth integration helper, not UI workflow code.
 
-Closed:
+The final legacy import scan intentionally leaves:
 
-- `app/blog/category/[slug]/page.tsx` and `app/blog/tag/[slug]/page.tsx` no longer fetch this app's own `/api/blog/*` endpoints over HTTP from server components. They now use `createServiceRolePublicBlogTaxonomyUseCases()` directly.
-- `tests/architecture-boundaries.test.ts` now guards against `app/blog` pages depending on `NEXT_PUBLIC_SITE_URL` plus `/api/blog/*` internal HTTP calls.
+- `lib/server/adapters/email/contact-email-notifier.ts` and `lib/server/adapters/email/subscription-email-notifier.ts` importing `@/lib/services/email`. These are email infrastructure adapters wrapping the existing email transport. Server application modules do not import `@/lib/services`.
 
-Recommended fix:
+## Final Verification
 
-1. Move public content reads to `/api/content/*` or server-side composition.
-2. Protect all `/api/admin/*` routes consistently.
-3. Update proxy comments and tests to match the chosen convention.
+Commands:
 
-### Legacy pass-through modules remain
+- `npm test`
+- `npm run test:client`
+- `npm run build`
+- `rg -n -e "fetch\\(" app components lib --glob "*.ts" --glob "*.tsx"`
+- `rg -n -e "@/lib/data|@/lib/services" app components lib tests --glob "*.ts" --glob "*.tsx"`
 
-Likely obsolete compatibility modules:
+Current verification results:
 
-- `lib/data/blog-post-detail.ts`
-- `lib/data/blog-post-workflow.ts`
-- `lib/data/public-blog-listing.ts`
-
-Current public blog page still imports `BlogServerData` from `lib/data/blog-server.ts`.
-
-Recommended fix:
-
-1. Move `app/blog/page.tsx` away from `lib/data/blog-server.ts`.
-2. Remove unused `lib/data/*` pass-throughs after import searches prove no callers remain.
-
-### Potentially unused components/utilities
-
-The current import graph found no app callers for:
-
-- `components/blog/mobile-stay-updated.tsx`
-- `components/utils/email-protection.tsx`
-- `components/ui/form.tsx`
-- `components/ui/navigation-menu.tsx`
-- `components/ui/sheet.tsx`
-- `lib/api/documentation.ts`
-
-Some `components/ui/*` files may be intentionally kept as design-system inventory. The others should either be wired into real UI or removed.
-
-## Backend/Frontend Data Wiring Checklist
-
-### Site content
-
-- Backend: present.
-- Admin edit page: present for hero/about fields.
-- Public frontend: hero, dynamic SEO, about, contact intro/opportunity copy, and footer fields are wired through public portfolio content.
-- Admin hero/about page: load/save fetches moved behind client workflow/gateway.
-
-### Projects
-
-- Backend/admin API: present.
-- Admin page: present.
-- Public frontend: static placeholders.
-- Gap: published project data is not rendered on home page.
-
-### Skills
-
-- Backend/admin API: present.
-- Admin page: present.
-- Public frontend: static skill categories.
-- Public frontend: published skill data is rendered on home page.
-- Admin skills page: list/create/update/delete fetches moved behind client workflow/gateway.
-
-### Contact methods/social links
-
-- Backend/admin API: present.
-- Admin page: missing.
-- Public frontend: static contact methods/social links.
-- Gap: no complete admin UI and no public rendering from stored data.
-
-### Blog posts
-
-- Backend/public API: present.
-- Public listing/detail pages: wired, but `app/blog/page.tsx` still uses legacy `lib/data/blog-server.ts`.
-- Admin listing page: partially refactored.
-- Admin taxonomy pages: list/create/update/delete fetches moved behind client workflow/gateway.
-- Admin create/edit post pages: post and taxonomy HTTP calls moved behind client workflow/gateway. Editor state and page navigation remain in the route containers.
-
-### Comments
-
-- Backend/public/admin APIs: present.
-- Public comment components: partially refactored through client application/adapters.
-- Admin comments page: list/delete/reply fetches moved behind client workflow/gateway.
-- Admin delete now has a real authenticated `DELETE /api/admin/comments?id=...` path backed by `deleteAdminComment`.
-
-### Contact submissions
-
-- Backend/admin APIs: present.
-- Admin contacts page: server-side initial load exists.
-- Client table: filtering, mutations, and export fetch moved behind client workflow/gateway. The component keeps only UI state and browser download click mechanics.
-
-## Suggested Fix Order
-
-1. Implement missing `/admin/content/contact` or remove the broken dashboard link.
-2. Wire public home sections to backend data: projects, skills, about, contact, footer.
-3. Normalize public/admin API boundaries so public content reads do not live under ambiguous `/api/admin/*` routes.
-4. Extract remaining admin client workflows into `lib/client/application` and `lib/client/adapters/http`.
-5. Move recommendation logic out of `lib/services` and finish Supabase adapter typing.
-6. Move fat route logic for URL metadata, markdown conversion, and exports into testable application modules.
-7. Remove or wire likely-unused modules after focused import checks.
-
-## Evidence Commands Used
-
-- `rg --files`
-- `rg -n -e 'fetch\\(' app components lib --glob '*.ts' --glob '*.tsx'`
-- `rg -n -e '@/lib/supabase|@/lib/server|@/lib/data|@/lib/services|@/lib/client' app components lib --glob '*.ts' --glob '*.tsx'`
-- `rg -n -e 'static|hardcoded|TODO|FIXME|mock|placeholder|coming soon|sample|dummy' app components lib docs --glob '*.ts' --glob '*.tsx' --glob '*.md'`
-- Node import graph over `app`, `components`, `lib`, and `tests`.
+- Server tests: 76 passing.
+- Client tests: 44 passing.
+- Production build: passing.
+- `next.config.ts` remains the only unstaged local change and was not included in the refactor commits.

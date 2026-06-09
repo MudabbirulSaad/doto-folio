@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +10,8 @@ import { useGoogleReCaptcha, GoogleReCaptchaProvider } from 'react-google-recapt
 import { Eye, EyeOff, Lock, Mail, AlertCircle, Shield, ArrowLeft } from 'lucide-react'
 import { SectionNebula } from '@/components/section-nebula'
 import { motion } from 'framer-motion'
+import { createAdminRecaptchaApiGateway } from '@/lib/client/adapters/http/admin-recaptcha-api'
+import { verifyAdminRecaptcha } from '@/lib/client/application/admin/recaptcha'
 
 function AdminLoginForm() {
   const [email, setEmail] = useState('')
@@ -18,6 +20,7 @@ function AdminLoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const recaptchaGateway = useMemo(() => createAdminRecaptchaApiGateway(), [])
 
   // reCAPTCHA v3 hook
   const { executeRecaptcha } = useGoogleReCaptcha()
@@ -48,19 +51,10 @@ function AdminLoginForm() {
 
       const recaptchaToken = await executeRecaptcha('admin_login')
 
-      // Verify reCAPTCHA server-side
-      const recaptchaResponse = await fetch('/api/admin/auth/verify-recaptcha', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token: recaptchaToken }),
-      })
-
-      const recaptchaResult = await recaptchaResponse.json()
+      const recaptchaResult = await verifyAdminRecaptcha(recaptchaGateway, recaptchaToken)
 
       if (!recaptchaResult.success) {
-        setError('Security verification failed. Please try again.')
+        setError(recaptchaResult.error)
         setIsLoading(false)
         return
       }
