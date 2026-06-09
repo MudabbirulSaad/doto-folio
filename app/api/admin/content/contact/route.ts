@@ -1,17 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { createSuccessResponse } from '@/lib/api/response'
 import { authorizeAdminRequest } from '@/lib/auth/api-authorization'
 import { createContactContentUseCases } from '@/lib/server/composition/content'
-import { createLegacyJsonErrorResponse } from '@/lib/server/adapters/http/legacy-json-response'
+import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 
 export async function GET(request: NextRequest) {
   try {
     await authorizeAdminRequest(request, 'contact-content:read')
 
     const data = await (await createContactContentUseCases()).get()
-    return NextResponse.json({ data })
+    return createSuccessResponse(data)
   } catch (error) {
     console.error('Error in GET /api/admin/content/contact:', error)
-    return createLegacyJsonErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
 
@@ -20,9 +21,9 @@ export async function POST(request: NextRequest) {
     await authorizeAdminRequest(request, 'contact-content:create')
 
     const result = await (await createContactContentUseCases()).create(await request.json())
-    return NextResponse.json(result)
+    return createSuccessResponse(result, 'Contact content created successfully')
   } catch (error) {
     console.error('Error in POST /api/admin/content/contact:', error)
-    return createLegacyJsonErrorResponse(error)
+    return createApplicationOrInternalErrorResponse(error)
   }
 }
