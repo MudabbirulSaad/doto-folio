@@ -18,27 +18,58 @@ test('admin content dashboard destinations have implemented pages', () => {
   )
 })
 
-test('admin content read APIs require an admin user before loading data', () => {
+test('admin content APIs authorize before loading scoped data', () => {
   const root = process.cwd()
   const protectedRoutes = [
-    'app/api/admin/content/contact/route.ts',
-    'app/api/admin/content/projects/route.ts',
-    'app/api/admin/content/projects/[id]/route.ts',
-    'app/api/admin/content/skills/route.ts'
+    {
+      route: 'app/api/admin/content/contact/route.ts',
+      factories: ['createContactContentUseCases(principal)']
+    },
+    {
+      route: 'app/api/admin/content/overview/route.ts',
+      factories: ['createAdminContentOverviewUseCase(principal)']
+    },
+    {
+      route: 'app/api/admin/content/projects/route.ts',
+      factories: ['createProjectUseCases(principal)']
+    },
+    {
+      route: 'app/api/admin/content/projects/[id]/route.ts',
+      factories: ['createProjectUseCases(principal)']
+    },
+    {
+      route: 'app/api/admin/content/skills/route.ts',
+      factories: ['createSkillContentUseCases(principal)']
+    },
+    {
+      route: 'app/api/admin/content/skills/[categoryId]/route.ts',
+      factories: ['createSkillContentUseCases(principal)']
+    },
+    {
+      route: 'app/api/admin/content/skills/[categoryId]/skills/route.ts',
+      factories: ['createSkillContentUseCases(principal)']
+    }
   ]
 
-  for (const route of protectedRoutes) {
+  for (const { route, factories } of protectedRoutes) {
     const source = readFileSync(join(root, route), 'utf8')
-    const authIndex = source.indexOf('await authorizeAdminRequest(')
-    const dataAccessIndex = Math.min(
-      ...[
-        source.indexOf('await (await createContactContentUseCases())'),
-        source.indexOf('await (await createProjectUseCases())'),
-        source.indexOf('await (await createSkillContentUseCases())')
-      ].filter(index => index >= 0)
-    )
+    const authIndex = source.indexOf('const principal = await authorizeAdminRequest(')
+    const dataAccessIndices = factories.map(factory => source.indexOf(factory))
 
     assert.notEqual(authIndex, -1, `${route} should use the shared admin/agent authorization guard`)
-    assert.ok(authIndex < dataAccessIndex, `${route} should authenticate before data access`)
+    assert.ok(dataAccessIndices.every(index => index >= 0), `${route} should pass the authorized principal to content use cases`)
+    assert.ok(
+      dataAccessIndices.every(index => authIndex < index),
+      `${route} should authenticate before data access`
+    )
   }
+})
+
+test('site content API passes middleware principal into content use cases', () => {
+  const root = process.cwd()
+  const source = readFileSync(join(root, 'app/api/admin/content/site/route.ts'), 'utf8')
+
+  assert.match(source, /withScopedAuth\(getSiteContentHandler, 'site-content:read'\)/)
+  assert.match(source, /withScopedAuth\(updateSiteContentHandler, 'site-content:update'\)/)
+  assert.match(source, /createSiteContentUseCases\(context\.principal\)/)
 })
