@@ -10,9 +10,9 @@ export async function POST(
 ) {
   try {
     const { categoryId } = await params
-    await authorizeAdminRequest(request, 'skills:create')
+    const principal = await authorizeAdminRequest(request, 'skills:create')
 
-    const skill = await (await createSkillContentUseCases()).createInCategory(categoryId, await request.json())
+    const skill = await (await createSkillContentUseCases(principal)).createInCategory(categoryId, await request.json())
     return createSuccessResponse(skill, 'Skill created successfully')
   } catch (error) {
     console.error('Error in POST /api/admin/content/skills/[categoryId]/skills:', error)

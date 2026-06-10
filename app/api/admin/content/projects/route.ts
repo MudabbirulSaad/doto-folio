@@ -6,9 +6,9 @@ import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/
 
 export async function GET(request: NextRequest) {
   try {
-    await authorizeAdminRequest(request, 'projects:read')
+    const principal = await authorizeAdminRequest(request, 'projects:read')
 
-    const projects = await (await createProjectUseCases()).list()
+    const projects = await (await createProjectUseCases(principal)).list()
     return createSuccessResponse(projects)
   } catch (error) {
     console.error('Error in GET /api/admin/content/projects:', error)
@@ -18,10 +18,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await authorizeAdminRequest(request, 'projects:create')
+    const principal = await authorizeAdminRequest(request, 'projects:create')
 
     const body = await request.json()
-    const projects = await createProjectUseCases()
+    const projects = await createProjectUseCases(principal)
     const project = await projects.create(body)
     const completeProject = await projects.get(project.id)
 

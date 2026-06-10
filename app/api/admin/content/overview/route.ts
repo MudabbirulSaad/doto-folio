@@ -6,9 +6,9 @@ import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/
 
 export async function GET(request: NextRequest) {
   try {
-    await authorizeAdminRequest(request, 'content-overview:read')
+    const principal = await authorizeAdminRequest(request, 'content-overview:read')
 
-    const getOverview = await createAdminContentOverviewUseCase()
+    const getOverview = await createAdminContentOverviewUseCase(principal)
     return createSuccessResponse(await getOverview())
   } catch (error) {
     console.error('Error in GET /api/admin/content/overview:', error)

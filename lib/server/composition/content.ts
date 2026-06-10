@@ -1,4 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import type { ApiPrincipal } from '@/lib/auth/api-authorization'
+import type { SupabaseDataClient } from '@/lib/server/adapters/supabase/types'
 import {
   createProject,
   deleteProject,
@@ -35,8 +38,12 @@ import { createSupabaseSkillContentRepository } from '@/lib/server/adapters/supa
 import { createSupabaseAdminContentOverviewRepository } from '@/lib/server/adapters/supabase/content/content-overview-repository'
 import type { ProjectInput } from '@/lib/server/application/content/projects'
 
-export async function createProjectUseCases() {
-  const repository = createSupabaseProjectRepository(await createClient())
+async function createContentClient(principal?: ApiPrincipal): Promise<SupabaseDataClient> {
+  return principal ? createAdminClient() : await createClient()
+}
+
+export async function createProjectUseCases(principal?: ApiPrincipal) {
+  const repository = createSupabaseProjectRepository(await createContentClient(principal))
 
   return {
     list: () => listProjects(repository),
@@ -47,8 +54,8 @@ export async function createProjectUseCases() {
   }
 }
 
-export async function createSiteContentUseCases() {
-  const repository = createSupabaseSiteContentRepository(await createClient())
+export async function createSiteContentUseCases(principal?: ApiPrincipal) {
+  const repository = createSupabaseSiteContentRepository(await createContentClient(principal))
 
   return {
     getPublished: () => getPublishedSiteContent(repository),
@@ -57,8 +64,8 @@ export async function createSiteContentUseCases() {
   }
 }
 
-export async function createContactContentUseCases() {
-  const repository = createSupabaseContactContentRepository(await createClient())
+export async function createContactContentUseCases(principal?: ApiPrincipal) {
+  const repository = createSupabaseContactContentRepository(await createContentClient(principal))
 
   return {
     get: () => getContactContent(repository),
@@ -66,8 +73,8 @@ export async function createContactContentUseCases() {
   }
 }
 
-export async function createSkillContentUseCases() {
-  const repository = createSupabaseSkillContentRepository(await createClient())
+export async function createSkillContentUseCases(principal?: ApiPrincipal) {
+  const repository = createSupabaseSkillContentRepository(await createContentClient(principal))
 
   return {
     listFlat: () => listFlatSkills(repository),
@@ -78,8 +85,8 @@ export async function createSkillContentUseCases() {
   }
 }
 
-export async function createAdminContentOverviewUseCase() {
-  const repository = createSupabaseAdminContentOverviewRepository(await createClient())
+export async function createAdminContentOverviewUseCase(principal?: ApiPrincipal) {
+  const repository = createSupabaseAdminContentOverviewRepository(await createContentClient(principal))
 
   return () => getAdminContentOverview(repository)
 }

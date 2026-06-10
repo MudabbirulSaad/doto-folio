@@ -9,10 +9,10 @@ export async function PUT(
   { params }: { params: Promise<{ categoryId: string }> }
 ) {
   try {
-    await authorizeAdminRequest(request, 'skills:update')
+    const principal = await authorizeAdminRequest(request, 'skills:update')
 
     const { categoryId: skillId } = await params
-    const skill = await (await createSkillContentUseCases()).updateFlat(skillId, await request.json())
+    const skill = await (await createSkillContentUseCases(principal)).updateFlat(skillId, await request.json())
     return createSuccessResponse(skill, 'Skill updated successfully')
   } catch (error) {
     console.error('Error in PUT /api/admin/content/skills/[id]:', error)
@@ -25,10 +25,10 @@ export async function DELETE(
   { params }: { params: Promise<{ categoryId: string }> }
 ) {
   try {
-    await authorizeAdminRequest(_request, 'skills:delete')
+    const principal = await authorizeAdminRequest(_request, 'skills:delete')
 
     const { categoryId: skillId } = await params
-    await (await createSkillContentUseCases()).delete(skillId)
+    await (await createSkillContentUseCases(principal)).delete(skillId)
     return createSuccessResponse({ id: skillId }, 'Skill deleted successfully')
   } catch (error) {
     console.error('Error in DELETE /api/admin/content/skills/[id]:', error)
