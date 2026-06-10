@@ -1,12 +1,11 @@
-import { NextRequest } from 'next/server'
-import { withScopedAuth } from '@/lib/api/middleware'
+import { withScopedAuth, type ApiContext } from '@/lib/api/middleware'
 import { createSuccessResponse, createInternalErrorResponse } from '@/lib/api/response'
 import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 import { createSiteContentUseCases } from '@/lib/server/composition/content'
 
-async function getSiteContentHandler() {
+async function getSiteContentHandler(context: ApiContext) {
   try {
-    const siteContent = await (await createSiteContentUseCases()).getAdmin()
+    const siteContent = await (await createSiteContentUseCases(context.principal)).getAdmin()
     return createSuccessResponse(siteContent, 'Site content retrieved successfully')
   } catch (error) {
     return createInternalErrorResponse(
@@ -18,10 +17,10 @@ async function getSiteContentHandler() {
 
 export const GET = withScopedAuth(getSiteContentHandler, 'site-content:read')
 
-async function updateSiteContentHandler(context: { request: NextRequest }) {
+async function updateSiteContentHandler(context: ApiContext) {
   try {
     const body = await context.request.json()
-    const siteContent = await (await createSiteContentUseCases()).save(body)
+    const siteContent = await (await createSiteContentUseCases(context.principal)).save(body)
 
     return createSuccessResponse(siteContent, 'Site content updated successfully')
   } catch (error) {

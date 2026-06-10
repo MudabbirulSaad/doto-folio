@@ -6,9 +6,9 @@ import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/
 
 export async function GET(request: NextRequest) {
   try {
-    await authorizeAdminRequest(request, 'contact-content:read')
+    const principal = await authorizeAdminRequest(request, 'contact-content:read')
 
-    const data = await (await createContactContentUseCases()).get()
+    const data = await (await createContactContentUseCases(principal)).get()
     return createSuccessResponse(data)
   } catch (error) {
     console.error('Error in GET /api/admin/content/contact:', error)
@@ -18,9 +18,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await authorizeAdminRequest(request, 'contact-content:create')
+    const principal = await authorizeAdminRequest(request, 'contact-content:create')
 
-    const result = await (await createContactContentUseCases()).create(await request.json())
+    const result = await (await createContactContentUseCases(principal)).create(await request.json())
     return createSuccessResponse(result, 'Contact content created successfully')
   } catch (error) {
     console.error('Error in POST /api/admin/content/contact:', error)

@@ -9,10 +9,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await authorizeAdminRequest(request, 'projects:read')
+    const principal = await authorizeAdminRequest(request, 'projects:read')
 
     const { id } = await params
-    const project = await (await createProjectUseCases()).get(id)
+    const project = await (await createProjectUseCases(principal)).get(id)
     return createSuccessResponse(project)
   } catch (error) {
     console.error('Error in GET /api/admin/content/projects/[id]:', error)
@@ -26,10 +26,10 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
-    await authorizeAdminRequest(request, 'projects:update')
+    const principal = await authorizeAdminRequest(request, 'projects:update')
 
     const body = await request.json()
-    const projects = await createProjectUseCases()
+    const projects = await createProjectUseCases(principal)
     await projects.update(id, body)
     const completeProject = await projects.get(id)
 
@@ -46,9 +46,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    await authorizeAdminRequest(request, 'projects:delete')
+    const principal = await authorizeAdminRequest(request, 'projects:delete')
 
-    await (await createProjectUseCases()).delete(id)
+    await (await createProjectUseCases(principal)).delete(id)
 
     return createSuccessResponse({ id }, 'Project deleted successfully')
   } catch (error) {
