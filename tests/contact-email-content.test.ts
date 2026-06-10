@@ -1,10 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import {
   createAdminContactEmail,
   createContactEmailContent,
   createUserContactConfirmationEmail
 } from '../lib/server/application/contact/contact-email-content'
+import { getSubscriptionWelcomeTemplate } from '../lib/services/email'
 import {
   createContactEmailNotifier,
   type ContactEmailEnvelope,
@@ -23,6 +26,27 @@ function styleTagCount(html: string) {
   return {
     open: html.match(/<style\b/gi)?.length ?? 0,
     close: html.match(/<\/style>/gi)?.length ?? 0
+  }
+}
+
+const offBrandColors = [
+  '#e0f2fe',
+  '#3b82f6',
+  '#22c55e',
+  '#eab308',
+  '#1e3a8a'
+]
+
+function assertGmailSafePortfolioEmail(html: string) {
+  assert.match(html, /<meta name="viewport"/i)
+  assert.match(html, /<meta name="color-scheme" content="dark"/i)
+  assert.match(html, /<table role="presentation"/i)
+  assert.match(html, /background-color: #1d1d1d/i)
+  assert.match(html, /color: #f2f2ef/i)
+  assert.match(html, /#ead99f/i)
+  assert.doesNotMatch(html, /linear-gradient|backdrop-filter|::before|::after|display:\s*flex/i)
+  for (const color of offBrandColors) {
+    assert.doesNotMatch(html.toLowerCase(), new RegExp(color, 'i'))
   }
 }
 
@@ -59,6 +83,34 @@ test('contact email html uses balanced style tags and no script tags', () => {
   assert.equal(userStyleTags.open, userStyleTags.close)
   assert.doesNotMatch(content.admin.html, /<script>/i)
   assert.doesNotMatch(content.user.html, /<script>/i)
+})
+
+test('contact email html uses gmail-safe portfolio structure and approved colors', () => {
+  const content = createContactEmailContent(formData, '10 June 2026')
+
+  assertGmailSafePortfolioEmail(content.admin.html)
+  assertGmailSafePortfolioEmail(content.user.html)
+})
+
+test('subscription welcome email uses gmail-safe portfolio structure and approved colors', () => {
+  const html = getSubscriptionWelcomeTemplate('Ada <script>alert("x")</script>', 'ada@example.com')
+  const styleTags = styleTagCount(html)
+
+  assert.equal(styleTags.open, styleTags.close)
+  assert.match(html, /Ada &lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;/)
+  assert.doesNotMatch(html, /<script>/i)
+  assertGmailSafePortfolioEmail(html)
+  assert.match(html, /Browse Latest Articles/)
+  assert.match(html, /Unsubscribe/)
+})
+
+test('supabase otp template stays standalone, gmail-safe, and keeps token placeholder', () => {
+  const html = readFileSync(join(process.cwd(), 'supabase/templates/email-otp.html'), 'utf8')
+  const styleTags = styleTagCount(html)
+
+  assert.equal(styleTags.open, styleTags.close)
+  assert.match(html, /{{ \.Token }}/)
+  assertGmailSafePortfolioEmail(html)
 })
 
 test('contact email notifier sends html and text bodies through the transport', async () => {

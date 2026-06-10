@@ -1,4 +1,13 @@
 import nodemailer from 'nodemailer'
+import {
+  escapeHtml,
+  renderBodyText,
+  renderButton,
+  renderMutedLink,
+  renderPanel,
+  renderPortfolioEmail,
+  renderSectionHeading
+} from '@/lib/server/application/email-template'
 
 export interface EmailConfig {
   gmailUser: string
@@ -27,93 +36,41 @@ function createTransporter(config: EmailConfig) {
   })
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
-function getSubscriptionWelcomeTemplate(name: string, email: string): string {
+export function getSubscriptionWelcomeTemplate(name: string, email: string): string {
   const safeName = escapeHtml(name || 'there')
   const blogUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/blog`
   const unsubscribeUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/unsubscribe?email=${encodeURIComponent(email)}`
 
-  return `
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Welcome to SAAD Newsletter</title>
-        <style>
-          @media only screen and (max-width: 600px) {
-            .container { width: 100% !important; padding: 10px !important; }
-            .content { padding: 20px !important; }
-            .feature-item { flex-direction: column !important; text-align: center !important; }
-            .feature-icon { margin: 0 auto 10px auto !important; }
-          }
-        </style>
-      </head>
-      <body style="background-color: #2d2d2d; color: #f2f2f2; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; margin: 0; padding: 0;">
-        <div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; padding: 40px 0; border-bottom: 1px solid #3c3c3c;">
-            <div style="font-size: 24px; font-weight: bold; color: #e0f2fe; margin-bottom: 8px;">SAAD</div>
-            <p style="color: #c4c4c4; font-size: 14px; margin: 0;">AI Student & Full-Stack Developer</p>
-          </div>
+  const featureRows = [
+    ['AI notes', 'Readable observations on models, tools, research ideas, and what they mean in practice.'],
+    ['Build logs', 'Honest notes from portfolio, app, and full-stack experiments as they take shape.'],
+    ['Technical essays', 'Occasional deep dives on development, product thinking, and useful patterns.']
+  ].map(([label, description]) => `<tr>
+    <td width="18" valign="top" style="padding: 10px 12px 10px 0;">
+      <span style="display: inline-block; width: 8px; height: 8px; background-color: #ead99f; border-radius: 8px;"></span>
+    </td>
+    <td style="padding: 8px 0;">
+      <p style="margin: 0 0 3px; color: #f2f2ef; font-size: 15px; font-weight: 700;">${label}</p>
+      <p style="margin: 0; color: #c7c2b7; font-size: 14px; line-height: 1.55;">${description}</p>
+    </td>
+  </tr>`).join('')
 
-          <div class="content" style="padding: 40px 0;">
-            <h1 style="font-size: 28px; font-weight: bold; color: #f2f2f2; margin-bottom: 20px; text-align: center;">Welcome to the Newsletter!</h1>
-            <p style="font-size: 16px; color: #c4c4c4; margin-bottom: 32px; text-align: center;">
-              Hi ${safeName}! Thank you for subscribing to my newsletter.
-              You'll now receive updates whenever I publish new articles about AI, technology, and development.
-            </p>
+  const body = [
+    renderBodyText(`Hi ${safeName}, thanks for subscribing. You will get a calm, useful note when I publish something worth your time.`),
+    renderPanel(`${renderSectionHeading('What to expect')}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">${featureRows}</table>`),
+    renderBodyText('No noise, no daily churn. Just AI notes, build logs, technical essays, and occasional project updates from the portfolio.'),
+    renderButton(blogUrl, 'Browse Latest Articles'),
+    `<p style="margin: 22px 0 0; color: #8e887d; font-size: 12px; line-height: 1.6;">Need out? ${renderMutedLink(unsubscribeUrl, 'Unsubscribe here')}.</p>`
+  ].join('')
 
-            <div style="background-color: #363636; border: 1px solid #3c3c3c; border-radius: 12px; padding: 32px; margin: 32px 0;">
-              <div class="feature-item" style="display: flex; align-items: flex-start; margin-bottom: 20px;">
-                <div class="feature-icon" style="width: 20px; height: 20px; background-color: #e0f2fe; border-radius: 50%; margin-right: 16px; margin-top: 4px; flex-shrink: 0;"></div>
-                <div>
-                  <div style="font-weight: 600; color: #f2f2f2; margin-bottom: 4px;">Latest AI Insights</div>
-                  <div style="color: #c4c4c4;">Deep dives into machine learning, AI trends, and practical applications</div>
-                </div>
-              </div>
-              <div class="feature-item" style="display: flex; align-items: flex-start; margin-bottom: 20px;">
-                <div class="feature-icon" style="width: 20px; height: 20px; background-color: #e0f2fe; border-radius: 50%; margin-right: 16px; margin-top: 4px; flex-shrink: 0;"></div>
-                <div>
-                  <div style="font-weight: 600; color: #f2f2f2; margin-bottom: 4px;">Development Tutorials</div>
-                  <div style="color: #c4c4c4;">Step-by-step guides on modern web development and best practices</div>
-                </div>
-              </div>
-              <div class="feature-item" style="display: flex; align-items: flex-start;">
-                <div class="feature-icon" style="width: 20px; height: 20px; background-color: #e0f2fe; border-radius: 50%; margin-right: 16px; margin-top: 4px; flex-shrink: 0;"></div>
-                <div>
-                  <div style="font-weight: 600; color: #f2f2f2; margin-bottom: 4px;">Tech Industry Updates</div>
-                  <div style="color: #c4c4c4;">Analysis of the latest trends and technologies shaping our future</div>
-                </div>
-              </div>
-            </div>
-
-            <div style="text-align: center;">
-              <a href="${blogUrl}" style="display: inline-block; background-color: #e0f2fe; color: #1e3a8a; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;">
-                Browse Latest Articles
-              </a>
-            </div>
-          </div>
-
-          <div style="text-align: center; padding: 32px 0; border-top: 1px solid #3c3c3c; color: #c4c4c4; font-size: 14px;">
-            <p style="margin-bottom: 8px;">You're receiving this because you subscribed to SAAD Newsletter.</p>
-            <p style="margin: 0;">
-              <a href="${unsubscribeUrl}" style="color: #c4c4c4; text-decoration: none; font-size: 12px;">
-                Unsubscribe
-              </a>
-            </p>
-          </div>
-        </div>
-      </body>
-    </html>
-  `
+  return renderPortfolioEmail({
+    title: 'Welcome to SAAD Newsletter',
+    preheader: 'You are on the list for AI notes, build logs, and technical essays.',
+    heading: 'Welcome to the Newsletter',
+    eyebrow: 'AI notes, build logs, and thoughtful technical essays.',
+    body,
+    footerNote: `You are receiving this because you subscribed to SAAD Newsletter. ${renderMutedLink(unsubscribeUrl, 'Unsubscribe')}`
+  })
 }
 
 export async function sendSubscriptionWelcomeEmail(
