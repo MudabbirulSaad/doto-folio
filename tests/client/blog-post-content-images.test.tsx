@@ -69,3 +69,61 @@ describe('blog post content images', () => {
     expect(screen.getByText('Remote diagram')).toBeInTheDocument()
   })
 })
+
+describe('blog post markdown security', () => {
+  it('renders Editor.js inline code markup as inline code instead of raw text', () => {
+    render(<BlogPostContent post={post(JSON.stringify({
+      time: Date.now(),
+      version: '2.28.2',
+      blocks: [
+        {
+          type: 'paragraph',
+          data: {
+            text: 'Read <code class="inline-code">skill.md</code> before joining.'
+          }
+        }
+      ]
+    }))} />)
+
+    expect(screen.queryByText(/<code class="inline-code">skill\.md<\/code>/)).not.toBeInTheDocument()
+    expect(screen.getByText('skill.md').tagName.toLowerCase()).toBe('code')
+  })
+
+  it('renders trusted blog markdown with GFM features', () => {
+    render(<BlogPostContent post={post(`Use \`skill.md\` and:
+
+\`\`\`ts
+const ok = true
+\`\`\`
+
+[Portfolio](https://mudabbirulsaad.com)
+
+*italic* _also italic_
+
+- One
+- Two
+
+| A | B |
+| - | - |
+| 1 | 2 |
+
+> Quote`)} />)
+
+    expect(screen.getByText('skill.md').tagName.toLowerCase()).toBe('code')
+    expect(screen.getByText('const ok = true')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Portfolio' })).toHaveAttribute('href', 'https://mudabbirulsaad.com')
+    expect(screen.getByText('italic').tagName.toLowerCase()).toBe('em')
+    expect(screen.getByText('also italic').tagName.toLowerCase()).toBe('em')
+    expect(screen.getByText('One').tagName.toLowerCase()).toBe('li')
+    expect(screen.getByText('A').tagName.toLowerCase()).toBe('th')
+    expect(screen.getByText('Quote')).toBeInTheDocument()
+  })
+
+  it('removes unsafe trusted blog HTML', () => {
+    render(<BlogPostContent post={post('<script>alert(1)</script><p onclick="alert(1)">Safe</p><a href="javascript:alert(1)">bad</a>')} />)
+
+    expect(screen.queryByText('alert(1)')).not.toBeInTheDocument()
+    expect(screen.getByText('Safe')).not.toHaveAttribute('onclick')
+    expect(screen.getByText('bad')).not.toHaveAttribute('href', 'javascript:alert(1)')
+  })
+})

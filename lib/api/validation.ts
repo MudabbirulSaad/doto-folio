@@ -152,7 +152,8 @@ export async function validateRequestSize(request: NextRequest): Promise<boolean
 
 export async function parseAndValidateJSON<T>(
   request: NextRequest,
-  schema: z.ZodSchema<T>
+  schema: z.ZodSchema<T>,
+  options: { sanitize?: boolean } = {}
 ): Promise<ValidationResult<T>> {
   try {
     // Check request size
@@ -167,8 +168,7 @@ export async function parseAndValidateJSON<T>(
     // Parse JSON
     const body = await request.json()
     
-    // Sanitize input
-    const sanitizedBody = sanitizeObject(body)
+    const sanitizedBody = options.sanitize === false ? body : sanitizeObject(body)
     
     // Validate against schema
     return validateRequest(schema, sanitizedBody)

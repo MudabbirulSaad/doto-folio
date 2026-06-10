@@ -58,7 +58,7 @@ export async function handlePostComment(request: NextRequest, commentUseCases: C
         }
 
         // 2. Validate Payload
-        const validation = await parseAndValidateJSON(request, PostCommentSchema)
+        const validation = await parseAndValidateJSON(request, PostCommentSchema, { sanitize: false })
         if (!validation.success) {
             return createValidationErrorResponse(validation.errors!, undefined, { origin })
         }

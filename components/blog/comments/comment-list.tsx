@@ -14,6 +14,7 @@ import {
 } from '@/lib/client/application/comments/comments'
 import { createCommentApiGateway } from '@/lib/client/adapters/http/comments-api'
 import type { ClientComment } from '@/lib/client/domain/comments'
+import { MarkdownRenderer } from '@/components/markdown/markdown-renderer'
 
 interface CommentListProps {
     postId: string
@@ -154,8 +155,8 @@ function CommentItem({
                             </Button>
                         </div>
 
-                        <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                            {comment.content}
+                        <div className="text-sm text-muted-foreground leading-relaxed">
+                            <MarkdownRenderer source={comment.content} policy="userComment" mode="comment" />
                         </div>
                     </div>
                 </div>

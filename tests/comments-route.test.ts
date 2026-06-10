@@ -56,6 +56,19 @@ test('POST /api/comments accepts agent comment payloads without userId', async (
   })
 })
 
+test('POST /api/comments preserves markdown and safe HTML source for rendering boundary', async () => {
+  calls.length = 0
+  createError = null
+
+  const response = await postComment(request({
+    postId: '00000000-0000-4000-8000-000000000001',
+    content: 'Use `skill.md` and <kbd>Enter</kbd>.'
+  }))
+
+  assert.equal(response.status, 200)
+  assert.equal(calls[0].input.content, 'Use `skill.md` and <kbd>Enter</kbd>.')
+})
+
 test('POST /api/comments accepts agent replies with parentId', async () => {
   calls.length = 0
   createError = null
