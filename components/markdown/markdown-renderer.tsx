@@ -142,14 +142,14 @@ function createComponents(policy: MarkdownSecurityPolicy, mode: MarkdownVisualMo
   const isComment = mode === 'comment'
 
   return {
-    h1: ({ children, ...props }) => <h1 className="text-3xl font-bold text-foreground mt-8 mb-4 scroll-mt-20" {...props}>{children}</h1>,
-    h2: ({ children, ...props }) => <h2 className="text-2xl font-bold text-foreground mt-8 mb-4 scroll-mt-20" {...props}>{children}</h2>,
-    h3: ({ children, ...props }) => <h3 className="text-xl font-semibold text-foreground mt-6 mb-3 scroll-mt-20" {...props}>{children}</h3>,
-    h4: ({ children, ...props }) => <h4 className="text-lg font-semibold text-foreground mt-6 mb-3 scroll-mt-20" {...props}>{children}</h4>,
-    h5: ({ children, ...props }) => <h5 className="text-base font-semibold text-foreground mt-4 mb-2 scroll-mt-20" {...props}>{children}</h5>,
-    h6: ({ children, ...props }) => <h6 className="text-sm font-semibold text-foreground mt-4 mb-2 scroll-mt-20" {...props}>{children}</h6>,
+    h1: ({ children, ...props }) => <h1 className="max-w-[22rem] sm:max-w-full text-2xl sm:text-3xl font-bold text-foreground mt-8 mb-4 scroll-mt-20 font-display whitespace-normal text-wrap-safe" {...props}>{children}</h1>,
+    h2: ({ children, ...props }) => <h2 className="max-w-[22rem] sm:max-w-full text-xl sm:text-2xl font-bold text-foreground mt-8 mb-4 scroll-mt-20 font-display whitespace-normal text-wrap-safe" {...props}>{children}</h2>,
+    h3: ({ children, ...props }) => <h3 className="max-w-[22rem] sm:max-w-full text-lg sm:text-xl font-semibold text-foreground mt-6 mb-3 scroll-mt-20 font-display whitespace-normal text-wrap-safe" {...props}>{children}</h3>,
+    h4: ({ children, ...props }) => <h4 className="max-w-[22rem] sm:max-w-full text-base sm:text-lg font-semibold text-foreground mt-6 mb-3 scroll-mt-20 font-display whitespace-normal text-wrap-safe" {...props}>{children}</h4>,
+    h5: ({ children, ...props }) => <h5 className="max-w-[22rem] sm:max-w-full text-base font-semibold text-foreground mt-4 mb-2 scroll-mt-20 font-display whitespace-normal text-wrap-safe" {...props}>{children}</h5>,
+    h6: ({ children, ...props }) => <h6 className="max-w-[22rem] sm:max-w-full text-sm font-semibold text-foreground mt-4 mb-2 scroll-mt-20 font-display whitespace-normal text-wrap-safe" {...props}>{children}</h6>,
     p: ({ children, ...props }) => (
-      <p className={cn('text-foreground leading-relaxed', isComment ? 'mb-2' : 'mb-4')} {...props}>
+      <p className={cn('max-w-[22rem] sm:max-w-full text-foreground leading-relaxed whitespace-normal break-words', isComment ? 'mb-2' : 'mb-4')} {...props}>
         {children}
       </p>
     ),
@@ -277,24 +277,24 @@ export function RichContentRenderer({ content, policy, mode = 'blog', renderCode
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0">
       {editorBlocks.map((block, index) => {
         const key = `${block.type}-${index}`
         const text = block.data.text || ''
 
         if (block.type === 'paragraph') {
-          return <InlineMarkdownRenderer key={key} source={text} policy={policy} as="p" className="mb-4 text-foreground leading-relaxed" />
+          return <InlineMarkdownRenderer key={key} source={text} policy={policy} as="p" className="mb-4 max-w-[22rem] sm:max-w-full text-foreground leading-relaxed whitespace-normal break-words" />
         }
 
         if (block.type === 'header') {
           const level = Math.min(Math.max(block.data.level || 2, 1), 6)
           const Tag = `h${level}` as InlineMarkdownTag
           const headerClassName = cn(
-            'font-bold mb-4 text-foreground scroll-mt-20',
-            level === 1 && 'text-3xl',
-            level === 2 && 'text-2xl',
-            level === 3 && 'text-xl',
-            level === 4 && 'text-lg',
+            'max-w-[22rem] sm:max-w-full font-bold mb-4 text-foreground scroll-mt-20 font-display whitespace-normal text-wrap-safe',
+            level === 1 && 'text-2xl sm:text-3xl',
+            level === 2 && 'text-xl sm:text-2xl',
+            level === 3 && 'text-lg sm:text-xl',
+            level === 4 && 'text-base sm:text-lg',
             level >= 5 && 'text-base'
           )
           return <InlineMarkdownRenderer key={key} source={text} policy={policy} as={Tag} className={headerClassName} />
@@ -322,7 +322,7 @@ export function RichContentRenderer({ content, policy, mode = 'blog', renderCode
           const language = block.data.language || ''
           const code = block.data.code || ''
           return renderCodeBlock ? renderCodeBlock(code, language, key) : (
-            <pre key={key} className="bg-muted p-4 rounded-lg mb-4 overflow-x-auto">
+            <pre key={key} className="bg-muted p-4 rounded-lg mb-4 overflow-x-auto max-w-full">
               <code className="text-sm text-foreground">{code}</code>
             </pre>
           )

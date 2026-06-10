@@ -195,7 +195,7 @@ export function BlogCard({
             </div>
 
             {/* Title */}
-            <h3 className={`font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 ${variant === 'featured' ? 'text-xl md:text-2xl' : 'text-lg'
+            <h3 className={`font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 font-display ${variant === 'featured' ? 'text-xl md:text-2xl' : 'text-lg'
               }`}>
               {post.title}
             </h3>

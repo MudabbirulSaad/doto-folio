@@ -1,22 +1,29 @@
 import type { Metadata } from "next";
-import { Doto, Besley } from "next/font/google";
+import { Doto, Geist_Mono, Instrument_Sans, Space_Grotesk } from "next/font/google";
 import Script from "next/script";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 
 import "./globals.css";
 
+const instrumentSans = Instrument_Sans({
+  variable: "--font-instrument-sans",
+  subsets: ["latin"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
 const doto = Doto({
-  variable: "--font-sans",
+  variable: "--font-doto",
   subsets: ["latin"],
 });
-
-const besley = Besley({
-  variable: "--font-serif",
-  subsets: ["latin"],
-});
-
-// Note: Google Sans Code is not available via next/font/google
-// It's defined in CSS as fallback with system fonts
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://mudabbirulsaad.com'),
@@ -158,7 +165,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body
-        className={`${doto.variable} ${besley.variable} antialiased`}
+        className={`${instrumentSans.variable} ${spaceGrotesk.variable} ${geistMono.variable} ${doto.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
         <GoogleAnalytics />

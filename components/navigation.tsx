@@ -37,7 +37,7 @@ export function Navigation() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex-shrink-0">
-              <Link href="/" className="text-2xl font-bold text-foreground">
+              <Link href="/" className="text-2xl font-bold text-foreground font-accent">
                 SAAD
               </Link>
             </div>
@@ -125,7 +125,7 @@ export function Navigation() {
                     {/* Mobile Logo */}
                     <Link
                       href="/"
-                      className="text-3xl font-bold text-foreground mb-4"
+                      className="text-3xl font-bold text-foreground mb-4 font-accent"
                       onClick={() => setIsOpen(false)}
                     >
                       SAAD

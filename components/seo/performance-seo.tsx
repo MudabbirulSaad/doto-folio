@@ -4,37 +4,13 @@ import { useEffect } from "react"
 
 export function PerformanceSEO() {
   useEffect(() => {
-    // Preload critical resources
-    const preloadCriticalResources = () => {
-      // Preload fonts
-      const fontLink = document.createElement('link')
-      fontLink.rel = 'preload'
-      fontLink.href = 'https://fonts.googleapis.com/css2?family=Doto:wght@100..900&family=Besley:ital,wght@0,400..900;1,400..900&display=swap'
-      fontLink.as = 'style'
-      fontLink.crossOrigin = 'anonymous'
-      document.head.appendChild(fontLink)
-
-    }
-
     // Add performance hints
     const addPerformanceHints = () => {
       // DNS prefetch for external resources
       const dnsPrefetch = document.createElement('link')
       dnsPrefetch.rel = 'dns-prefetch'
-      dnsPrefetch.href = 'https://fonts.googleapis.com'
+      dnsPrefetch.href = 'https://cdn.jsdelivr.net'
       document.head.appendChild(dnsPrefetch)
-
-      const dnsPrefetch2 = document.createElement('link')
-      dnsPrefetch2.rel = 'dns-prefetch'
-      dnsPrefetch2.href = 'https://cdn.jsdelivr.net'
-      document.head.appendChild(dnsPrefetch2)
-
-      // Preconnect to critical origins
-      const preconnect = document.createElement('link')
-      preconnect.rel = 'preconnect'
-      preconnect.href = 'https://fonts.gstatic.com'
-      preconnect.crossOrigin = 'anonymous'
-      document.head.appendChild(preconnect)
     }
 
     // Optimize images loading
@@ -64,7 +40,6 @@ export function PerformanceSEO() {
     }
 
     // Run optimizations
-    preloadCriticalResources()
     addPerformanceHints()
 
     // Optimize images and styles after a short delay to ensure DOM is ready

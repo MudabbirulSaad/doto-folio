@@ -22,6 +22,7 @@ const portfolioCodeTheme = {
   'code[class*="language-"]': {
     ...oneDark['code[class*="language-"]'],
     background: 'transparent',
+    fontFamily: 'var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace',
     color: 'var(--foreground)',
     textShadow: 'none'
   },
@@ -168,7 +169,7 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
     const codeString = code.replace(/\n$/, '')
 
     return (
-      <div key={id} className="group relative my-8 overflow-hidden rounded-xl border border-border bg-background/5 shadow-sm shadow-black/10">
+      <div key={id} className="group relative my-8 max-w-full overflow-hidden rounded-xl border border-border bg-background/5 shadow-sm shadow-black/10">
         <div className="flex items-center justify-between border-b border-border bg-card/30 px-4 py-1.5">
           <span className="font-mono text-[0.65rem] font-medium uppercase text-muted-foreground/80">{language || 'code'}</span>
           <Button
@@ -188,8 +189,8 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
           style={portfolioCodeTheme}
           language={language || 'text'}
           PreTag="div"
-          className="!mt-0 overflow-x-auto !bg-transparent !p-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border"
-          customStyle={{ margin: 0, background: 'transparent' }}
+          className="!mt-0 max-w-full overflow-x-auto !bg-transparent !p-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border"
+          customStyle={{ margin: 0, background: 'transparent', fontFamily: 'var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace' }}
         >
           {codeString}
         </SyntaxHighlighter>
@@ -198,10 +199,10 @@ export function BlogPostContent({ post }: BlogPostContentProps) {
   }
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0 max-w-full overflow-hidden">
       <ReadingProgress />
 
-      <div ref={contentRef} className="prose prose-lg max-w-none">
+      <div ref={contentRef} className="prose prose-lg max-w-none min-w-0">
         <RichContentRenderer
           content={post.content}
           policy="trustedBlog"

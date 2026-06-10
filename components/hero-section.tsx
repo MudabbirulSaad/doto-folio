@@ -31,7 +31,7 @@ export function HeroSection({ content }: HeroSectionProps) {
           <div className="max-w-5xl">
             <AnimatedHeroTitle
               text={text(content, 'hero_title')}
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-foreground leading-[1.1] mb-8 sm:mb-12 font-serif drop-shadow-lg"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-foreground leading-[1.1] mb-8 sm:mb-12 font-display drop-shadow-lg"
               delay={0.8}
             />
 

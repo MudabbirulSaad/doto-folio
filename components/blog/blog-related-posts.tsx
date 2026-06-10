@@ -91,7 +91,7 @@ export function BlogRelatedPosts({ posts, className = '' }: BlogRelatedPostsProp
     <section ref={sectionRef} className={`space-y-8 ${className}`}>
       {/* Section Header */}
       <div className="flex items-center justify-between">
-        <h2 ref={titleRef} className="text-2xl md:text-3xl font-bold text-foreground">
+        <h2 ref={titleRef} className="text-2xl md:text-3xl font-bold text-foreground font-display">
           Related Articles
         </h2>
         <Button asChild variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground">
@@ -124,7 +124,7 @@ export function BlogRelatedPosts({ posts, className = '' }: BlogRelatedPostsProp
       {/* Call to Action */}
       <div className="text-center pt-8 border-t border-border/50">
         <div className="max-w-md mx-auto space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">
+          <h3 className="text-lg font-semibold text-foreground font-display">
             Enjoyed this article?
           </h3>
           <p className="text-sm text-muted-foreground">

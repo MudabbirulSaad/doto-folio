@@ -364,7 +364,7 @@ export default function NotionEditor({
           border-radius: 8px !important;
           padding: 16px !important;
           margin: 16px 0 !important;
-          font-family: var(--font-mono) !important;
+          font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace !important;
           font-size: 14px !important;
           color: hsl(var(--foreground)) !important;
         }

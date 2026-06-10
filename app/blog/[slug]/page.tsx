@@ -132,7 +132,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-12">
             {/* Main Content */}
-            <div className="lg:col-span-8 xl:col-span-9">
+            <div className="min-w-0 max-w-full overflow-hidden lg:col-span-8 xl:col-span-9">
               <Suspense fallback={<BlogSkeleton variant="post" />}>
                 <BlogPostContent post={post} />
               </Suspense>
@@ -158,7 +158,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           {/* Related Posts */}
           {relatedPosts && relatedPosts.length > 0 && (
             <div className="mt-20 border-t border-white/10 pt-12">
-              <h3 className="text-2xl font-bold mb-8">Related Articles</h3>
+              <h3 className="text-2xl font-bold mb-8 font-display">Related Articles</h3>
               <Suspense fallback={<BlogSkeleton variant="grid" count={3} />}>
                 <BlogRelatedPosts posts={relatedPosts} />
               </Suspense>

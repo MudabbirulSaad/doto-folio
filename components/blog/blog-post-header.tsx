@@ -111,7 +111,7 @@ export function BlogPostHeader({ post }: BlogPostHeaderProps) {
         {/* Title */}
         <h1
           ref={titleRef}
-          className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight drop-shadow-lg"
+          className="max-w-[22rem] sm:max-w-full text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight drop-shadow-lg font-display text-wrap-safe"
         >
           {post.title}
         </h1>

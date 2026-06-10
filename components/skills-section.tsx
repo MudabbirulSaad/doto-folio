@@ -40,7 +40,7 @@ export function SkillsSection({ skills = [] }: SkillsSectionProps) {
       <div className="container mx-auto px-8 sm:px-12 lg:px-16">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 font-serif">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 font-display">
               Skills & Expertise
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">

@@ -110,7 +110,7 @@ export function BlogHero({
           {/* Title */}
           <h1
             ref={titleRef}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight drop-shadow-lg"
+            className="max-w-[22rem] sm:max-w-full text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight drop-shadow-lg font-display text-wrap-safe"
           >
             {title}
           </h1>
@@ -158,7 +158,7 @@ export function BlogHero({
         {featuredPosts.length > 0 && (
           <div ref={featuredRef} className="mt-16">
             <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2 font-display">
                 Featured Articles
               </h2>
               <p className="text-muted-foreground">

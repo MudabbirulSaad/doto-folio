@@ -47,7 +47,7 @@ export function FooterSection({ content, socialLinks = [] }: FooterSectionProps)
       <div className="container mx-auto px-8 sm:px-12 lg:px-16 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-foreground font-serif">
+            <h3 className="text-2xl font-bold text-foreground font-display">
               {text(content, 'footer_brand_name')}
             </h3>
             <p className="text-sm leading-relaxed">

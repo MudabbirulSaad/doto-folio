@@ -16,7 +16,7 @@ export function AboutSection({ content }: AboutSectionProps) {
       <SectionNebula />
       <div className="container mx-auto px-8 sm:px-12 lg:px-16">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-12 font-serif text-center">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-12 font-display text-center">
             {text(content, 'about_title')}
           </h2>
 
