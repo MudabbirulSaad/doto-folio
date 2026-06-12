@@ -11,7 +11,8 @@ import {
     Eye,
     Plus,
     BarChart3,
-    MessageSquare
+    MessageSquare,
+    Sparkles
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
@@ -73,14 +74,14 @@ export default function ContentManagementPage() {
             statusColor: 'text-purple-400 bg-purple-500/10 border-purple-500/20'
         },
         {
-            title: 'Skills & Expertise',
-            description: 'Manage skill categories and individual skills with proficiency levels',
-            href: '/admin/content/skills',
-            icon: Layers,
+            title: 'Skills as Evidence',
+            description: 'Manage capability groups, proof points, technologies, and hiring evidence',
+            href: '/admin/content/skill-capabilities',
+            icon: Sparkles,
             color: 'text-green-400',
             bgColor: 'bg-green-500/10',
             borderColor: 'border-green-500/20',
-            status: `${stats.skillsCount} Skills`,
+            status: `${stats.skillsCount} Legacy Skills`,
             statusColor: 'text-green-400 bg-green-500/10 border-green-500/20'
         },
         {
@@ -259,10 +260,10 @@ export default function ContentManagementPage() {
                             <span>Add Project</span>
                         </Button>
                     </Link>
-                    <Link href="/admin/content/skills">
+                    <Link href="/admin/content/skill-capabilities">
                         <Button variant="outline" size="sm" className="flex items-center space-x-2 bg-white/5 border-white/10 hover:bg-white/10">
                             <Plus className="w-4 h-4" />
-                            <span>Add Skill</span>
+                            <span>Add Evidence</span>
                         </Button>
                     </Link>
                     <Link href="/admin/content/hero-about">

@@ -41,6 +41,45 @@ function repository(overrides: Partial<PublicPortfolioRepository> = {}): PublicP
       { id: 'skill-hidden', name: 'Hidden', category: 'Other', proficiency: 10, icon_name: 'Code2', display_order: 1, is_published: false },
       { id: 'skill-1', name: 'React', category: 'Frontend', proficiency: 90, icon_name: 'Atom', display_order: 2, is_published: true }
     ],
+    listPublishedSkillCapabilities: async () => [
+      {
+        id: 'capability-hidden',
+        title: 'Hidden Capability',
+        summary: 'Hidden',
+        icon_name: 'Sparkles',
+        display_order: 1,
+        is_published: false,
+        evidence: []
+      },
+      {
+        id: 'capability-1',
+        title: 'Backend & API Design',
+        summary: 'Scoped APIs',
+        icon_name: 'Route',
+        display_order: 2,
+        is_published: true,
+        evidence: [
+          {
+            id: 'evidence-hidden',
+            capability_id: 'capability-1',
+            label: 'Hidden proof',
+            description: 'Hidden',
+            technologies: [],
+            display_order: 1,
+            is_published: false
+          },
+          {
+            id: 'evidence-1',
+            capability_id: 'capability-1',
+            label: 'Scoped routes',
+            description: 'Thin routes call use cases',
+            technologies: ['Next.js'],
+            display_order: 2,
+            is_published: true
+          }
+        ]
+      }
+    ],
     listPublishedContactMethods: async () => [
       { id: 'contact-1', title: 'Email', value: 'hello@example.com', description: 'Write me', link: 'mailto:hello@example.com', icon_name: 'Mail', display_order: 1, is_published: true }
     ],
@@ -61,6 +100,8 @@ test('public portfolio content uses published backend content and omits unpublis
   assert.deepEqual(result.projects.map(project => project.title), ['Published Project'])
   assert.deepEqual(result.projects[0].project_technologies.map(technology => technology.technology_name), ['A', 'B'])
   assert.deepEqual(result.skills.map(skill => skill.name), ['React'])
+  assert.deepEqual(result.skillCapabilities.map(capability => capability.title), ['Backend & API Design'])
+  assert.deepEqual(result.skillCapabilities[0].evidence.map(evidence => evidence.label), ['Scoped routes'])
   assert.deepEqual(result.contactMethods.map(method => method.value), ['hello@example.com'])
   assert.deepEqual(result.socialLinks.map(link => link.platform), ['GitHub'])
 })

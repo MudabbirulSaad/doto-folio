@@ -29,12 +29,24 @@ import {
   listFlatSkills,
   updateFlatSkill
 } from '@/lib/server/application/content/skills'
+import {
+  createSkillCapability,
+  createSkillEvidence,
+  deleteSkillCapability,
+  deleteSkillEvidence,
+  listSkillCapabilities,
+  type SkillCapabilityInput,
+  type SkillEvidenceInput,
+  updateSkillCapability,
+  updateSkillEvidence
+} from '@/lib/server/application/content/skill-capabilities'
 import { getPublicPortfolioContent } from '@/lib/server/application/content/public-portfolio'
 import { getAdminContentOverview } from '@/lib/server/application/content/content-overview'
 import { createSupabaseProjectRepository } from '@/lib/server/adapters/supabase/content/projects-repository'
 import { createSupabaseSiteContentRepository } from '@/lib/server/adapters/supabase/content/site-content-repository'
 import { createSupabaseContactContentRepository } from '@/lib/server/adapters/supabase/content/contact-content-repository'
 import { createSupabaseSkillContentRepository } from '@/lib/server/adapters/supabase/content/skills-repository'
+import { createSupabaseSkillCapabilityRepository } from '@/lib/server/adapters/supabase/content/skill-capabilities-repository'
 import { createSupabaseAdminContentOverviewRepository } from '@/lib/server/adapters/supabase/content/content-overview-repository'
 import type { ProjectInput } from '@/lib/server/application/content/projects'
 
@@ -85,6 +97,21 @@ export async function createSkillContentUseCases(principal?: ApiPrincipal) {
   }
 }
 
+export async function createSkillCapabilityUseCases(principal?: ApiPrincipal) {
+  const repository = createSupabaseSkillCapabilityRepository(await createContentClient(principal))
+
+  return {
+    list: () => listSkillCapabilities(repository),
+    listPublished: () => listSkillCapabilities(repository, { publishedOnly: true }),
+    createCapability: (input: SkillCapabilityInput) => createSkillCapability(repository, input),
+    updateCapability: (id: string, input: SkillCapabilityInput) => updateSkillCapability(repository, id, input),
+    deleteCapability: (id: string) => deleteSkillCapability(repository, id),
+    createEvidence: (capabilityId: string, input: SkillEvidenceInput) => createSkillEvidence(repository, capabilityId, input),
+    updateEvidence: (id: string, input: SkillEvidenceInput) => updateSkillEvidence(repository, id, input),
+    deleteEvidence: (id: string) => deleteSkillEvidence(repository, id)
+  }
+}
+
 export async function createAdminContentOverviewUseCase(principal?: ApiPrincipal) {
   const repository = createSupabaseAdminContentOverviewRepository(await createContentClient(principal))
 
@@ -96,12 +123,14 @@ export async function createPublicPortfolioContentUseCase() {
   const siteContentRepository = createSupabaseSiteContentRepository(supabase)
   const projectRepository = createSupabaseProjectRepository(supabase)
   const skillRepository = createSupabaseSkillContentRepository(supabase)
+  const skillCapabilityRepository = createSupabaseSkillCapabilityRepository(supabase)
   const contactRepository = createSupabaseContactContentRepository(supabase)
 
   return () => getPublicPortfolioContent({
     getPublishedSiteContent: () => siteContentRepository.getPublishedSiteContent(),
     listPublishedProjects: () => projectRepository.listProjects(),
     listPublishedSkills: () => skillRepository.listFlatSkills(),
+    listPublishedSkillCapabilities: () => skillCapabilityRepository.listCapabilities({ publishedOnly: true }),
     listPublishedContactMethods: () => contactRepository.listContactMethods(),
     listPublishedSocialLinks: () => contactRepository.listSocialLinks()
   })

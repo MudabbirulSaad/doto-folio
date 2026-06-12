@@ -47,18 +47,38 @@ describe('public portfolio sections', () => {
     expect(screen.queryByText('Coming Soon')).not.toBeInTheDocument()
   })
 
-  it('renders skills grouped from backend-shaped data', () => {
+  it('renders skill capabilities with proof instead of proficiency scores', () => {
     render(
       <SkillsSection
-        skills={[
-          { id: 'skill-1', name: 'TypeScript', category: 'Frontend', proficiency: 95, icon_name: 'Code2', display_order: 1 }
+        capabilities={[
+          {
+            id: 'capability-1',
+            title: 'Backend & API Design',
+            summary: 'Scoped APIs backed by use cases.',
+            icon_name: 'Route',
+            display_order: 1,
+            evidence: [
+              {
+                id: 'evidence-1',
+                capability_id: 'capability-1',
+                label: 'Agent access APIs',
+                description: 'Invite-first agent APIs expose public and private context through scoped tokens.',
+                technologies: ['Next.js', 'Supabase'],
+                proof_label: 'Read skill.md',
+                proof_url: '/skill.md',
+                display_order: 1
+              }
+            ]
+          }
         ]}
       />
     )
 
-    expect(screen.getByText('Frontend')).toBeInTheDocument()
-    expect(screen.getByText('TypeScript')).toBeInTheDocument()
-    expect(screen.queryByText('Programming Languages')).not.toBeInTheDocument()
+    expect(screen.getByText('Backend & API Design')).toBeInTheDocument()
+    expect(screen.getByText('Agent access APIs')).toBeInTheDocument()
+    expect(screen.getByText('Next.js')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Read skill.md/i })).toHaveAttribute('href', '/skill.md')
+    expect(screen.queryByText(/proficiency/i)).not.toBeInTheDocument()
   })
 
   it('renders about, contact, and footer from stored site/contact content', () => {

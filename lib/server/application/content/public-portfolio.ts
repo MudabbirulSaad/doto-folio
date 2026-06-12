@@ -28,6 +28,28 @@ export interface PublicSkill {
   is_published?: boolean
 }
 
+export interface PublicSkillEvidence {
+  id: string
+  capability_id: string
+  label: string
+  description: string
+  technologies: string[]
+  proof_label?: string | null
+  proof_url?: string | null
+  display_order: number
+  is_published?: boolean
+}
+
+export interface PublicSkillCapability {
+  id: string
+  title: string
+  summary: string
+  icon_name: string
+  display_order: number
+  is_published?: boolean
+  evidence: PublicSkillEvidence[]
+}
+
 export interface PublicContactMethod {
   id: string
   title: string
@@ -53,6 +75,7 @@ export interface PublicPortfolioRepository {
   getPublishedSiteContent(): Promise<Record<string, unknown> | null>
   listPublishedProjects(): Promise<PublicProject[]>
   listPublishedSkills(): Promise<PublicSkill[]>
+  listPublishedSkillCapabilities(): Promise<PublicSkillCapability[]>
   listPublishedContactMethods(): Promise<PublicContactMethod[]>
   listPublishedSocialLinks(): Promise<PublicSocialLink[]>
 }
@@ -61,6 +84,7 @@ export interface PublicPortfolioContent {
   siteContent: Record<string, unknown>
   projects: PublicProject[]
   skills: PublicSkill[]
+  skillCapabilities: PublicSkillCapability[]
   contactMethods: PublicContactMethod[]
   socialLinks: PublicSocialLink[]
 }
@@ -80,13 +104,21 @@ function sortProject(project: PublicProject): PublicProject {
   }
 }
 
+function sortSkillCapability(capability: PublicSkillCapability): PublicSkillCapability {
+  return {
+    ...capability,
+    evidence: published(capability.evidence).sort(byDisplayOrder)
+  }
+}
+
 export async function getPublicPortfolioContent(
   repository: PublicPortfolioRepository
 ): Promise<PublicPortfolioContent> {
-  const [siteContent, projects, skills, contactMethods, socialLinks] = await Promise.all([
+  const [siteContent, projects, skills, skillCapabilities, contactMethods, socialLinks] = await Promise.all([
     repository.getPublishedSiteContent(),
     repository.listPublishedProjects(),
     repository.listPublishedSkills(),
+    repository.listPublishedSkillCapabilities(),
     repository.listPublishedContactMethods(),
     repository.listPublishedSocialLinks()
   ])
@@ -95,6 +127,7 @@ export async function getPublicPortfolioContent(
     siteContent: siteContent || DEFAULT_SITE_CONTENT,
     projects: published(projects).sort(byDisplayOrder).map(sortProject),
     skills: published(skills).sort(byDisplayOrder),
+    skillCapabilities: published(skillCapabilities).sort(byDisplayOrder).map(sortSkillCapability),
     contactMethods: published(contactMethods).sort(byDisplayOrder),
     socialLinks: published(socialLinks).sort(byDisplayOrder)
   }

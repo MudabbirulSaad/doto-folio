@@ -104,6 +104,41 @@ CREATE TABLE skills (
 );
 
 -- =============================================
+-- SKILL CAPABILITIES TABLE
+-- =============================================
+CREATE TABLE skill_capabilities (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL UNIQUE,
+  summary TEXT NOT NULL,
+  icon_name TEXT NOT NULL DEFAULT 'Sparkles',
+  display_order INTEGER NOT NULL DEFAULT 0,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =============================================
+-- SKILL EVIDENCE TABLE
+-- =============================================
+CREATE TABLE skill_evidence (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  capability_id UUID NOT NULL REFERENCES skill_capabilities(id) ON DELETE CASCADE,
+  label TEXT NOT NULL,
+  description TEXT NOT NULL,
+  technologies TEXT[] NOT NULL DEFAULT '{}',
+  proof_label TEXT DEFAULT NULL,
+  proof_url TEXT DEFAULT NULL,
+  display_order INTEGER NOT NULL DEFAULT 0,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT skill_evidence_capability_label_unique UNIQUE (capability_id, label),
+  CONSTRAINT skill_evidence_proof_url_format CHECK (
+    proof_url IS NULL OR proof_url = '' OR proof_url LIKE '/%' OR proof_url ~* '^https?://'
+  )
+);
+
+-- =============================================
 -- CONTACT METHODS TABLE
 -- =============================================
 CREATE TABLE contact_methods (
@@ -157,6 +192,10 @@ CREATE INDEX idx_project_technologies_project_id ON project_technologies(project
 CREATE INDEX idx_skills_category_id ON skills(category_id);
 CREATE INDEX idx_skills_display_order ON skills(display_order);
 CREATE INDEX idx_skill_categories_display_order ON skill_categories(display_order);
+CREATE INDEX idx_skill_capabilities_display_order ON skill_capabilities(display_order);
+CREATE INDEX idx_skill_capabilities_published_order ON skill_capabilities(is_published, display_order);
+CREATE INDEX idx_skill_evidence_capability_order ON skill_evidence(capability_id, display_order);
+CREATE INDEX idx_skill_evidence_published_order ON skill_evidence(is_published, display_order);
 CREATE INDEX idx_contact_methods_display_order ON contact_methods(display_order);
 CREATE INDEX idx_social_links_display_order ON social_links(display_order);
 CREATE INDEX idx_site_settings_key ON site_settings(setting_key);
@@ -171,6 +210,8 @@ ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_technologies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE skill_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE skills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_capabilities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skill_evidence ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_methods ENABLE ROW LEVEL SECURITY;
 ALTER TABLE social_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
@@ -185,6 +226,10 @@ CREATE POLICY "Public can read published skill categories" ON skill_categories F
 CREATE POLICY "Public can read published skills" ON skills FOR SELECT USING (
   is_published = true AND EXISTS (SELECT 1 FROM skill_categories WHERE skill_categories.id = skills.category_id AND skill_categories.is_published = true)
 );
+CREATE POLICY "Public can read published skill capabilities" ON skill_capabilities FOR SELECT USING (is_published = true);
+CREATE POLICY "Public can read published skill evidence" ON skill_evidence FOR SELECT USING (
+  is_published = true AND EXISTS (SELECT 1 FROM skill_capabilities WHERE skill_capabilities.id = skill_evidence.capability_id AND skill_capabilities.is_published = true)
+);
 CREATE POLICY "Public can read published contact methods" ON contact_methods FOR SELECT USING (is_published = true);
 CREATE POLICY "Public can read published social links" ON social_links FOR SELECT USING (is_published = true);
 CREATE POLICY "Public can read site settings" ON site_settings FOR SELECT USING (true);
@@ -195,6 +240,8 @@ CREATE POLICY "Authenticated users can manage projects" ON projects FOR ALL USIN
 CREATE POLICY "Authenticated users can manage project technologies" ON project_technologies FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated users can manage skill categories" ON skill_categories FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated users can manage skills" ON skills FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can manage skill capabilities" ON skill_capabilities FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can manage skill evidence" ON skill_evidence FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated users can manage contact methods" ON contact_methods FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated users can manage social links" ON social_links FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated users can manage site settings" ON site_settings FOR ALL USING (auth.role() = 'authenticated');
@@ -214,6 +261,8 @@ CREATE TRIGGER update_site_content_updated_at BEFORE UPDATE ON site_content FOR 
 CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_skill_categories_updated_at BEFORE UPDATE ON skill_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_skills_updated_at BEFORE UPDATE ON skills FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_skill_capabilities_updated_at BEFORE UPDATE ON skill_capabilities FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_skill_evidence_updated_at BEFORE UPDATE ON skill_evidence FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_contact_methods_updated_at BEFORE UPDATE ON contact_methods FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_social_links_updated_at BEFORE UPDATE ON social_links FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_site_settings_updated_at BEFORE UPDATE ON site_settings FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

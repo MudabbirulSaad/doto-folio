@@ -70,3 +70,43 @@ export interface AdminSkillFormData {
   proficiency: number
   icon_name: string
 }
+
+export interface AdminSkillEvidence {
+  id: string
+  capability_id: string
+  label: string
+  description: string
+  technologies: string[]
+  proof_label?: string | null
+  proof_url?: string | null
+  display_order: number
+  is_published?: boolean
+}
+
+export interface AdminSkillCapability {
+  id: string
+  title: string
+  summary: string
+  icon_name: string
+  display_order: number
+  is_published?: boolean
+  evidence: AdminSkillEvidence[]
+}
+
+export interface AdminSkillCapabilityFormData {
+  title: string
+  summary: string
+  icon_name: string
+  display_order: number
+  is_published: boolean
+}
+
+export interface AdminSkillEvidenceFormData {
+  label: string
+  description: string
+  technologies: string[]
+  proof_label: string
+  proof_url: string
+  display_order: number
+  is_published: boolean
+}
