@@ -81,7 +81,7 @@ export default function ContentManagementPage() {
             color: 'text-green-400',
             bgColor: 'bg-green-500/10',
             borderColor: 'border-green-500/20',
-            status: `${stats.skillsCount} Legacy Skills`,
+            status: `${stats.skillsCount} Capabilities`,
             statusColor: 'text-green-400 bg-green-500/10 border-green-500/20'
         },
         {

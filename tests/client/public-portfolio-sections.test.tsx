@@ -76,7 +76,8 @@ describe('public portfolio sections', () => {
 
     expect(screen.getByText('Backend & API Design')).toBeInTheDocument()
     expect(screen.getByText('Agent access APIs')).toBeInTheDocument()
-    expect(screen.getByText('Next.js')).toBeInTheDocument()
+    expect(screen.getByText('Skill index')).toBeInTheDocument()
+    expect(screen.getAllByText('Next.js').length).toBeGreaterThanOrEqual(2)
     expect(screen.getByRole('link', { name: /Read skill.md/i })).toHaveAttribute('href', '/skill.md')
     expect(screen.queryByText(/proficiency/i)).not.toBeInTheDocument()
   })

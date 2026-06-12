@@ -29,7 +29,7 @@ export function createSupabaseAdminContentOverviewRepository(supabase: SupabaseD
         commentsCount
       ] = await Promise.all([
         countTable(supabase, 'projects', { publishedOnly: true }),
-        countTable(supabase, 'skills', { publishedOnly: true }),
+        countTable(supabase, 'skill_capabilities', { publishedOnly: true }),
         countTable(supabase, 'contact_methods', { publishedOnly: true }),
         countTable(supabase, 'social_links', { publishedOnly: true }),
         countTable(supabase, 'blog_comments')

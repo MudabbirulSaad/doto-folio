@@ -76,34 +76,6 @@ CREATE TABLE project_technologies (
 );
 
 -- =============================================
--- SKILL CATEGORIES TABLE
--- =============================================
-CREATE TABLE skill_categories (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title TEXT NOT NULL,
-  description TEXT DEFAULT NULL,
-  display_order INTEGER NOT NULL DEFAULT 0,
-  is_published BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- =============================================
--- SKILLS TABLE
--- =============================================
-CREATE TABLE skills (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  category_id UUID NOT NULL REFERENCES skill_categories(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  level TEXT NOT NULL CHECK (level IN ('Learning', 'Intermediate', 'Advanced', 'Expert')),
-  description TEXT NOT NULL,
-  display_order INTEGER NOT NULL DEFAULT 0,
-  is_published BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- =============================================
 -- SKILL CAPABILITIES TABLE
 -- =============================================
 CREATE TABLE skill_capabilities (
@@ -189,9 +161,6 @@ CREATE INDEX idx_projects_status ON projects(status);
 CREATE INDEX idx_projects_display_order ON projects(display_order);
 CREATE INDEX idx_projects_is_published ON projects(is_published);
 CREATE INDEX idx_project_technologies_project_id ON project_technologies(project_id);
-CREATE INDEX idx_skills_category_id ON skills(category_id);
-CREATE INDEX idx_skills_display_order ON skills(display_order);
-CREATE INDEX idx_skill_categories_display_order ON skill_categories(display_order);
 CREATE INDEX idx_skill_capabilities_display_order ON skill_capabilities(display_order);
 CREATE INDEX idx_skill_capabilities_published_order ON skill_capabilities(is_published, display_order);
 CREATE INDEX idx_skill_evidence_capability_order ON skill_evidence(capability_id, display_order);
@@ -208,8 +177,6 @@ CREATE INDEX idx_site_settings_key ON site_settings(setting_key);
 ALTER TABLE site_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_technologies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE skill_categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE skills ENABLE ROW LEVEL SECURITY;
 ALTER TABLE skill_capabilities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE skill_evidence ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contact_methods ENABLE ROW LEVEL SECURITY;
@@ -221,10 +188,6 @@ CREATE POLICY "Public can read published site content" ON site_content FOR SELEC
 CREATE POLICY "Public can read published projects" ON projects FOR SELECT USING (is_published = true);
 CREATE POLICY "Public can read project technologies" ON project_technologies FOR SELECT USING (
   EXISTS (SELECT 1 FROM projects WHERE projects.id = project_technologies.project_id AND projects.is_published = true)
-);
-CREATE POLICY "Public can read published skill categories" ON skill_categories FOR SELECT USING (is_published = true);
-CREATE POLICY "Public can read published skills" ON skills FOR SELECT USING (
-  is_published = true AND EXISTS (SELECT 1 FROM skill_categories WHERE skill_categories.id = skills.category_id AND skill_categories.is_published = true)
 );
 CREATE POLICY "Public can read published skill capabilities" ON skill_capabilities FOR SELECT USING (is_published = true);
 CREATE POLICY "Public can read published skill evidence" ON skill_evidence FOR SELECT USING (
@@ -238,8 +201,6 @@ CREATE POLICY "Public can read site settings" ON site_settings FOR SELECT USING 
 CREATE POLICY "Authenticated users can manage site content" ON site_content FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated users can manage projects" ON projects FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated users can manage project technologies" ON project_technologies FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated users can manage skill categories" ON skill_categories FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Authenticated users can manage skills" ON skills FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated users can manage skill capabilities" ON skill_capabilities FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated users can manage skill evidence" ON skill_evidence FOR ALL USING (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated users can manage contact methods" ON contact_methods FOR ALL USING (auth.role() = 'authenticated');
@@ -259,8 +220,6 @@ $$ language 'plpgsql';
 
 CREATE TRIGGER update_site_content_updated_at BEFORE UPDATE ON site_content FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON projects FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_skill_categories_updated_at BEFORE UPDATE ON skill_categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_skills_updated_at BEFORE UPDATE ON skills FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_skill_capabilities_updated_at BEFORE UPDATE ON skill_capabilities FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_skill_evidence_updated_at BEFORE UPDATE ON skill_evidence FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_contact_methods_updated_at BEFORE UPDATE ON contact_methods FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

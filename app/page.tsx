@@ -25,7 +25,7 @@ export default async function Home() {
         <HeroSection content={portfolio.siteContent} />
         <AboutSection content={portfolio.siteContent} />
         <ProjectsSection projects={portfolio.projects} />
-        <SkillsSection skills={portfolio.skills} capabilities={portfolio.skillCapabilities} />
+        <SkillsSection capabilities={portfolio.skillCapabilities} />
         <ContactSection
           content={portfolio.siteContent}
           contactMethods={portfolio.contactMethods}

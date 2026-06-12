@@ -38,18 +38,6 @@ test('admin content APIs authorize before loading scoped data', () => {
       factories: ['createProjectUseCases(principal)']
     },
     {
-      route: 'app/api/admin/content/skills/route.ts',
-      factories: ['createSkillContentUseCases(principal)']
-    },
-    {
-      route: 'app/api/admin/content/skills/[categoryId]/route.ts',
-      factories: ['createSkillContentUseCases(principal)']
-    },
-    {
-      route: 'app/api/admin/content/skills/[categoryId]/skills/route.ts',
-      factories: ['createSkillContentUseCases(principal)']
-    },
-    {
       route: 'app/api/admin/content/skill-capabilities/route.ts',
       factories: ['createSkillCapabilityUseCases(principal)']
     },

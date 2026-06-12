@@ -37,10 +37,6 @@ function repository(overrides: Partial<PublicPortfolioRepository> = {}): PublicP
         project_technologies: []
       }
     ],
-    listPublishedSkills: async () => [
-      { id: 'skill-hidden', name: 'Hidden', category: 'Other', proficiency: 10, icon_name: 'Code2', display_order: 1, is_published: false },
-      { id: 'skill-1', name: 'React', category: 'Frontend', proficiency: 90, icon_name: 'Atom', display_order: 2, is_published: true }
-    ],
     listPublishedSkillCapabilities: async () => [
       {
         id: 'capability-hidden',
@@ -99,7 +95,6 @@ test('public portfolio content uses published backend content and omits unpublis
 
   assert.deepEqual(result.projects.map(project => project.title), ['Published Project'])
   assert.deepEqual(result.projects[0].project_technologies.map(technology => technology.technology_name), ['A', 'B'])
-  assert.deepEqual(result.skills.map(skill => skill.name), ['React'])
   assert.deepEqual(result.skillCapabilities.map(capability => capability.title), ['Backend & API Design'])
   assert.deepEqual(result.skillCapabilities[0].evidence.map(evidence => evidence.label), ['Scoped routes'])
   assert.deepEqual(result.contactMethods.map(method => method.value), ['hello@example.com'])

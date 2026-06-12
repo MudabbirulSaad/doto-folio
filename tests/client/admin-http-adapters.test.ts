@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createAdminProjectApiGateway } from '@/lib/client/adapters/http/admin-projects-api'
-import { createAdminSkillApiGateway } from '@/lib/client/adapters/http/admin-skills-api'
+import { createAdminSkillCapabilityApiGateway } from '@/lib/client/adapters/http/admin-skill-capabilities-api'
 import { createAdminContactSubmissionApiGateway } from '@/lib/client/adapters/http/admin-contact-submissions-api'
 import { createNewsletterSubscriptionApiGateway } from '@/lib/client/adapters/http/subscription-api'
 import type { JsonClient } from '@/lib/client/adapters/http/json-client'
-import type { AdminProject, AdminSkill } from '@/lib/client/domain/admin-content'
+import type { AdminProject, AdminSkillCapability } from '@/lib/client/domain/admin-content'
 import type { AdminContactSubmission } from '@/lib/client/domain/contact-submissions'
 
 const project: AdminProject = {
@@ -18,13 +18,14 @@ const project: AdminProject = {
   project_technologies: []
 }
 
-const skill: AdminSkill = {
-  id: 'skill-1',
-  name: 'React',
-  category: 'Frontend',
-  proficiency: 90,
-  icon_name: 'Code2',
-  display_order: 1
+const capability: AdminSkillCapability = {
+  id: 'capability-1',
+  title: 'Product Frontend',
+  summary: 'Polished UI',
+  icon_name: 'LayoutDashboard',
+  display_order: 1,
+  is_published: true,
+  evidence: []
 }
 
 const submission: AdminContactSubmission = {
@@ -56,10 +57,10 @@ describe('admin HTTP adapters', () => {
     await expect(gateway.list()).resolves.toEqual([project])
   })
 
-  it('reads skill data from the shared success envelope', async () => {
-    const gateway = createAdminSkillApiGateway(jsonClient({ success: true, data: [skill] }))
+  it('reads skill capability data from the shared success envelope', async () => {
+    const gateway = createAdminSkillCapabilityApiGateway(jsonClient({ success: true, data: [capability] }))
 
-    await expect(gateway.list()).resolves.toEqual([skill])
+    await expect(gateway.list()).resolves.toEqual([capability])
   })
 
   it('reads contact submissions and update results from the shared success envelope', async () => {

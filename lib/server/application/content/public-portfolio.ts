@@ -18,16 +18,6 @@ export interface PublicProject {
   project_technologies?: PublicProjectTechnology[]
 }
 
-export interface PublicSkill {
-  id: string
-  name: string
-  category: string
-  proficiency: number
-  icon_name: string
-  display_order: number
-  is_published?: boolean
-}
-
 export interface PublicSkillEvidence {
   id: string
   capability_id: string
@@ -74,7 +64,6 @@ export interface PublicSocialLink {
 export interface PublicPortfolioRepository {
   getPublishedSiteContent(): Promise<Record<string, unknown> | null>
   listPublishedProjects(): Promise<PublicProject[]>
-  listPublishedSkills(): Promise<PublicSkill[]>
   listPublishedSkillCapabilities(): Promise<PublicSkillCapability[]>
   listPublishedContactMethods(): Promise<PublicContactMethod[]>
   listPublishedSocialLinks(): Promise<PublicSocialLink[]>
@@ -83,7 +72,6 @@ export interface PublicPortfolioRepository {
 export interface PublicPortfolioContent {
   siteContent: Record<string, unknown>
   projects: PublicProject[]
-  skills: PublicSkill[]
   skillCapabilities: PublicSkillCapability[]
   contactMethods: PublicContactMethod[]
   socialLinks: PublicSocialLink[]
@@ -114,10 +102,9 @@ function sortSkillCapability(capability: PublicSkillCapability): PublicSkillCapa
 export async function getPublicPortfolioContent(
   repository: PublicPortfolioRepository
 ): Promise<PublicPortfolioContent> {
-  const [siteContent, projects, skills, skillCapabilities, contactMethods, socialLinks] = await Promise.all([
+  const [siteContent, projects, skillCapabilities, contactMethods, socialLinks] = await Promise.all([
     repository.getPublishedSiteContent(),
     repository.listPublishedProjects(),
-    repository.listPublishedSkills(),
     repository.listPublishedSkillCapabilities(),
     repository.listPublishedContactMethods(),
     repository.listPublishedSocialLinks()
@@ -126,7 +113,6 @@ export async function getPublicPortfolioContent(
   return {
     siteContent: siteContent || DEFAULT_SITE_CONTENT,
     projects: published(projects).sort(byDisplayOrder).map(sortProject),
-    skills: published(skills).sort(byDisplayOrder),
     skillCapabilities: published(skillCapabilities).sort(byDisplayOrder).map(sortSkillCapability),
     contactMethods: published(contactMethods).sort(byDisplayOrder),
     socialLinks: published(socialLinks).sort(byDisplayOrder)

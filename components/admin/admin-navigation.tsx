@@ -97,9 +97,9 @@ export default function AdminNavigation() {
     },
     {
       name: 'Skills',
-      href: '/admin/content/skills',
+      href: '/admin/content/skill-capabilities',
       icon: Code2,
-      current: pathname.startsWith('/admin/content/skills')
+      current: pathname.startsWith('/admin/content/skill-capabilities')
     },
     {
       name: 'Categories',

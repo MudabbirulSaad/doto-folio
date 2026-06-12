@@ -5,13 +5,9 @@ import { ArrowUpRight, CheckCircle2, Sparkles } from "lucide-react"
 import { AnimatedCard, AnimatedSection } from "./animations"
 import { RevealCard } from "./reveal-card"
 import { SectionNebula } from "./section-nebula"
-import type {
-  PublicSkill,
-  PublicSkillCapability
-} from "@/lib/server/application/content/public-portfolio"
+import type { PublicSkillCapability } from "@/lib/server/application/content/public-portfolio"
 
 interface SkillsSectionProps {
-  skills?: PublicSkill[]
   capabilities?: PublicSkillCapability[]
 }
 
@@ -20,39 +16,19 @@ function iconFor(name: string) {
   return iconMap[name] || Sparkles
 }
 
-function fallbackCapabilities(skills: PublicSkill[]): PublicSkillCapability[] {
-  const grouped = skills.reduce<Record<string, PublicSkill[]>>((groups, skill) => {
-    groups[skill.category] = [...(groups[skill.category] || []), skill]
-    return groups
-  }, {})
-
-  return Object.entries(grouped).map(([category, categorySkills], index) => ({
-    id: `legacy-${category}`,
-    title: category,
-    summary: "A focused toolset used across portfolio, content, and product development work.",
-    icon_name: categorySkills[0]?.icon_name || "Sparkles",
-    display_order: index + 1,
-    is_published: true,
-    evidence: categorySkills.map((skill, skillIndex) => ({
-      id: skill.id,
-      capability_id: `legacy-${category}`,
-      label: skill.name,
-      description: `${skill.name} is part of the delivery stack behind this portfolio and its admin CMS.`,
-      technologies: [skill.name],
-      proof_label: null,
-      proof_url: null,
-      display_order: skillIndex + 1,
-      is_published: true
-    }))
-  }))
-}
-
 function isExternalUrl(url: string) {
   return /^https?:\/\//i.test(url)
 }
 
-export function SkillsSection({ skills = [], capabilities = [] }: SkillsSectionProps) {
-  const capabilityMatrix = capabilities.length > 0 ? capabilities : fallbackCapabilities(skills)
+function skillIndex(capabilities: PublicSkillCapability[]) {
+  return [...new Set(capabilities.flatMap(capability => {
+    return capability.evidence.flatMap(evidence => evidence.technologies)
+  }))].sort((left, right) => left.localeCompare(right))
+}
+
+export function SkillsSection({ capabilities = [] }: SkillsSectionProps) {
+  const capabilityMatrix = capabilities
+  const skills = skillIndex(capabilityMatrix)
 
   if (capabilityMatrix.length === 0) return null
 
@@ -75,6 +51,28 @@ export function SkillsSection({ skills = [], capabilities = [] }: SkillsSectionP
               </p>
             </div>
           </AnimatedSection>
+
+          {skills.length > 0 && (
+            <AnimatedSection animation="fadeUp" delay={0.1}>
+              <RevealCard className="mb-8 rounded-2xl border border-border/50 bg-background/80 p-5 sm:p-6 backdrop-blur-sm">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="max-w-xl">
+                    <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">Skill index</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      One place for the full stack I can talk through, connected directly to the proof below.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 lg:max-w-3xl">
+                    {skills.map((skill) => (
+                      <span key={skill} className="px-2.5 py-1 rounded-full border border-border/70 bg-muted/30 text-xs text-muted-foreground">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </RevealCard>
+            </AnimatedSection>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {capabilityMatrix.map((capability, index) => {

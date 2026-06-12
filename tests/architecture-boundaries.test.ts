@@ -71,8 +71,8 @@ test('project content application contract does not use explicit any', () => {
   assert.equal(hasExplicitAny(source), false)
 })
 
-test('skill content application contract does not use explicit any', () => {
-  const source = readFileSync(join(process.cwd(), 'lib/server/application/content/skills.ts'), 'utf8')
+test('skill capability content application contract does not use explicit any', () => {
+  const source = readFileSync(join(process.cwd(), 'lib/server/application/content/skill-capabilities.ts'), 'utf8')
 
   assert.equal(hasExplicitAny(source), false)
 })

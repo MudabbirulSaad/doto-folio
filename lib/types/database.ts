@@ -189,11 +189,12 @@ export interface Database {
           created_at?: string
         }
       }
-      skill_categories: {
+      skill_capabilities: {
         Row: {
           id: string
           title: string
-          description: string | null
+          summary: string
+          icon_name: string
           display_order: number
           is_published: boolean
           created_at: string
@@ -202,7 +203,8 @@ export interface Database {
         Insert: {
           id?: string
           title: string
-          description?: string | null
+          summary: string
+          icon_name?: string
           display_order?: number
           is_published?: boolean
           created_at?: string
@@ -211,20 +213,23 @@ export interface Database {
         Update: {
           id?: string
           title?: string
-          description?: string | null
+          summary?: string
+          icon_name?: string
           display_order?: number
           is_published?: boolean
           created_at?: string
           updated_at?: string
         }
       }
-      skills: {
+      skill_evidence: {
         Row: {
           id: string
-          category_id: string
-          name: string
-          level: 'Learning' | 'Intermediate' | 'Advanced' | 'Expert'
+          capability_id: string
+          label: string
           description: string
+          technologies: string[]
+          proof_label: string | null
+          proof_url: string | null
           display_order: number
           is_published: boolean
           created_at: string
@@ -232,10 +237,12 @@ export interface Database {
         }
         Insert: {
           id?: string
-          category_id: string
-          name: string
-          level: 'Learning' | 'Intermediate' | 'Advanced' | 'Expert'
+          capability_id: string
+          label: string
           description: string
+          technologies?: string[]
+          proof_label?: string | null
+          proof_url?: string | null
           display_order?: number
           is_published?: boolean
           created_at?: string
@@ -243,10 +250,12 @@ export interface Database {
         }
         Update: {
           id?: string
-          category_id?: string
-          name?: string
-          level?: 'Learning' | 'Intermediate' | 'Advanced' | 'Expert'
+          capability_id?: string
+          label?: string
           description?: string
+          technologies?: string[]
+          proof_label?: string | null
+          proof_url?: string | null
           display_order?: number
           is_published?: boolean
           created_at?: string
