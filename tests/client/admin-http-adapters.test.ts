@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createAdminProjectApiGateway } from '@/lib/client/adapters/http/admin-projects-api'
 import { createAdminSkillCapabilityApiGateway } from '@/lib/client/adapters/http/admin-skill-capabilities-api'
 import { createAdminContactSubmissionApiGateway } from '@/lib/client/adapters/http/admin-contact-submissions-api'
+import { createAdminContactContentApiGateway } from '@/lib/client/adapters/http/admin-contact-content-api'
 import { createNewsletterSubscriptionApiGateway } from '@/lib/client/adapters/http/subscription-api'
 import type { JsonClient } from '@/lib/client/adapters/http/json-client'
 import type { AdminProject, AdminSkillCapability } from '@/lib/client/domain/admin-content'
@@ -81,6 +82,38 @@ describe('admin HTTP adapters', () => {
     await expect(gateway.updateReadStatus(['submission-1'], true, 'Admin')).resolves.toEqual({
       updated: 1,
       submissions: [{ id: 'submission-1' }]
+    })
+  })
+
+  it('creates a published social link through the existing contact-content endpoint', async () => {
+    const socialLink = {
+      id: 'social-1',
+      platform: 'LinkedIn',
+      url: 'https://www.linkedin.com/in/example/',
+      username: 'example',
+      icon_name: 'Linkedin',
+      display_order: 1,
+      is_published: true
+    }
+    const client = jsonClient({
+      success: true,
+      data: { data: socialLink, message: 'Social link created successfully' }
+    })
+    const gateway = createAdminContactContentApiGateway(client)
+
+    await expect(gateway.createSocialLink({
+      platform: 'LinkedIn',
+      url: socialLink.url,
+      username: '  example  ',
+      icon_name: 'Linkedin'
+    })).resolves.toEqual(socialLink)
+    expect(client.post).toHaveBeenCalledWith('/api/admin/content/contact', {
+      type: 'social_link',
+      platform: 'LinkedIn',
+      url: socialLink.url,
+      username: 'example',
+      icon_name: 'Linkedin',
+      is_published: true
     })
   })
 

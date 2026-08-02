@@ -92,3 +92,36 @@ export interface AdminSkillEvidenceFormData {
   display_order: number
   is_published: boolean
 }
+
+export interface AdminContactMethod {
+  id: string
+  title: string
+  value: string
+  description: string
+  link: string
+  icon_name: string
+  display_order: number
+  is_published?: boolean
+}
+
+export interface AdminSocialLink {
+  id: string
+  platform: string
+  url: string
+  username?: string | null
+  icon_name: string
+  display_order: number
+  is_published?: boolean
+}
+
+export interface AdminContactContent {
+  contactMethods: AdminContactMethod[]
+  socialLinks: AdminSocialLink[]
+}
+
+export interface AdminSocialLinkFormData {
+  platform: string
+  url: string
+  username: string
+  icon_name: string
+}
