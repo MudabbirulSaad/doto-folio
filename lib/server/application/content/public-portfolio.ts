@@ -77,6 +77,18 @@ export interface PublicPortfolioContent {
   socialLinks: PublicSocialLink[]
 }
 
+export const DEFAULT_SOCIAL_LINKS: PublicSocialLink[] = [
+  {
+    id: 'default-linkedin',
+    platform: 'LinkedIn',
+    username: 'mudabbirul-saad-b71a0a211',
+    url: 'https://www.linkedin.com/in/mudabbirul-saad-b71a0a211/',
+    icon_name: 'Linkedin',
+    display_order: 1,
+    is_published: true
+  }
+]
+
 function byDisplayOrder(left: { display_order: number }, right: { display_order: number }) {
   return left.display_order - right.display_order
 }
@@ -110,11 +122,15 @@ export async function getPublicPortfolioContent(
     repository.listPublishedSocialLinks()
   ])
 
+  const publishedSocialLinks = published(socialLinks).sort(byDisplayOrder)
+
   return {
     siteContent: siteContent || DEFAULT_SITE_CONTENT,
     projects: published(projects).sort(byDisplayOrder).map(sortProject),
     skillCapabilities: published(skillCapabilities).sort(byDisplayOrder).map(sortSkillCapability),
     contactMethods: published(contactMethods).sort(byDisplayOrder),
-    socialLinks: published(socialLinks).sort(byDisplayOrder)
+    socialLinks: publishedSocialLinks.length > 0
+      ? publishedSocialLinks
+      : DEFAULT_SOCIAL_LINKS.map(link => ({ ...link }))
   }
 }
