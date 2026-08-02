@@ -89,7 +89,7 @@ export function createUserContactConfirmationEmail(formData: ContactFormData): C
     next,
     renderBodyText('In the meantime, you can browse the latest articles and project notes from the portfolio.'),
     renderButton(blogUrl, 'Browse Latest Articles'),
-    `<p style="margin: 28px 0 0; color: #c7c2b7; font-size: 15px; line-height: 1.65;">Best regards,<br><strong style="color: #f2f2ef;">Mudabbirul Saad</strong><br>AI Student & Developer</p>`
+    `<p style="margin: 28px 0 0; color: #c7c2b7; font-size: 15px; line-height: 1.65;">Best regards,<br><strong style="color: #f2f2ef;">Mudabbirul Saad</strong><br>Software Development Student & Developer</p>`
   ].join('')
 
   return {
@@ -109,7 +109,8 @@ export function createUserContactConfirmationEmail(formData: ContactFormData): C
       blogUrl,
       '',
       'Best regards,',
-      'Mudabbirul Saad'
+      'Mudabbirul Saad',
+      'Software Development Student & Developer'
     ].join('\n'),
     html: renderPortfolioEmail({
       title: 'Message Received - SAAD Portfolio',

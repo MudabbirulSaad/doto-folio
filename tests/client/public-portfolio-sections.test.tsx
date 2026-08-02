@@ -29,7 +29,7 @@ describe('public portfolio sections', () => {
         projects={[
           {
             id: 'project-1',
-            title: 'Backend Portfolio',
+            title: 'ThePlanner',
             description: 'Real stored project',
             status: 'Completed',
             display_order: 1,
@@ -42,7 +42,11 @@ describe('public portfolio sections', () => {
       />
     )
 
-    expect(screen.getByText('Backend Portfolio')).toBeInTheDocument()
+    expect(screen.getByText('ThePlanner')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'GitHub for ThePlanner' })).toHaveAttribute(
+      'href',
+      'https://github.com/MudabbirulSaad/ThePlanner'
+    )
     expect(screen.queryByText('AI-Powered Application')).not.toBeInTheDocument()
     expect(screen.queryByText('Coming Soon')).not.toBeInTheDocument()
   })
@@ -76,8 +80,8 @@ describe('public portfolio sections', () => {
 
     expect(screen.getByText('Backend & API Design')).toBeInTheDocument()
     expect(screen.getByText('Agent access APIs')).toBeInTheDocument()
-    expect(screen.getByText('Skill index')).toBeInTheDocument()
-    expect(screen.getAllByText('Next.js').length).toBeGreaterThanOrEqual(2)
+    expect(screen.queryByText('Skill index')).not.toBeInTheDocument()
+    expect(screen.getByText('Next.js')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /Read skill.md/i })).toHaveAttribute('href', '/skill.md')
     expect(screen.queryByText(/proficiency/i)).not.toBeInTheDocument()
   })

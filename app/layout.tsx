@@ -28,40 +28,24 @@ const doto = Doto({
 export const metadata: Metadata = {
   metadataBase: new URL('https://mudabbirulsaad.com'),
   title: {
-    default: "SAAD - Mudabbirul Saad | AI Student & Developer Portfolio - Projects, Technology, Development",
+    default: "Mudabbirul Saad | Software & Platform Engineering Portfolio",
     template: "%s | SAAD - Mudabbirul Saad"
   },
-  description: "Professional portfolio of Mudabbirul Saad - AI Student at Swinburne University building beautiful and intelligent digital experiences with React, Next.js, Python, Machine Learning, and modern web development technologies. Explore projects, artificial intelligence work, and technology innovations.",
+  description: "Software and platform engineering portfolio of Mudabbirul Saad, a Bachelor of Computer Science student majoring in Software Development at Swinburne University.",
   keywords: [
     "Mudabbirul Saad",
-    "SAAD",
-    "AI Student",
-    "Artificial Intelligence",
+    "Software Development Student",
+    "Software Engineering",
+    "Platform Engineering",
     "Swinburne University",
-    "React Developer",
     "Next.js",
-    "Python",
-    "Machine Learning",
-    "Web Development",
-    "Portfolio",
-    "Melbourne",
-    "Australia",
-    "Frontend Developer",
-    "Full Stack Developer",
-    "projects",
-    "development",
-    "technology",
-    "artificial",
-    "intelligence",
-    "JavaScript",
     "TypeScript",
-    "Node.js",
-    "Software Engineer",
-    "Computer Science",
-    "Programming",
-    "Tech Portfolio",
-    "Developer Portfolio",
-    "Student Developer"
+    "PostgreSQL",
+    "Docker",
+    "Distributed Systems",
+    "Developer Tools",
+    "Applied AI",
+    "Melbourne"
   ],
   authors: [{ name: "Mudabbirul Saad", url: "https://mudabbirulsaad.com" }],
   creator: "Mudabbirul Saad",
@@ -81,8 +65,8 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_AU",
     url: "https://mudabbirulsaad.com",
-    title: "SAAD - Mudabbirul Saad | AI Student & Developer Portfolio",
-    description: "Professional portfolio of Mudabbirul Saad - AI Student at Swinburne University building beautiful and intelligent digital experiences.",
+    title: "Mudabbirul Saad | Software & Platform Engineering Portfolio",
+    description: "Selected platform systems, developer tools, and applied-AI projects by Software Development student Mudabbirul Saad.",
     siteName: "SAAD Portfolio",
     images: [
       {
@@ -95,8 +79,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "SAAD - Mudabbirul Saad | AI Student & Developer Portfolio",
-    description: "Professional portfolio of Mudabbirul Saad - AI Student at Swinburne University building beautiful and intelligent digital experiences.",
+    title: "Mudabbirul Saad | Software & Platform Engineering Portfolio",
+    description: "Selected platform systems, developer tools, and applied-AI projects by Software Development student Mudabbirul Saad.",
     images: ["/saad-icon.svg"],
     creator: "@mudabbirulsaad",
   },
@@ -181,15 +165,15 @@ export default function RootLayout({
               "@type": "Person",
               "name": "Mudabbirul Saad",
               "alternateName": "SAAD",
-              "description": "AI Student at Swinburne University building beautiful and intelligent digital experiences",
+              "description": "Software Development student at Swinburne University building secure platforms and developer tools",
               "url": "https://mudabbirulsaad.com",
               "image": "https://mudabbirulsaad.com/saad-icon.svg",
               "sameAs": [
                 "https://github.com/MudabbirulSaad",
-                "https://linkedin.com/in/mudabbirulsaad"
+                "https://www.linkedin.com/in/mudabbirul-saad-b71a0a211/"
               ],
-              "jobTitle": "AI Student & Developer",
-              "worksFor": {
+              "jobTitle": "Software Development Student",
+              "affiliation": {
                 "@type": "EducationalOrganization",
                 "name": "Swinburne University of Technology",
                 "address": {
@@ -204,21 +188,16 @@ export default function RootLayout({
                 "name": "Swinburne University of Technology"
               },
               "knowsAbout": [
-                "Artificial Intelligence",
-                "Machine Learning",
-                "React",
-                "Next.js",
-                "Python",
-                "JavaScript",
-                "TypeScript",
-                "Web Development",
-                "Frontend Development",
-                "Full Stack Development"
+                "Software Engineering",
+                "Platform Engineering",
+                "Distributed Systems",
+                "Developer Tools",
+                "Applied Artificial Intelligence"
               ],
               "address": {
                 "@type": "PostalAddress",
                 "addressLocality": "Melbourne",
-                "@addressRegion": "Victoria",
+                "addressRegion": "Victoria",
                 "addressCountry": "Australia"
               }
             })

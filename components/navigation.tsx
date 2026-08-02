@@ -81,9 +81,6 @@ export function Navigation() {
                   Blog
                 </Link>
               </Button>
-              <Button variant="default" size="sm">
-                View Resume
-              </Button>
             </div>
 
             {/* Mobile Menu Button */}
@@ -171,9 +168,6 @@ export function Navigation() {
                         <Link href="/blog" onClick={() => setIsOpen(false)}>
                           Blog
                         </Link>
-                      </Button>
-                      <Button variant="default" size="lg" className="w-full text-base py-4">
-                        View Resume
                       </Button>
                     </div>
                   </div>

@@ -79,7 +79,7 @@ export function ContactSection({ content, contactMethods = [], socialLinks = [] 
           {/* Social Media Links */}
           <AnimatedSection animation="fadeUp" delay={0.2} className="mb-16">
             <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-8 text-center">
-              Follow Me
+              Professional profiles
             </h3>
             <div className="grid grid-cols-2 sm:flex sm:justify-center gap-6 sm:gap-8 max-w-md sm:max-w-none mx-auto">
             {socialLinks.map((social, index) => (
@@ -157,9 +157,9 @@ export function ContactSection({ content, contactMethods = [], socialLinks = [] 
                 <div className="bg-accent/10 rounded-2xl p-4 border border-accent/20">
                   <div className="flex items-center justify-center mb-2">
                     <div className="w-3 h-3 bg-accent rounded-full mr-2"></div>
-                    <span className="font-semibold text-accent-foreground">Research</span>
+                    <span className="font-semibold text-accent-foreground">Graduate roles</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">Research opportunities</p>
+                  <p className="text-sm text-muted-foreground">Open to graduate roles</p>
                 </div>
               </div>
             </RevealCard>

@@ -2,6 +2,12 @@
 
 A full-stack portfolio and content management system for Mudabbirul Saad. The public site presents portfolio content, projects, skills, blog posts, comments, contact flows, and subscriptions; the admin area manages content, blog publishing, comments, submissions, metrics, and scoped agent access.
 
+**Live site:** [mudabbirulsaad.com](https://mudabbirulsaad.com)
+
+**Status:** Active portfolio and CMS; recruiter-focused content refresh prepared for deployment.
+
+The public experience is deliberately recruiter-focused: it leads with software and platform engineering, presents five evidence-backed projects, and treats AI as supporting coursework and project experience rather than a degree major.
+
 ## Features
 
 - Public portfolio with backend-managed hero, about, projects, skills, contact, and footer content.
@@ -91,6 +97,6 @@ Route handlers should stay thin: parse input, apply HTTP concerns, call composed
 
 Current API rate limiting is process-local and in-memory. It is useful for development and light portfolio traffic, but it is not a distributed abuse-prevention system. Before relying on it for serious production protection, replace the store with a shared backend such as Redis, Upstash, or a provider-level rate-limiting feature.
 
-## License
+## Source-Available Notice
 
-Private and proprietary to Mudabbirul Saad.
+This repository is publicly viewable for portfolio and evaluation purposes. Copyright © Mudabbirul Saad. All rights are reserved; no permission is granted to copy, redistribute, modify, or reuse the source unless separately agreed in writing.
