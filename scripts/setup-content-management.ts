@@ -25,22 +25,23 @@ async function insertInitialData(supabase: SupabaseAdminDataClient) {
     const { error: siteError } = await supabase
       .from('site_content')
       .insert({
-        hero_title: 'I build beautiful and intelligent digital experiences.',
+        hero_title: 'I build secure, reliable platforms and intelligent developer tools.',
+        hero_subtitle: 'Software Development student at Swinburne University with additional applied-AI coursework and project experience.',
         hero_cta_text: 'Explore My Work',
-        about_intro: 'I\'m Mudabbirul Saad, a passionate Bachelor\'s degree student at Swinburne University of Technology, majoring in Artificial Intelligence.',
-        about_description: 'My journey in technology is driven by a deep fascination with how intelligent systems can transform the way we interact with digital experiences. I thrive in quiet, focused environments where I can dive deep into complex problems and emerge with elegant solutions.',
-        about_personal: 'When I\'m not immersed in coursework, you\'ll find me coding personal projects, watching the latest tech content, and staying current with emerging technology trends. I believe that continuous learning and hands-on experimentation are the keys to mastering the rapidly evolving field of AI.',
-        education_degree: 'Bachelor\'s Degree',
-        education_field: 'Artificial Intelligence',
+        about_intro: 'I am Mudabbirul Saad, a Bachelor of Computer Science student at Swinburne University of Technology, majoring in Software Development.',
+        about_description: 'I build product and platform systems with typed boundaries, reliable delivery paths, and evidence-backed engineering decisions.',
+        about_personal: 'Additional applied-AI coursework and projects support my work in developer tooling, local AI workflows, and evaluated machine-learning systems.',
+        education_degree: 'Bachelor of Computer Science',
+        education_field: 'Software Development',
         education_institution: 'Swinburne University of Technology',
-        approach_description: 'I believe in building beautiful, intelligent digital experiences through focused work, continuous learning, and staying at the forefront of technological innovation.',
-        contact_description: 'I\'m always interested in discussing AI, technology trends, and potential collaboration opportunities. Feel free to reach out through any of the channels below.',
-        contact_opportunities_description: 'As a dedicated AI student, I\'m actively seeking internships, research opportunities, and collaborative projects that align with my passion for artificial intelligence and software development. I\'m particularly interested in roles that combine technical challenges with innovative problem-solving.',
+        approach_description: 'I prefer clear contracts, observable failure modes, focused tests, and deployment processes that remain understandable under pressure.',
+        contact_description: 'Use the contact form or LinkedIn to discuss software and platform engineering opportunities.',
+        contact_opportunities_description: 'Seeking graduate, internship, and junior software or platform engineering roles in Melbourne or remote-friendly teams.',
         footer_brand_name: 'SAAD',
-        footer_brand_description: 'AI Student & Developer building intelligent digital experiences with a passion for innovation and technology.',
+        footer_brand_description: 'Building secure platforms, developer tools, and reliable product systems.',
         footer_location: 'Melbourne, Australia',
         footer_university: 'Swinburne University',
-        footer_field: 'Artificial Intelligence'
+        footer_field: 'Software Development'
       })
 
     if (siteError) {
@@ -71,22 +72,34 @@ async function insertInitialData(supabase: SupabaseAdminDataClient) {
     // Insert projects
     const projects = [
       {
-        title: 'AI-Powered Application',
-        description: 'Intelligent system leveraging machine learning algorithms to solve complex problems.',
+        title: 'OpenReels',
+        description: 'Private production-oriented video platform with protected media delivery, resilient asynchronous workflows, and immutable releases.',
         status: 'In Development',
         display_order: 1
       },
       {
-        title: 'Web Development Project',
-        description: 'Full-stack web application with modern design and responsive functionality.',
+        title: 'ThePlanner',
+        description: 'Published TypeScript CLI for deterministic planning graphs, work items, readiness checks, and agent handoffs.',
         status: 'Completed',
         display_order: 2
       },
       {
-        title: 'Data Analysis Tool',
-        description: 'Comprehensive data processing and visualization tool for insights generation.',
-        status: 'Planning',
+        title: 'Inspector',
+        description: 'Local TypeScript CLI for evidence-backed AI-assisted codebase inspection, deterministic QA, and resumable reports.',
+        status: 'In Development',
         display_order: 3
+      },
+      {
+        title: 'Study Podcast Generator',
+        description: 'Local-first FastAPI and React app for queued WAV podcast generation with persistent projects and reusable voices.',
+        status: 'In Development',
+        display_order: 4
+      },
+      {
+        title: 'Aura',
+        description: 'End-to-end misinformation-classification prototype with evaluated ML models, FastAPI inference, Vue, and Docker.',
+        status: 'Completed',
+        display_order: 5
       }
     ]
 

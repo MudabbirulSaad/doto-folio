@@ -20,15 +20,8 @@ function isExternalUrl(url: string) {
   return /^https?:\/\//i.test(url)
 }
 
-function skillIndex(capabilities: PublicSkillCapability[]) {
-  return [...new Set(capabilities.flatMap(capability => {
-    return capability.evidence.flatMap(evidence => evidence.technologies)
-  }))].sort((left, right) => left.localeCompare(right))
-}
-
 export function SkillsSection({ capabilities = [] }: SkillsSectionProps) {
   const capabilityMatrix = capabilities
-  const skills = skillIndex(capabilityMatrix)
 
   if (capabilityMatrix.length === 0) return null
 
@@ -47,32 +40,10 @@ export function SkillsSection({ capabilities = [] }: SkillsSectionProps) {
                 Proof-backed capabilities
               </h2>
               <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed">
-                I do not want you to guess what I can do from tool names. These are the product capabilities I can bring to a team, backed by real systems in this portfolio.
+                Five focused capability areas, each connected to project evidence rather than an exhaustive list of tools.
               </p>
             </div>
           </AnimatedSection>
-
-          {skills.length > 0 && (
-            <AnimatedSection animation="fadeUp" delay={0.1}>
-              <RevealCard className="mb-8 rounded-2xl border border-border/50 bg-background/80 p-5 sm:p-6 backdrop-blur-sm">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="max-w-xl">
-                    <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">Skill index</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      One place for the full stack I can talk through, connected directly to the proof below.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 lg:max-w-3xl">
-                    {skills.map((skill) => (
-                      <span key={skill} className="px-2.5 py-1 rounded-full border border-border/70 bg-muted/30 text-xs text-muted-foreground">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </RevealCard>
-            </AnimatedSection>
-          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {capabilityMatrix.map((capability, index) => {

@@ -1,3 +1,5 @@
+import Link from "next/link"
+import { ArrowUpRight, LockKeyhole } from "lucide-react"
 import { AnimatedSection, AnimatedCard } from "./animations"
 import { RevealCard } from "./reveal-card"
 import { SectionNebula } from "./section-nebula"
@@ -5,6 +7,26 @@ import type { PublicProject } from "@/lib/server/application/content/public-port
 
 interface ProjectsSectionProps {
   projects?: PublicProject[]
+}
+
+interface ProjectLink {
+  label: string
+  href: string
+}
+
+const projectLinks: Record<string, ProjectLink[]> = {
+  OpenReels: [{ label: 'Read case study', href: '/projects/openreels' }],
+  ThePlanner: [
+    { label: 'GitHub', href: 'https://github.com/MudabbirulSaad/ThePlanner' },
+    { label: 'npm', href: 'https://www.npmjs.com/package/@mudabbirulsaad/theplanner' }
+  ],
+  Inspector: [{ label: 'GitHub', href: 'https://github.com/MudabbirulSaad/inspector' }],
+  'Study Podcast Generator': [{ label: 'GitHub', href: 'https://github.com/MudabbirulSaad/Study-Podcast-Generator' }],
+  Aura: [{ label: 'GitHub', href: 'https://github.com/MudabbirulSaad/COS30049-Fake-Info-Detect' }]
+}
+
+function isExternal(url: string) {
+  return /^https?:\/\//i.test(url)
 }
 
 export function ProjectsSection({ projects = [] }: ProjectsSectionProps) {
@@ -18,8 +40,8 @@ export function ProjectsSection({ projects = [] }: ProjectsSectionProps) {
               Projects
             </h2>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-              A showcase of my work in artificial intelligence, web development, and software engineering.
-              Each project represents my commitment to building intelligent, user-focused solutions.
+              Selected systems that demonstrate platform delivery, backend design, secure media,
+              developer tooling, and applied-AI engineering.
             </p>
           </div>
 
@@ -34,6 +56,12 @@ export function ProjectsSection({ projects = [] }: ProjectsSectionProps) {
                       }`}>
                       {project.status}
                     </span>
+                    {project.title === 'OpenReels' && (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <LockKeyhole className="h-3.5 w-3.5" />
+                        Private repository
+                      </span>
+                    )}
                   </div>
 
                   <h3 className="text-xl font-semibold text-foreground mb-3 font-display">
@@ -51,6 +79,24 @@ export function ProjectsSection({ projects = [] }: ProjectsSectionProps) {
                       </span>
                     ))}
                   </div>
+
+                  {(projectLinks[project.title] || []).length > 0 && (
+                    <div className="flex flex-wrap gap-4 mt-6">
+                      {(projectLinks[project.title] || []).map(link => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          target={isExternal(link.href) ? '_blank' : undefined}
+                          rel={isExternal(link.href) ? 'noreferrer' : undefined}
+                          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                          aria-label={`${link.label} for ${project.title}`}
+                        >
+                          {link.label}
+                          <ArrowUpRight className="h-4 w-4" />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </RevealCard>
               </AnimatedCard>
             ))}
@@ -62,11 +108,11 @@ export function ProjectsSection({ projects = [] }: ProjectsSectionProps) {
               <RevealCard className="bg-background/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-border/50 hover:shadow-2xl hover:border-primary/30 hover:bg-background/90 transition-all duration-500 text-center max-w-2xl mx-auto">
                 <h3 className="text-xl font-bold text-foreground mb-4">Coming Soon</h3>
                 <p className="text-muted-foreground mb-6 leading-relaxed">
-                  More projects coming soon as I continue my journey in AI and software development.
+                  Selected project details are being prepared for publication.
                 </p>
                 <div className="inline-flex items-center text-sm text-primary font-medium">
                   <div className="w-2 h-2 bg-primary rounded-full mr-2 animate-pulse"></div>
-                  Currently working on exciting new projects
+                  More evidence-backed work will be added here
                 </div>
               </RevealCard>
             </AnimatedSection>

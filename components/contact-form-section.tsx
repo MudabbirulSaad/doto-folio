@@ -251,8 +251,8 @@ export function ContactFormSection() {
                       I&apos;m always excited to discuss new projects, creative ideas, or opportunities to be part of your vision.
                     </p>
                     <p className="leading-relaxed">
-                      Whether you&apos;re looking for an AI enthusiast for your team, need help with a web development project,
-                      or want to collaborate on something innovative, I&apos;d love to hear from you.
+                      Whether you&apos;re hiring for a software or platform engineering role, reviewing one of my projects,
+                      or exploring a focused collaboration, I&apos;d be glad to hear from you.
                     </p>
                   </div>
                 </RevealCard>
@@ -265,7 +265,7 @@ export function ContactFormSection() {
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 bg-primary rounded-full"></div>
                       <span className="text-sm text-muted-foreground">
-                        <span className="font-medium text-foreground">Email:</span> Usually within 24 hours
+                        <span className="font-medium text-foreground">Contact form:</span> Usually within 24 hours
                       </span>
                     </div>
                     <div className="flex items-center gap-3">

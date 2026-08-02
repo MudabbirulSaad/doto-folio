@@ -21,7 +21,8 @@ function repository(existing: Record<string, unknown> | null = null): SiteConten
 test('getPublishedSiteContent returns defaults when no published content exists', async () => {
   const result = await getPublishedSiteContent(repository())
 
-  assert.equal(result.content.hero_title, 'I build beautiful and intelligent digital experiences.')
+  assert.equal(result.content.hero_title, 'I build secure, reliable platforms and intelligent developer tools.')
+  assert.equal(result.content.education_field, 'Software Development')
   assert.match(result.message, /Default site content/)
 })
 

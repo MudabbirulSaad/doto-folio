@@ -607,7 +607,7 @@ export function generateOpenApiSpec(): Record<string, unknown> {
       version: '1.0.0',
       contact: {
         name: 'Mudabbirul Saad',
-        email: 'mudabbirulsaad@gmail.com',
+        email: 'you@example.com',
         url: 'https://mudabbirulsaad.com'
       }
     },

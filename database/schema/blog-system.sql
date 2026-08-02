@@ -48,7 +48,7 @@ CREATE TABLE blog_posts (
   
   -- Author & Publishing
   author_name TEXT NOT NULL DEFAULT 'Mudabbirul Saad',
-  author_bio TEXT DEFAULT 'AI Student & Developer at Swinburne University',
+  author_bio TEXT DEFAULT 'Software Development student at Swinburne University',
   author_avatar TEXT DEFAULT NULL,
   
   -- Status & Visibility

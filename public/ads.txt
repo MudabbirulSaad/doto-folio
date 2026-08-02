@@ -5,8 +5,7 @@
 # No authorized digital sellers at this time
 # This is a personal portfolio website without advertising monetization
 
-# Contact information for inquiries
-# Contact: mudabbirulsaad@gmail.com
-# Website: https://mudabbirulsaad.com
+# Contact information for inquiries is available through the portfolio form
+# Website: https://mudabbirulsaad.com/#contact-form
 
-# Last updated: 2025-01-16
+# Last updated: 2026-08-02

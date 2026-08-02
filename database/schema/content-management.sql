@@ -8,39 +8,39 @@
 CREATE TABLE site_content (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   -- Hero Section
-  hero_title TEXT NOT NULL DEFAULT 'I build beautiful and intelligent digital experiences.',
-  hero_subtitle TEXT DEFAULT NULL,
+  hero_title TEXT NOT NULL DEFAULT 'I build secure, reliable platforms and intelligent developer tools.',
+  hero_subtitle TEXT DEFAULT 'Software Development student at Swinburne University with additional applied-AI coursework and project experience.',
   hero_cta_text TEXT NOT NULL DEFAULT 'Explore My Work',
   hero_cta_link TEXT NOT NULL DEFAULT '#projects',
   
   -- About Section
   about_title TEXT NOT NULL DEFAULT 'About Me',
-  about_intro TEXT NOT NULL DEFAULT 'I''m Mudabbirul Saad, a passionate Bachelor''s degree student at Swinburne University of Technology, majoring in Artificial Intelligence.',
-  about_description TEXT NOT NULL DEFAULT 'My journey in technology is driven by a deep fascination with how intelligent systems can transform the way we interact with digital experiences. I thrive in quiet, focused environments where I can dive deep into complex problems and emerge with elegant solutions.',
-  about_personal TEXT NOT NULL DEFAULT 'When I''m not immersed in coursework, you''ll find me coding personal projects, watching the latest tech content, and staying current with emerging technology trends. I believe that continuous learning and hands-on experimentation are the keys to mastering the rapidly evolving field of AI.',
+  about_intro TEXT NOT NULL DEFAULT 'I am Mudabbirul Saad, a Bachelor of Computer Science student at Swinburne University of Technology, majoring in Software Development.',
+  about_description TEXT NOT NULL DEFAULT 'I build product and platform systems with typed boundaries, reliable delivery paths, and evidence-backed engineering decisions.',
+  about_personal TEXT NOT NULL DEFAULT 'Additional applied-AI coursework and projects support my work in developer tooling, local AI workflows, and evaluated machine-learning systems.',
   
   -- Education Card
   education_title TEXT NOT NULL DEFAULT 'Education',
-  education_degree TEXT NOT NULL DEFAULT 'Bachelor''s Degree',
-  education_field TEXT NOT NULL DEFAULT 'Artificial Intelligence',
+  education_degree TEXT NOT NULL DEFAULT 'Bachelor of Computer Science',
+  education_field TEXT NOT NULL DEFAULT 'Software Development',
   education_institution TEXT NOT NULL DEFAULT 'Swinburne University of Technology',
   
   -- Approach Card
   approach_title TEXT NOT NULL DEFAULT 'Approach',
-  approach_description TEXT NOT NULL DEFAULT 'I believe in building beautiful, intelligent digital experiences through focused work, continuous learning, and staying at the forefront of technological innovation.',
+  approach_description TEXT NOT NULL DEFAULT 'I prefer clear contracts, observable failure modes, focused tests, and deployment processes that remain understandable under pressure.',
   
   -- Contact Section
   contact_title TEXT NOT NULL DEFAULT 'Let''s Connect',
-  contact_description TEXT NOT NULL DEFAULT 'I''m always interested in discussing AI, technology trends, and potential collaboration opportunities. Feel free to reach out through any of the channels below.',
+  contact_description TEXT NOT NULL DEFAULT 'Use the contact form or LinkedIn to discuss software and platform engineering opportunities.',
   contact_opportunities_title TEXT NOT NULL DEFAULT 'Open to Opportunities',
-  contact_opportunities_description TEXT NOT NULL DEFAULT 'As a dedicated AI student, I''m actively seeking internships, research opportunities, and collaborative projects that align with my passion for artificial intelligence and software development. I''m particularly interested in roles that combine technical challenges with innovative problem-solving.',
+  contact_opportunities_description TEXT NOT NULL DEFAULT 'Seeking graduate, internship, and junior software or platform engineering roles in Melbourne or remote-friendly teams.',
   
   -- Footer Brand
   footer_brand_name TEXT NOT NULL DEFAULT 'SAAD',
-  footer_brand_description TEXT NOT NULL DEFAULT 'AI Student & Developer building intelligent digital experiences with a passion for innovation and technology.',
+  footer_brand_description TEXT NOT NULL DEFAULT 'Building secure platforms, developer tools, and reliable product systems.',
   footer_location TEXT NOT NULL DEFAULT 'Melbourne, Australia',
   footer_university TEXT NOT NULL DEFAULT 'Swinburne University',
-  footer_field TEXT NOT NULL DEFAULT 'Artificial Intelligence',
+  footer_field TEXT NOT NULL DEFAULT 'Software Development',
   footer_copyright TEXT NOT NULL DEFAULT '© 2025 Mudabbirul Saad. All rights reserved.',
   
   -- Meta
