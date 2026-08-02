@@ -1,10 +1,18 @@
 # SAAD Portfolio
 
-A full-stack portfolio and content management system for Mudabbirul Saad. The public site presents portfolio content, projects, skills, blog posts, comments, contact flows, and subscriptions; the admin area manages content, blog publishing, comments, submissions, metrics, and scoped agent access.
+A full-stack portfolio and content management system for Mudabbirul Saad. The public site presents recruiter-focused project evidence while the authenticated admin area manages portfolio content, publishing, messages, metrics, and scoped agent access.
 
-**Live site:** [mudabbirulsaad.com](https://mudabbirulsaad.com)
+## At a Glance
 
-**Status:** Active portfolio and CMS; recruiter-focused content refresh prepared for deployment.
+| | |
+| --- | --- |
+| **Problem** | Keep a professional portfolio current without hard-coding public content or exposing administrative workflows. |
+| **Result** | A responsive public portfolio and private CMS with five evidence-backed projects, contact flows, publishing tools, tests, and deployment checks. |
+| **Status** | Live and actively maintained. |
+| **Core technologies** | Next.js, React, TypeScript, Tailwind CSS, Supabase, Vitest, and the Node test runner. |
+| **Demo** | [mudabbirulsaad.com](https://mudabbirulsaad.com) |
+| **Run locally** | `npm install && npm run dev` |
+| **Test** | `npm run lint && npm test && npm run test:client && npm run build` |
 
 The public experience is deliberately recruiter-focused: it leads with software and platform engineering, presents five evidence-backed projects, and treats AI as supporting coursework and project experience rather than a degree major.
 
