@@ -48,7 +48,7 @@ CREATE TABLE blog_posts (
   
   -- Author & Publishing
   author_name TEXT NOT NULL DEFAULT 'Mudabbirul Saad',
-  author_bio TEXT DEFAULT 'Software Development student at Swinburne University',
+  author_bio TEXT DEFAULT 'Bachelor of Computer Science student at Swinburne University, majoring in Software Development.',
   author_avatar TEXT DEFAULT NULL,
   
   -- Status & Visibility

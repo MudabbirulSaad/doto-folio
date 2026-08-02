@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   view_count INTEGER DEFAULT 0,
   category_id UUID REFERENCES blog_categories(id) ON DELETE SET NULL,
   author_name VARCHAR(100) DEFAULT 'Mudabbirul Saad',
-  author_bio TEXT DEFAULT 'Software Development Student & Developer',
+  author_bio TEXT DEFAULT 'Bachelor of Computer Science student at Swinburne University, majoring in Software Development.',
   author_avatar TEXT,
   published_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

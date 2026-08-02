@@ -109,7 +109,8 @@ export function createUserContactConfirmationEmail(formData: ContactFormData): C
       blogUrl,
       '',
       'Best regards,',
-      'Mudabbirul Saad'
+      'Mudabbirul Saad',
+      'Software Development Student & Developer'
     ].join('\n'),
     html: renderPortfolioEmail({
       title: 'Message Received - SAAD Portfolio',

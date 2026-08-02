@@ -26,7 +26,7 @@ CREATE TABLE site_content (
   education_institution TEXT NOT NULL DEFAULT 'Swinburne University of Technology',
   
   -- Approach Card
-  approach_title TEXT NOT NULL DEFAULT 'Approach',
+  approach_title TEXT NOT NULL DEFAULT 'My Approach',
   approach_description TEXT NOT NULL DEFAULT 'I prefer clear contracts, observable failure modes, focused tests, and deployment processes that remain understandable under pressure.',
   
   -- Contact Section

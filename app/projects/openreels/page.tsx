@@ -135,8 +135,11 @@ export default function OpenReelsCaseStudyPage() {
 
         <div className="mt-20 border-t border-border pt-8">
           <p className="text-sm text-muted-foreground">
-            Interested in the engineering decisions behind this work? Connect through the portfolio
-            contact form or{' '}
+            Interested in the engineering decisions behind this work? Connect through the{' '}
+            <Link href="/#contact" className="font-medium text-primary hover:text-primary/80">
+              portfolio contact form
+            </Link>{' '}
+            or{' '}
             <a
               href="https://www.linkedin.com/in/mudabbirul-saad-b71a0a211/"
               target="_blank"
