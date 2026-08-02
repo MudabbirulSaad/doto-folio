@@ -26,7 +26,7 @@ async function insertInitialData(supabase: SupabaseAdminDataClient) {
       .from('site_content')
       .insert({
         hero_title: 'I build secure, reliable platforms and intelligent developer tools.',
-        hero_subtitle: 'Software Development student at Swinburne University with additional applied-AI coursework and project experience.',
+        hero_subtitle: 'Bachelor of Computer Science student at Swinburne University, majoring in Software Development, with additional applied-AI coursework and project experience.',
         hero_cta_text: 'Explore My Work',
         about_intro: 'I am Mudabbirul Saad, a Bachelor of Computer Science student at Swinburne University of Technology, majoring in Software Development.',
         about_description: 'I build product and platform systems with typed boundaries, reliable delivery paths, and evidence-backed engineering decisions.',

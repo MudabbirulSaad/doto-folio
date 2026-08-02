@@ -9,7 +9,7 @@ CREATE TABLE site_content (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   -- Hero Section
   hero_title TEXT NOT NULL DEFAULT 'I build secure, reliable platforms and intelligent developer tools.',
-  hero_subtitle TEXT DEFAULT 'Software Development student at Swinburne University with additional applied-AI coursework and project experience.',
+  hero_subtitle TEXT DEFAULT 'Bachelor of Computer Science student at Swinburne University, majoring in Software Development, with additional applied-AI coursework and project experience.',
   hero_cta_text TEXT NOT NULL DEFAULT 'Explore My Work',
   hero_cta_link TEXT NOT NULL DEFAULT '#projects',
   

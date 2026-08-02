@@ -4,6 +4,8 @@ A full-stack portfolio and content management system for Mudabbirul Saad. The pu
 
 **Live site:** [mudabbirulsaad.com](https://mudabbirulsaad.com)
 
+**Status:** Active portfolio and CMS; recruiter-focused content refresh prepared for deployment.
+
 The public experience is deliberately recruiter-focused: it leads with software and platform engineering, presents five evidence-backed projects, and treats AI as supporting coursework and project experience rather than a degree major.
 
 ## Features

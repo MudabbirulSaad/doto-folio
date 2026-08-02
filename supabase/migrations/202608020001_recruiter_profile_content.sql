@@ -4,7 +4,7 @@
 UPDATE site_content
 SET
   hero_title = 'I build secure, reliable platforms and intelligent developer tools.',
-  hero_subtitle = 'Software Development student at Swinburne University with additional applied-AI coursework and project experience.',
+  hero_subtitle = 'Bachelor of Computer Science student at Swinburne University, majoring in Software Development, with additional applied-AI coursework and project experience.',
   hero_cta_text = 'Explore My Work',
   hero_cta_link = '#projects',
   about_title = 'About Me',
