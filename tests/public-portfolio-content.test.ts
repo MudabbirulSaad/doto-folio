@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  DEFAULT_SOCIAL_LINKS,
   DEFAULT_SITE_CONTENT,
   getPublicPortfolioContent,
   type PublicPortfolioRepository
@@ -108,4 +109,12 @@ test('public portfolio content falls back to default site content when backend c
 
   assert.equal(result.siteContent.hero_title, DEFAULT_SITE_CONTENT.hero_title)
   assert.equal(result.siteContent.about_title, DEFAULT_SITE_CONTENT.about_title)
+})
+
+test('public portfolio content keeps LinkedIn reachable when the CMS has no social links', async () => {
+  const result = await getPublicPortfolioContent(repository({
+    listPublishedSocialLinks: async () => []
+  }))
+
+  assert.deepEqual(result.socialLinks, DEFAULT_SOCIAL_LINKS)
 })
