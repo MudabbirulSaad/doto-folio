@@ -118,3 +118,15 @@ test('public portfolio content keeps LinkedIn reachable when the CMS has no soci
 
   assert.deepEqual(result.socialLinks, DEFAULT_SOCIAL_LINKS)
 })
+
+test('public portfolio content returns isolated default social links', async () => {
+  const contentRepository = repository({
+    listPublishedSocialLinks: async () => []
+  })
+  const firstResult = await getPublicPortfolioContent(contentRepository)
+
+  firstResult.socialLinks[0].platform = 'Changed'
+
+  const secondResult = await getPublicPortfolioContent(contentRepository)
+  assert.deepEqual(secondResult.socialLinks, DEFAULT_SOCIAL_LINKS)
+})

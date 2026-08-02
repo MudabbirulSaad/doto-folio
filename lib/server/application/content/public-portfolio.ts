@@ -129,6 +129,8 @@ export async function getPublicPortfolioContent(
     projects: published(projects).sort(byDisplayOrder).map(sortProject),
     skillCapabilities: published(skillCapabilities).sort(byDisplayOrder).map(sortSkillCapability),
     contactMethods: published(contactMethods).sort(byDisplayOrder),
-    socialLinks: publishedSocialLinks.length > 0 ? publishedSocialLinks : DEFAULT_SOCIAL_LINKS
+    socialLinks: publishedSocialLinks.length > 0
+      ? publishedSocialLinks
+      : DEFAULT_SOCIAL_LINKS.map(link => ({ ...link }))
   }
 }
