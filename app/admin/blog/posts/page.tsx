@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,67 +36,84 @@ import {
   Trash2,
   Plus
 } from 'lucide-react'
-import type { BlogCategory } from '@/lib/types/blog'
-import {
-  deleteAdminBlogPost,
-  filterAdminBlogPosts,
-  summarizeAdminBlogPosts
-} from '@/lib/client/application/admin/blog-posts'
+import type { AdminPostSummary, BlogCategory } from '@/lib/types/blog'
+import { deleteAdminBlogPost } from '@/lib/client/application/admin/blog-posts'
 import { createAdminBlogPostApiGateway } from '@/lib/client/adapters/http/admin-blog-api'
-import type { AdminBlogPostWithRelations } from '@/lib/client/domain/admin-blog'
+import type { AdminBlogPostList, AdminBlogPostListQuery } from '@/lib/client/domain/admin-blog'
 
 export default function BlogPostsPage() {
-  const [posts, setPosts] = useState<AdminBlogPostWithRelations[]>([])
+  const gateway = useMemo(() => createAdminBlogPostApiGateway(), [])
   const [categories, setCategories] = useState<BlogCategory[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [query, setQuery] = useState<AdminBlogPostListQuery>({ page: 1, search: '', status: 'all', category: 'all' })
+  const [list, setList] = useState<AdminBlogPostList | null>(null)
+  const [listFailed, setListFailed] = useState(false)
+  const [summary, setSummary] = useState<AdminPostSummary | null>(null)
+  const [summaryFailed, setSummaryFailed] = useState(false)
+  const [summaryRevision, setSummaryRevision] = useState(0)
 
   useEffect(() => {
-    fetchPosts()
-    fetchCategories()
-  }, [])
+    gateway.listCategories().then(setCategories).catch(error => console.error('Error fetching categories:', error))
+  }, [gateway])
 
-  const fetchPosts = async () => {
-    try {
-      const data = await createAdminBlogPostApiGateway().listPosts()
-      setPosts(data.posts || [])
-    } catch (error) {
-      console.error('Error fetching posts:', error)
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    const controller = new AbortController()
+    gateway.getSummary(controller.signal).then(data => {
+      if (!controller.signal.aborted) setSummary(data)
+    }).catch(() => {
+      if (!controller.signal.aborted) setSummaryFailed(true)
+    })
+    return () => controller.abort()
+  }, [gateway, summaryRevision])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      try {
+        const data = await gateway.listPosts(query, controller.signal)
+        if (controller.signal.aborted) return
+        if (query.page > Math.max(1, data.pagination.totalPages)) {
+          setQuery({ ...query, page: Math.max(1, data.pagination.totalPages) })
+        } else {
+          setList(data)
+        }
+      } catch {
+        if (!controller.signal.aborted) setListFailed(true)
+      }
+    }, query.search.trim() ? 200 : 0)
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
     }
+  }, [gateway, query])
+
+  function changeQuery(change: Partial<AdminBlogPostListQuery>) {
+    setList(null)
+    setListFailed(false)
+    setQuery(current => ({ ...current, page: 1, ...change }))
   }
 
-  const fetchCategories = async () => {
-    try {
-      setCategories(await createAdminBlogPostApiGateway().listCategories())
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-    }
+  function refreshSummary() {
+    setSummary(null)
+    setSummaryFailed(false)
+    setSummaryRevision(current => current + 1)
   }
 
   const handleDeletePost = async (postId: string) => {
     if (!confirm('Are you sure you want to delete this post?')) return
 
-    try {
-      const result = await deleteAdminBlogPost(createAdminBlogPostApiGateway(), postId)
-
-      if (result.success) {
-        setPosts(posts.filter(post => post.id !== postId))
-      }
-    } catch (error) {
-      console.error('Error deleting post:', error)
+    const result = await deleteAdminBlogPost(gateway, postId)
+    if (result.success) {
+      setList(null)
+      setListFailed(false)
+      setQuery(current => {
+        const page = current === query && list?.posts.length === 1 ? Math.max(1, current.page - 1) : current.page
+        return { ...current, page }
+      })
+      refreshSummary()
     }
   }
 
-  const filteredPosts = filterAdminBlogPosts(posts, {
-    searchQuery,
-    statusFilter,
-    categoryFilter
-  })
-  const postSummary = summarizeAdminBlogPosts(posts)
+  const filtered = Boolean(query.search.trim()) || query.status !== 'all' || query.category !== 'all'
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -109,21 +126,6 @@ export default function BlogPostsPage() {
       default:
         return <Badge variant="secondary">{status}</Badge>
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Blog Posts</h1>
-        </div>
-        <div className="animate-pulse space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-16 bg-muted rounded-lg" />
-          ))}
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -149,7 +151,7 @@ export default function BlogPostsPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Posts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{postSummary.total}</div>
+            <div className="text-2xl font-bold">{summary?.totalPosts ?? '—'}</div>
           </CardContent>
         </Card>
         <Card>
@@ -158,7 +160,7 @@ export default function BlogPostsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {postSummary.published}
+              {summary?.publishedPosts ?? '—'}
             </div>
           </CardContent>
         </Card>
@@ -168,7 +170,7 @@ export default function BlogPostsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
-              {postSummary.drafts}
+              {summary?.draftPosts ?? '—'}
             </div>
           </CardContent>
         </Card>
@@ -178,11 +180,13 @@ export default function BlogPostsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {postSummary.views}
+              {summary?.totalViews ?? '—'}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {summaryFailed && <p role="alert">Could not load post totals. <Button variant="link" onClick={refreshSummary}>Retry totals</Button></p>}
 
       {/* Filters */}
       <Card>
@@ -193,14 +197,15 @@ export default function BlogPostsPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search posts..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search posts"
+                  value={query.search}
+                  onChange={e => changeQuery({ search: e.target.value })}
                   className="pl-10"
                 />
               </div>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
+            <Select value={query.status} onValueChange={status => changeQuery({ status })}>
+              <SelectTrigger aria-label="Filter by status" className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -210,8 +215,8 @@ export default function BlogPostsPage() {
                 <SelectItem value="archived">Archived</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
+            <Select value={query.category} onValueChange={category => changeQuery({ category })}>
+              <SelectTrigger aria-label="Filter by category" className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
@@ -242,7 +247,7 @@ export default function BlogPostsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPosts.map((post) => (
+              {list?.posts.map((post) => (
                 <TableRow key={post.id}>
                   <TableCell>
                     <div className="space-y-1">
@@ -300,7 +305,7 @@ export default function BlogPostsPage() {
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" aria-label={`Actions for ${post.title}`}>
                           <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -339,17 +344,23 @@ export default function BlogPostsPage() {
             </TableBody>
           </Table>
           
-          {filteredPosts.length === 0 && (
+          {!list && !listFailed && <p role="status" className="p-6 text-center text-muted-foreground">Loading posts…</p>}
+          {listFailed && (
+            <div role="alert" className="p-6 text-center">
+              Could not load posts. <Button variant="link" onClick={() => changeQuery({ page: query.page })}>Retry</Button>
+            </div>
+          )}
+          {list?.posts.length === 0 && (
             <div className="text-center py-12">
               <PenTool className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No posts found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchQuery || statusFilter !== 'all' || categoryFilter !== 'all'
+                {filtered
                   ? 'Try adjusting your filters'
                   : 'Get started by creating your first blog post'
                 }
               </p>
-              {!searchQuery && statusFilter === 'all' && categoryFilter === 'all' && (
+              {!filtered && (
                 <Link href="/admin/blog/posts/new">
                   <Button>
                     <Plus className="w-4 h-4 mr-2" />
@@ -358,6 +369,19 @@ export default function BlogPostsPage() {
                 </Link>
               )}
             </div>
+          )}
+          {list && list.pagination.total > 0 && (
+            <nav aria-label="Post list pagination" className="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
+              <span className="text-sm text-muted-foreground">
+                {list.pagination.total} {list.pagination.total === 1 ? 'post' : 'posts'} · Page {query.page} of {list.pagination.totalPages}
+              </span>
+              {list.pagination.totalPages > 1 && (
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" disabled={query.page <= 1} onClick={() => changeQuery({ page: query.page - 1 })}>Previous</Button>
+                  <Button variant="outline" size="sm" disabled={query.page >= list.pagination.totalPages} onClick={() => changeQuery({ page: query.page + 1 })}>Next</Button>
+                </div>
+              )}
+            </nav>
           )}
         </CardContent>
       </Card>

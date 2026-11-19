@@ -27,7 +27,8 @@ import {
 } from '@/lib/server/application/blog/admin-blog-taxonomy'
 import {
   getAdminBlogPost,
-  listAdminBlogPosts
+  listAdminBlogPosts,
+  type AdminBlogPostListParams
 } from '@/lib/server/application/blog/admin-blog-posts'
 import { createSupabasePublicBlogListingRepository } from '@/lib/server/adapters/supabase/blog/public-blog-listing-repository'
 import { createSupabaseBlogTaxonomyRepository } from '@/lib/server/adapters/supabase/blog/public-blog-taxonomy-repository'
@@ -98,8 +99,8 @@ export async function createAdminBlogPostReadUseCases() {
   const repository = createSupabaseAdminBlogPostRepository(supabase)
 
   return {
-    listPosts: (params: { page?: number; limit?: number; status?: string | null; category?: string | null; search?: string | null }) =>
-      listAdminBlogPosts(repository, params),
+    listPosts: (params: AdminBlogPostListParams) => listAdminBlogPosts(repository, params),
+    getSummary: repository.getSummary,
     getPost: (id: string) => getAdminBlogPost(repository, id)
   }
 }

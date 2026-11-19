@@ -189,6 +189,8 @@ export interface BlogStats {
   topTags: Array<BlogTag & { post_count: number }>
 }
 
+export type AdminPostSummary = Pick<BlogStats, 'totalPosts' | 'publishedPosts' | 'draftPosts' | 'totalViews'>
+
 export interface BlogSEOData {
   title: string
   description: string

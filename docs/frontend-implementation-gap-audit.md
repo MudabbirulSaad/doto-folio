@@ -26,6 +26,8 @@ Each row names the affected route, the user-visible consequence, the evidence, a
 
 **PUB-06 fixed and verified on 20 November 2026.** In Edge, Preview showed the latest unsaved title, excerpt and body of a new post with either Draft or Published selected. On the edit screen, a published Editor.js post showed its unsaved revision and a Markdown draft showed its edited heading and table. Closing Preview preserved the edits and returned keyboard focus to the trigger. Neither screen sent a write request. In a separate signed-out browser, the published fixture still showed its saved text, and the draft and new-post URLs both returned 404.
 
+**PUB-07 fixed and verified on 20 November 2026.** In Edge with 51 local fixture posts, the oldest appeared on page two. Searching its title or excerpt found it on page one. Applying its status and category narrowed the list to that post, and Edit opened it. The summary cards continued to show 51 posts, 25 published, 25 drafts and 1,326 views. With 1,051 posts, the Draft filter found all 525 drafts across 11 pages and the global view total was 552,826. These browser checks used the admin pages and Next.js read routes with a simulated database.
+
 | ID · priority | Route and finding | Evidence | Acceptance check |
 |---|---|---|---|
 | PUB-01 · High | `/admin/blog/posts/new` — Selecting **Published** in the sidebar and clicking **Save Draft** sends the selected status. An author can release an unfinished post. | Source · `app/admin/blog/posts/new/page.tsx:219` and `:275` | Select Published, save a draft, and reload. The saved post is a draft and its public URL does not expose the article. |

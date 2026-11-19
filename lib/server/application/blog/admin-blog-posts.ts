@@ -1,4 +1,5 @@
 import { ApplicationError } from '@/lib/server/domain/errors'
+import type { AdminPostSummary } from '@/lib/types/blog'
 
 export interface AdminBlogPostListParams {
   page?: number
@@ -6,6 +7,7 @@ export interface AdminBlogPostListParams {
   status?: string | null
   category?: string | null
   search?: string | null
+  listOnly?: boolean
 }
 
 export interface AdminBlogPostRecord {
@@ -25,6 +27,7 @@ export type NormalizedAdminBlogPostListParams =
 
 export interface AdminBlogPostRepository {
   listPosts(params: NormalizedAdminBlogPostListParams): Promise<AdminBlogPostListResult>
+  getSummary(): Promise<AdminPostSummary>
   findPostById(id: string): Promise<AdminBlogPostRecord | null>
 }
 

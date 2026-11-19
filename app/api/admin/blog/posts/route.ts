@@ -9,6 +9,9 @@ import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/
 async function getPostsHandler({ request }: { request: NextRequest }) {
   try {
     const { searchParams } = new URL(request.url)
+    const reads = await createAdminBlogPostReadUseCases()
+    const view = searchParams.get('view')
+    if (view === 'summary') return createSuccessResponse(await reads.getSummary())
     
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
@@ -16,12 +19,13 @@ async function getPostsHandler({ request }: { request: NextRequest }) {
     const category = searchParams.get('category')
     const search = searchParams.get('search')
     
-    const result = await (await createAdminBlogPostReadUseCases()).listPosts({
+    const result = await reads.listPosts({
       page,
       limit,
       status,
       category,
-      search
+      search,
+      listOnly: view === 'list'
     })
 
     return createSuccessResponse(result)

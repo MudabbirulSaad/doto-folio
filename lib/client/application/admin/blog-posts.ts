@@ -1,43 +1,18 @@
 import type {
-  AdminBlogPostFilters,
+  AdminBlogPostListQuery,
   AdminBlogPostList,
   AdminBlogPostWithRelations
 } from '@/lib/client/domain/admin-blog'
-import type { BlogCategory, CreateBlogPostData, UpdateBlogPostData } from '@/lib/types/blog'
+import type { AdminPostSummary, BlogCategory, CreateBlogPostData, UpdateBlogPostData } from '@/lib/types/blog'
 
 export interface AdminBlogPostGateway {
   getPost(id: string): Promise<AdminBlogPostWithRelations>
-  listPosts(): Promise<AdminBlogPostList>
+  listPosts(query: AdminBlogPostListQuery, signal?: AbortSignal): Promise<AdminBlogPostList>
+  getSummary(signal?: AbortSignal): Promise<AdminPostSummary>
   listCategories(): Promise<BlogCategory[]>
   createPost(input: CreateBlogPostData): Promise<unknown>
   updatePost(id: string, input: UpdateBlogPostData): Promise<unknown>
   deletePost(id: string): Promise<void>
-}
-
-export function filterAdminBlogPosts(
-  posts: AdminBlogPostWithRelations[],
-  filters: AdminBlogPostFilters
-): AdminBlogPostWithRelations[] {
-  const searchQuery = filters.searchQuery.trim().toLowerCase()
-
-  return posts.filter(post => {
-    const matchesSearch = !searchQuery
-      || post.title.toLowerCase().includes(searchQuery)
-      || post.excerpt.toLowerCase().includes(searchQuery)
-    const matchesStatus = filters.statusFilter === 'all' || post.status === filters.statusFilter
-    const matchesCategory = filters.categoryFilter === 'all' || post.category?.id === filters.categoryFilter
-
-    return matchesSearch && matchesStatus && matchesCategory
-  })
-}
-
-export function summarizeAdminBlogPosts(posts: AdminBlogPostWithRelations[]) {
-  return {
-    total: posts.length,
-    published: posts.filter(post => post.status === 'published').length,
-    drafts: posts.filter(post => post.status === 'draft').length,
-    views: posts.reduce((sum, post) => sum + post.view_count, 0)
-  }
 }
 
 export async function deleteAdminBlogPost(gateway: AdminBlogPostGateway, id: string) {

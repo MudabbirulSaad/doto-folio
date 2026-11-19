@@ -23,9 +23,15 @@ export interface AdminBlogPostWithRelations extends BlogPost {
   tags: { tag: BlogTag }[]
 }
 
+export interface AdminBlogPostListItem extends Pick<BlogPost, 'id' | 'title' | 'slug' | 'status' | 'view_count' | 'published_at'> {
+  excerpt: string | null
+  category: Pick<BlogCategory, 'id' | 'name' | 'slug' | 'color'> | null
+  tags: { tag: Pick<BlogTag, 'id' | 'name' | 'slug'> }[]
+}
+
 export interface AdminBlogPostList {
-  posts: AdminBlogPostWithRelations[]
-  pagination?: {
+  posts: AdminBlogPostListItem[]
+  pagination: {
     page: number
     limit: number
     total: number
@@ -33,8 +39,9 @@ export interface AdminBlogPostList {
   }
 }
 
-export interface AdminBlogPostFilters {
-  searchQuery: string
-  statusFilter: string
-  categoryFilter: string
+export interface AdminBlogPostListQuery {
+  page: number
+  search: string
+  status: string
+  category: string
 }

@@ -8,7 +8,7 @@ import type {
   AdminBlogPostWithRelations,
   AdminBlogTagFormData
 } from '@/lib/client/domain/admin-blog'
-import type { BlogCategory, BlogTag, CreateBlogPostData, UpdateBlogPostData } from '@/lib/types/blog'
+import type { AdminPostSummary, BlogCategory, BlogTag, CreateBlogPostData, UpdateBlogPostData } from '@/lib/types/blog'
 
 interface DataResponse<T> {
   data: T
@@ -20,8 +20,16 @@ export function createAdminBlogPostApiGateway(client: JsonClient = createFetchJs
       const response = await client.get<DataResponse<AdminBlogPostWithRelations>>(`/api/admin/blog/posts/${id}`)
       return response.data
     },
-    async listPosts() {
-      const response = await client.get<DataResponse<AdminBlogPostList>>('/api/admin/blog/posts')
+    async listPosts({ page, search, status, category }, signal) {
+      const params = new URLSearchParams({ view: 'list', page: String(page) })
+      if (search.trim()) params.set('search', search.trim())
+      if (status !== 'all') params.set('status', status)
+      if (category !== 'all') params.set('category', category)
+      const response = await client.get<DataResponse<AdminBlogPostList>>(`/api/admin/blog/posts?${params}`, { signal })
+      return response.data
+    },
+    async getSummary(signal) {
+      const response = await client.get<DataResponse<AdminPostSummary>>('/api/admin/blog/posts?view=summary', { signal })
       return response.data
     },
     async listCategories() {
