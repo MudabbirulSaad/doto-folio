@@ -195,7 +195,7 @@ export default function NewPostPage() {
     setSelectedTags(selectedTags.filter(t => t.id !== tagId))
   }
 
-  const handleSave = async (publishNow = false) => {
+  const handleSave = async (saveStatus: 'draft' | 'published') => {
     if (!title.trim()) {
       alert('Please enter a title')
       return
@@ -216,7 +216,7 @@ export default function NewPostPage() {
         content: JSON.stringify(editorData),
         category_id: categoryId && categoryId !== 'none' ? categoryId : undefined,
         tag_ids: selectedTags.map(tag => tag.id),
-        status: publishNow ? 'published' : status,
+        status: saveStatus,
         featured: isFeatured,
         meta_title: metaTitle.trim() || undefined,
         meta_description: metaDescription.trim() || undefined,
@@ -272,7 +272,7 @@ export default function NewPostPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleSave(false)}
+                onClick={() => handleSave('draft')}
                 disabled={loading}
                 className="text-muted-foreground hover:text-foreground"
               >
@@ -288,7 +288,7 @@ export default function NewPostPage() {
                 Preview
               </Button>
               <Button
-                onClick={() => handleSave(true)}
+                onClick={() => handleSave('published')}
                 disabled={loading}
                 size="sm"
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
