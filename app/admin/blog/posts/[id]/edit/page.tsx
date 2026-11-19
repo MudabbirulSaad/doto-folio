@@ -78,6 +78,11 @@ interface EditPostPageProps {
   params: Promise<{ id: string }>
 }
 
+function optionalFieldUpdate(value: string, saved?: string | null) {
+  if (value === (saved ?? '')) return undefined
+  return value.trim() || null
+}
+
 export default function EditPostPage({ params }: EditPostPageProps) {
   const resolvedParams = React.use(params)
   const router = useRouter()
@@ -240,12 +245,12 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         slug: slug.trim(),
         excerpt: excerpt === (post?.excerpt ?? '') ? undefined : excerpt.trim(),
         content: content === post?.content ? undefined : content,
-        category_id: categoryId || undefined,
+        category_id: optionalFieldUpdate(categoryId, post?.category_id),
         tag_ids: selectedTags.map(tag => tag.id),
         status: publishNow ? 'published' : undefined,
         featured: isFeatured,
-        meta_title: metaTitle.trim() || undefined,
-        meta_description: metaDescription.trim() || undefined,
+        meta_title: optionalFieldUpdate(metaTitle, post?.meta_title),
+        meta_description: optionalFieldUpdate(metaDescription, post?.meta_description),
       })
 
       if (result.success) {
@@ -549,11 +554,12 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                 </CardHeader>
                 <CollapsibleContent>
                   <CardContent className="space-y-4 pt-0">
-                    <Select value={categoryId} onValueChange={setCategoryId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
+                    <Select value={categoryId || 'none'} onValueChange={value => setCategoryId(value === 'none' ? '' : value)}>
+                      <SelectTrigger aria-label="Category">
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">No category</SelectItem>
                         {categories.map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             <div className="flex items-center">
@@ -653,19 +659,21 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                 <CollapsibleContent>
                   <CardContent className="space-y-4 pt-0">
                     <div className="space-y-2">
-                      <Label>Meta Title</Label>
+                      <Label htmlFor="meta-title">Meta Title</Label>
                       <Input
+                        id="meta-title"
                         value={metaTitle}
                         onChange={(e) => setMetaTitle(e.target.value)}
-                        placeholder="SEO Title"
+                        placeholder="Defaults to the post title"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Meta Description</Label>
+                      <Label htmlFor="meta-description">Meta Description</Label>
                       <Textarea
+                        id="meta-description"
                         value={metaDescription}
                         onChange={(e) => setMetaDescription(e.target.value)}
-                        placeholder="SEO Description"
+                        placeholder="Defaults to the post excerpt"
                         className="h-24 resize-none"
                       />
                     </div>

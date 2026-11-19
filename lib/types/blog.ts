@@ -140,9 +140,9 @@ export interface CreateBlogPostData {
   content: string
   featured_image?: string
   featured_image_alt?: string
-  meta_title?: string
-  meta_description?: string
-  category_id?: string
+  meta_title?: string | null
+  meta_description?: string | null
+  category_id?: string | null
   tag_ids: string[]
   status: 'draft' | 'published' | 'archived'
   featured: boolean

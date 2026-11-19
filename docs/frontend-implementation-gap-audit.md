@@ -30,6 +30,8 @@ Each row names the affected route, the user-visible consequence, the evidence, a
 
 **PUB-08 fixed and verified on 20 November 2026.** In Edge, a signed-out reader opened a published fixture article. After the author chose **Move to draft** in the editor’s Status card, reloading the same URL returned 404 and omitted the article title and body. The public post API also returned 404. The author’s unsaved title and body stayed in the editor and survived saving and reopening the draft. Saving from a second tab that still showed Published also kept the article private. The browser check used the app’s editor, public page and API routes with a local test account and simulated storage.
 
+**PUB-09 and PUB-10 fixed and verified on 20 November 2026.** In Edge, an author selected **No category**, erased both SEO overrides, saved, and reopened a published test post. The editor showed **No category** and two empty SEO fields. The signed-out article had no category link, and its page and Open Graph metadata used the post title and excerpt. A second check reassigned a category and both overrides, then cleared only the SEO title with whitespace. The category and custom description persisted. These checks used the editor, public page and Next.js API routes with local fixture storage.
+
 | ID · priority | Route and finding | Evidence | Acceptance check |
 |---|---|---|---|
 | PUB-01 · High | `/admin/blog/posts/new` — Selecting **Published** in the sidebar and clicking **Save Draft** sends the selected status. An author can release an unfinished post. | Source · `app/admin/blog/posts/new/page.tsx:219` and `:275` | Select Published, save a draft, and reload. The saved post is a draft and its public URL does not expose the article. |
