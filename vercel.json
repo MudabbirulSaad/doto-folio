@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "env -u npm_config_cache_dir npx --yes \"$(node -p \"require('./package.json').packageManager\")\" install --no-save",
+  "buildCommand": "env -u npm_config_cache_dir node --run build"
+}
