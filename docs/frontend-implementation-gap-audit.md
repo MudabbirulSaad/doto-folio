@@ -24,6 +24,8 @@ Each row names the affected route, the user-visible consequence, the evidence, a
 
 **PUB-05 fixed and verified on 20 November 2026.** In Edge, a local Markdown paragraph containing bold, italic, strikethrough and an inline image was converted, edited, saved, reopened and edited again. The signed-out article retained the three text styles and loaded the image between the same words, with its alt text and title intact. A second fixture confirmed that both the editor and the reader stripped an iframe, unapproved image attributes and an unsupported image URL. Cancelling conversion of an unsupported image URL kept the unsaved Markdown intact.
 
+**PUB-06 fixed and verified on 20 November 2026.** In Edge, Preview showed the latest unsaved title, excerpt and body of a new post with either Draft or Published selected. On the edit screen, a published Editor.js post showed its unsaved revision and a Markdown draft showed its edited heading and table. Closing Preview preserved the edits and returned keyboard focus to the trigger. Neither screen sent a write request. In a separate signed-out browser, the published fixture still showed its saved text, and the draft and new-post URLs both returned 404.
+
 | ID · priority | Route and finding | Evidence | Acceptance check |
 |---|---|---|---|
 | PUB-01 · High | `/admin/blog/posts/new` — Selecting **Published** in the sidebar and clicking **Save Draft** sends the selected status. An author can release an unfinished post. | Source · `app/admin/blog/posts/new/page.tsx:219` and `:275` | Select Published, save a draft, and reload. The saved post is a draft and its public URL does not expose the article. |

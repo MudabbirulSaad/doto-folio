@@ -31,7 +31,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import {
   Save,
-  Eye,
   ArrowLeft,
   Calendar,
   Tag,
@@ -45,6 +44,8 @@ import {
   Send
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { PostPreview } from '@/components/admin/blog/post-preview'
+import type { NotionEditorHandle } from '@/components/admin/blog/notion-editor'
 
 const NotionEditor = dynamic(() => import('@/components/admin/blog/notion-editor'), {
   ssr: false,
@@ -86,6 +87,7 @@ export default function NewPostPage() {
   const [metaTitle, setMetaTitle] = useState('')
   const [metaDescription, setMetaDescription] = useState('')
   const [editorData, setEditorData] = useState<OutputData | null>(null)
+  const blockEditor = React.useRef<NotionEditorHandle>(null)
 
   // Collapsible states
   const [categoryOpen, setCategoryOpen] = useState(false)
@@ -279,14 +281,7 @@ export default function NewPostPage() {
                 <Save className="h-4 w-4 mr-1" />
                 Save Draft
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                Preview
-              </Button>
+              <PostPreview title={title} excerpt={excerpt} editor={blockEditor} disabled={loading} />
               <Button
                 onClick={() => handleSave('published')}
                 disabled={loading}
@@ -327,6 +322,7 @@ export default function NewPostPage() {
               {/* Content Editor */}
               <div className="min-h-[600px] mt-8">
                 <NotionEditor
+                  ref={blockEditor}
                   key="editor-new"
                   data={editorData || undefined}
                   onChange={setEditorData}

@@ -52,6 +52,7 @@ import dynamic from 'next/dynamic'
 import { MarkdownRenderer } from '@/components/markdown/markdown-renderer'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import type { NotionEditorHandle } from '@/components/admin/blog/notion-editor'
+import { PostPreview } from '@/components/admin/blog/post-preview'
 import { convertDraftMarkdown, markdownToBlocks } from '@/lib/markdown-converter'
 import { createAdminBlogPostApiGateway, createAdminBlogTaxonomyApiGateway } from '@/lib/client/adapters/http/admin-blog-api'
 import {
@@ -387,14 +388,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                 )}
                 Save Changes
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                Preview
-              </Button>
+              <PostPreview title={title} excerpt={excerpt} editor={blockEditor} markdownSource={markdownSource} disabled={saving} />
               {status !== 'published' && (
                 <Button
                   onClick={() => handleSave(true)}
