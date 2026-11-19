@@ -103,5 +103,10 @@ describe('admin blog post workflow', () => {
       success: true,
       post: { id: 'post-1' }
     })
+    const markdownEdit = { id: 'post-1', content: '| A | B |\n| - | - |\n| 1 | 2 |' }
+    await expect(updateAdminBlogPost(gateway, 'post-1', markdownEdit)).resolves.toMatchObject({ success: true })
+    expect(gateway.updatePost).toHaveBeenCalledWith('post-1', markdownEdit)
+    await expect(updateAdminBlogPost(gateway, 'post-1', { id: 'post-1', content: '{"blocks":[]}' }))
+      .resolves.toMatchObject({ success: false })
   })
 })

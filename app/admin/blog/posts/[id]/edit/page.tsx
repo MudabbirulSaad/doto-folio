@@ -49,6 +49,7 @@ import {
   Trash2
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { MarkdownRenderer } from '@/components/markdown/markdown-renderer'
 import { markdownToBlocks } from '@/lib/markdown-converter'
 import { createAdminBlogPostApiGateway, createAdminBlogTaxonomyApiGateway } from '@/lib/client/adapters/http/admin-blog-api'
 import {
@@ -101,6 +102,8 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const [metaTitle, setMetaTitle] = useState('')
   const [metaDescription, setMetaDescription] = useState('')
   const [editorData, setEditorData] = useState<OutputData | null>(null)
+  const [markdownSource, setMarkdownSource] = useState<string | null>(null)
+  const markdownInput = React.useRef<HTMLTextAreaElement>(null)
 
   // Collapsible state
   const [categoryOpen, setCategoryOpen] = useState(true)
@@ -126,6 +129,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         setMetaDescription(postData.meta_description || '')
 
         // Parse editor content
+        setMarkdownSource(null)
         try {
           const contentData = JSON.parse(postData.content)
 
@@ -162,31 +166,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           } else {
             throw new Error('Invalid EditorJS data')
           }
-        } catch (e) {
-          console.log('Content is not JSON, attempting to parse as Markdown:', e)
-          // If content is not JSON (e.g., Markdown), parse it to EditorJS blocks
-          const markdownContent = postData.content || ''
-
-          // Use the new converter
-          markdownToBlocks(markdownContent).then((blocksData: MarkdownBlocksData) => {
-            setEditorData(blocksData)
-          }).catch((err: unknown) => {
-            console.error('Error converting markdown:', err)
-            // Fallback to simple paragraph if conversion fails
-            setEditorData({
-              time: Date.now(),
-              blocks: [
-                {
-                  id: "fallback-block",
-                  type: "paragraph",
-                  data: {
-                    text: markdownContent
-                  }
-                }
-              ],
-              version: "2.28.2"
-            })
-          })
+        } catch {
+          setEditorData(null)
+          setMarkdownSource(postData.content)
         }
 
         // Set selected tags
@@ -246,7 +228,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       return
     }
 
-    if (!editorData || !editorData.blocks || editorData.blocks.length === 0) {
+    if (markdownSource === null ? !editorData?.blocks.length : !markdownSource.trim()) {
       alert('Please add some content')
       return
     }
@@ -254,11 +236,12 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     setSaving(true)
 
     try {
+      const content = markdownSource ?? JSON.stringify(editorData)
       const postData = {
         title: title.trim(),
         slug: slug.trim(),
-        excerpt: excerpt.trim(),
-        content: JSON.stringify(editorData),
+        excerpt: excerpt === (post?.excerpt ?? '') ? undefined : excerpt.trim(),
+        content: content === post?.content ? undefined : content,
         category_id: categoryId || undefined,
         tag_ids: selectedTags.map(tag => tag.id),
         status: publishNow ? 'published' : status,
@@ -345,6 +328,12 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
+      if (markdownInput.current) {
+        const details = markdownInput.current.closest('details')
+        if (details) details.open = true
+        markdownInput.current.focus()
+        return
+      }
       // Focus the editor
       const editorElement = document.querySelector('.notion-editor .codex-editor')
       if (editorElement) {
@@ -462,7 +451,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                     // Get current content - if it's in the editor, we might need to save it first or just use the raw post content
                     // For now, let's use the post.content if it exists, or try to grab from editor
                     if (post?.content) {
-                      let contentToConvert = post.content;
+                      let contentToConvert = markdownSource ?? post.content;
                       try {
                         const json = JSON.parse(contentToConvert);
                         if (json.blocks && json.blocks.length > 0) {
@@ -477,6 +466,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                         .then((blocksData: MarkdownBlocksData) => {
                           if (blocksData.blocks) {
                             setEditorData(blocksData)
+                            setMarkdownSource(null)
                             setEditorVersion(v => v + 1)
                             console.log('Converted markdown to blocks:', blocksData)
                           } else {
@@ -493,12 +483,28 @@ export default function EditPostPage({ params }: EditPostPageProps) {
               </Button>
             </div>
             <div className="min-h-[600px]">
-              <NotionEditor
-                key={`editor-${resolvedParams.id}-${editorVersion}`}
-                data={editorData || undefined}
-                onChange={setEditorData}
-                placeholder="Press '/' for commands, or start writing..."
-              />
+              {markdownSource !== null ? (
+                <div className="space-y-4">
+                  <details>
+                    <summary className="cursor-pointer text-sm font-medium">Edit Markdown source</summary>
+                    <Textarea
+                      ref={markdownInput}
+                      aria-label="Markdown source"
+                      value={markdownSource}
+                      onChange={event => setMarkdownSource(event.target.value)}
+                      className="mt-2 min-h-64 font-mono"
+                    />
+                  </details>
+                  <MarkdownRenderer source={markdownSource} policy="trustedBlog" />
+                </div>
+              ) : (
+                <NotionEditor
+                  key={`editor-${resolvedParams.id}-${editorVersion}`}
+                  data={editorData || undefined}
+                  onChange={setEditorData}
+                  placeholder="Press '/' for commands, or start writing..."
+                />
+              )}
             </div>
           </div>
 

@@ -52,21 +52,25 @@ export async function deleteAdminBlogPost(gateway: AdminBlogPostGateway, id: str
   }
 }
 
-function validatePostInput(input: Pick<CreateBlogPostData, 'title' | 'content'>) {
-  if (!input.title.trim()) return 'Please enter a title'
+function validatePostInput(input: Pick<UpdateBlogPostData, 'title' | 'content'>, mode: 'create' | 'update') {
+  if ((mode === 'create' || input.title !== undefined) && !input.title?.trim()) return 'Please enter a title'
+  if (mode === 'update' && input.content === undefined) return null
+  if (!input.content?.trim()) return 'Please add some content'
 
   try {
     const content = JSON.parse(input.content)
-    if (!content?.blocks?.length) return 'Please add some content'
+    if (Array.isArray(content?.blocks)) {
+      return content.blocks.length ? null : 'Please add some content'
+    }
   } catch {
-    return 'Please add some content'
+    // Legacy posts may have a plain Markdown body.
   }
 
-  return null
+  return mode === 'update' ? null : 'Please add some content'
 }
 
 export async function saveNewAdminBlogPost(gateway: AdminBlogPostGateway, input: CreateBlogPostData) {
-  const error = validatePostInput(input)
+  const error = validatePostInput(input, 'create')
   if (error) return { success: false as const, error }
 
   try {
@@ -85,7 +89,7 @@ export async function updateAdminBlogPost(
   id: string,
   input: UpdateBlogPostData
 ) {
-  const error = validatePostInput(input as CreateBlogPostData)
+  const error = validatePostInput(input, 'update')
   if (error) return { success: false as const, error }
 
   try {

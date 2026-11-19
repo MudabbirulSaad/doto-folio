@@ -16,6 +16,8 @@ Each row names the affected route, the user-visible consequence, the evidence, a
 
 **PUB-01 fixed and verified on 20 November 2026.** The new-post editor regression tests cover Save Draft with Published selected and Publish with Draft selected. Using temporary local records, a signed-out request to the draft URL showed Page Not Found and omitted the draft body. Next.js streamed that page with HTTP 200. The public post API returned 404. Both routes returned the article body for a published control. The table below records the original findings.
 
+**PUB-02 fixed and verified on 20 November 2026.** Opening a legacy Markdown post renders its original body in the editor. A title-only save omits the body from the update. In Edge, a local fixture retained its exact Markdown, including a trailing newline. The reopened editor and signed-out public page showed the new title and the same table headers, escaped pipe, bold percentage, and empty cell.
+
 | ID · priority | Route and finding | Evidence | Acceptance check |
 |---|---|---|---|
 | PUB-01 · High | `/admin/blog/posts/new` — Selecting **Published** in the sidebar and clicking **Save Draft** sends the selected status. An author can release an unfinished post. | Source · `app/admin/blog/posts/new/page.tsx:219` and `:275` | Select Published, save a draft, and reload. The saved post is a draft and its public URL does not expose the article. |
