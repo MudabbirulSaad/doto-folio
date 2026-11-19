@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useImperativeHandle, useRef, type Ref } from 'react'
+import { useEffect, useId, useImperativeHandle, useRef, type Ref } from 'react'
 
 // Global registry to track active editors and prevent duplicates
 const editorRegistry = new Map<string, boolean>()
@@ -46,7 +46,7 @@ export default function NotionEditor({
   const editorRef = useRef<EditorJS | null>(null)
   const holderRef = useRef<HTMLDivElement>(null)
   const initializingRef = useRef(false)
-  const editorIdRef = useRef(`editor-${Math.random().toString(36).substr(2, 9)}`)
+  const editorId = useId()
   const mountedRef = useRef(false)
   const initialDataRef = useRef(data)
   const initialBlocks = useRef<Promise<string | null> | null>(null)
@@ -84,8 +84,6 @@ export default function NotionEditor({
     const holder = holderRef.current
     if (!holder) return
 
-    const editorId = editorIdRef.current
-
     // Prevent double initialization using global registry
     if (editorRef.current || initializingRef.current || editorRegistry.has(editorId)) {
       return
@@ -103,6 +101,53 @@ export default function NotionEditor({
 
     // Clear any existing content in the holder
     holder.innerHTML = ''
+
+    const handleMarkdownShortcuts = async (e: KeyboardEvent) => {
+      if (e.key !== ' ') return
+
+      const editor = editorRef.current
+      if (!editor) return
+
+      try {
+        const index = editor.blocks.getCurrentBlockIndex()
+        const block = editor.blocks.getBlockByIndex(index)
+
+        if (!block) return
+
+        const savedData = await block.save()
+        if (!savedData) return
+        const text = savedData.data.text || ''
+
+        // Check patterns
+        if (text === '#') {
+          // Header 1 (using level 2 as default big header)
+          editor.blocks.insert('header', { text: '', level: 1 }, {}, index, true)
+          editor.caret.setToBlock(index)
+          editor.blocks.delete(index + 1) // Remove the old block which was pushed down? No, insert with replace=true replaces it?
+          // Actually insert(..., true) replaces.
+        } else if (text === '##') {
+          editor.blocks.insert('header', { text: '', level: 2 }, {}, index, true)
+          editor.caret.setToBlock(index)
+        } else if (text === '###') {
+          editor.blocks.insert('header', { text: '', level: 3 }, {}, index, true)
+          editor.caret.setToBlock(index)
+        } else if (text === '*' || text === '-') {
+          editor.blocks.insert('list', { style: 'unordered', items: [] }, {}, index, true)
+          editor.caret.setToBlock(index)
+        } else if (text === '1.') {
+          editor.blocks.insert('list', { style: 'ordered', items: [] }, {}, index, true)
+          editor.caret.setToBlock(index)
+        } else if (text === '>') {
+          editor.blocks.insert('quote', { text: '', caption: '' }, {}, index, true)
+          editor.caret.setToBlock(index)
+        } else if (text === '```') {
+          editor.blocks.insert('code', { code: '' }, {}, index, true)
+          editor.caret.setToBlock(index)
+        }
+      } catch (err) {
+        console.error('Error handling markdown shortcut:', err)
+      }
+    }
 
     // Initialize Editor.js
     const editor = new EditorJS({
@@ -239,54 +284,7 @@ export default function NotionEditor({
         }
       }
     }
-  }, [])
-
-  const handleMarkdownShortcuts = async (e: KeyboardEvent) => {
-    if (e.key !== ' ') return
-
-    const editor = editorRef.current
-    if (!editor) return
-
-    try {
-      const index = editor.blocks.getCurrentBlockIndex()
-      const block = editor.blocks.getBlockByIndex(index)
-
-      if (!block) return
-
-      const savedData = await block.save()
-      if (!savedData) return
-      const text = savedData.data.text || ''
-
-      // Check patterns
-      if (text === '#') {
-        // Header 1 (using level 2 as default big header)
-        editor.blocks.insert('header', { text: '', level: 1 }, {}, index, true)
-        editor.caret.setToBlock(index)
-        editor.blocks.delete(index + 1) // Remove the old block which was pushed down? No, insert with replace=true replaces it? 
-        // Actually insert(..., true) replaces.
-      } else if (text === '##') {
-        editor.blocks.insert('header', { text: '', level: 2 }, {}, index, true)
-        editor.caret.setToBlock(index)
-      } else if (text === '###') {
-        editor.blocks.insert('header', { text: '', level: 3 }, {}, index, true)
-        editor.caret.setToBlock(index)
-      } else if (text === '*' || text === '-') {
-        editor.blocks.insert('list', { style: 'unordered', items: [] }, {}, index, true)
-        editor.caret.setToBlock(index)
-      } else if (text === '1.') {
-        editor.blocks.insert('list', { style: 'ordered', items: [] }, {}, index, true)
-        editor.caret.setToBlock(index)
-      } else if (text === '>') {
-        editor.blocks.insert('quote', { text: '', caption: '' }, {}, index, true)
-        editor.caret.setToBlock(index)
-      } else if (text === '```') {
-        editor.blocks.insert('code', { code: '' }, {}, index, true)
-        editor.caret.setToBlock(index)
-      }
-    } catch (err) {
-      console.error('Error handling markdown shortcut:', err)
-    }
-  }
+  }, [editorId])
 
   const save = async (): Promise<OutputData | null> => {
     if (editorRef.current) {
@@ -324,7 +322,7 @@ export default function NotionEditor({
     <div className="notion-editor">
       <div
         ref={holderRef}
-        id={editorIdRef.current}
+        id={editorId}
         className="prose prose-lg max-w-none dark:prose-invert focus:outline-none"
         style={{
           minHeight: '400px',

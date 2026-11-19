@@ -12,7 +12,7 @@ import {
 
 function gateway(): AdminAgentGateway {
   return {
-    listRequests: vi.fn(async () => [{
+    listRequests: vi.fn<AdminAgentGateway['listRequests']>(async () => [{
       id: 'request-1',
       agentName: 'Codex',
       toolName: 'codex-cli',
@@ -24,7 +24,7 @@ function gateway(): AdminAgentGateway {
       createdAt: '2026-06-09T00:00:00.000Z',
       updatedAt: '2026-06-09T00:00:00.000Z'
     }]),
-    listInvitations: vi.fn(async () => [{
+    listInvitations: vi.fn<AdminAgentGateway['listInvitations']>(async () => [{
       id: 'invitation-1',
       agentLabel: 'Codex',
       toolName: 'codex-cli',
@@ -39,7 +39,7 @@ function gateway(): AdminAgentGateway {
       createdAt: '2026-06-09T00:00:00.000Z',
       updatedAt: '2026-06-09T00:00:00.000Z'
     }]),
-    createInvitation: vi.fn(async () => ({
+    createInvitation: vi.fn<AdminAgentGateway['createInvitation']>(async () => ({
       code: 'ABCD1234',
       expiresAt: '2026-06-09T00:15:00.000Z',
       invitation: {
@@ -58,7 +58,7 @@ function gateway(): AdminAgentGateway {
         updatedAt: '2026-06-09T00:00:00.000Z'
       }
     })),
-    revokeInvitation: vi.fn(async () => ({
+    revokeInvitation: vi.fn<AdminAgentGateway['revokeInvitation']>(async () => ({
       id: 'invitation-1',
       agentLabel: 'Codex',
       toolName: 'codex-cli',
@@ -73,7 +73,7 @@ function gateway(): AdminAgentGateway {
       createdAt: '2026-06-09T00:00:00.000Z',
       updatedAt: '2026-06-09T00:00:00.000Z'
     })),
-    approveRequest: vi.fn(async (_id, approvedScopes) => ({
+    approveRequest: vi.fn<AdminAgentGateway['approveRequest']>(async (_id, approvedScopes) => ({
       id: 'request-1',
       agentName: 'Codex',
       toolName: 'codex-cli',
@@ -85,7 +85,7 @@ function gateway(): AdminAgentGateway {
       createdAt: '2026-06-09T00:00:00.000Z',
       updatedAt: '2026-06-09T00:00:00.000Z'
     })),
-    rejectRequest: vi.fn(async () => ({
+    rejectRequest: vi.fn<AdminAgentGateway['rejectRequest']>(async () => ({
       id: 'request-1',
       agentName: 'Codex',
       toolName: 'codex-cli',
@@ -97,7 +97,7 @@ function gateway(): AdminAgentGateway {
       createdAt: '2026-06-09T00:00:00.000Z',
       updatedAt: '2026-06-09T00:00:00.000Z'
     })),
-    listTokens: vi.fn(async () => [{
+    listTokens: vi.fn<AdminAgentGateway['listTokens']>(async () => [{
       id: 'token-1',
       requestId: 'request-1',
       invitationId: null,
@@ -109,7 +109,7 @@ function gateway(): AdminAgentGateway {
       lastUsedAt: null,
       createdAt: '2026-06-09T00:00:00.000Z'
     }]),
-    revokeToken: vi.fn(async () => ({
+    revokeToken: vi.fn<AdminAgentGateway['revokeToken']>(async () => ({
       id: 'token-1',
       requestId: 'request-1',
       invitationId: null,
@@ -121,7 +121,7 @@ function gateway(): AdminAgentGateway {
       lastUsedAt: null,
       createdAt: '2026-06-09T00:00:00.000Z'
     })),
-    updateTokenAccess: vi.fn(async (_id, input) => ({
+    updateTokenAccess: vi.fn<AdminAgentGateway['updateTokenAccess']>(async (_id, input) => ({
       id: 'token-1',
       requestId: null,
       invitationId: 'invitation-1',

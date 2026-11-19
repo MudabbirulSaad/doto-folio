@@ -1,10 +1,9 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type SetAllCookies } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  const responseCookies: Parameters<SetAllCookies>[0] = []
+  const responseHeaders = new Headers()
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,14 +13,10 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, headers) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          responseCookies.push(...cookiesToSet)
+          Object.entries(headers).forEach(([name, value]) => responseHeaders.set(name, value))
         },
       },
     }
@@ -32,9 +27,7 @@ export async function updateSession(request: NextRequest) {
   // issues with users being randomly logged out.
   const { data: { user } } = await supabase.auth.getUser()
 
-  // For portfolio website, we don't need authentication protection
-  // This middleware just ensures session tokens are refreshed
-
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  return { response: supabaseResponse, user }
+  const response = NextResponse.next({ request, headers: responseHeaders })
+  responseCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+  return { response, user }
 }

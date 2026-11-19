@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { sanitizeAuthRedirectPath } from '@/lib/auth/redirect'
 
@@ -8,6 +8,7 @@ export async function GET(request: Request) {
     const code = searchParams.get('code')
     // if "next" is in param, use it as the redirect URL
     const next = sanitizeAuthRedirectPath(searchParams.get('next'))
+    const headers = new Headers()
 
     if (code) {
         const cookieStore = await cookies()
@@ -16,24 +17,20 @@ export async function GET(request: Request) {
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
             {
                 cookies: {
-                    get(name: string) {
-                        return cookieStore.get(name)?.value
-                    },
-                    set(name: string, value: string, options: CookieOptions) {
-                        cookieStore.set({ name, value, ...options })
-                    },
-                    remove(name: string, options: CookieOptions) {
-                        cookieStore.delete({ name, ...options })
+                    getAll: () => cookieStore.getAll(),
+                    setAll(cookies, cacheHeaders) {
+                        cookies.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+                        Object.entries(cacheHeaders).forEach(([name, value]) => headers.set(name, value))
                     },
                 },
             }
         )
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (!error) {
-            return NextResponse.redirect(`${origin}${next}`)
+            return NextResponse.redirect(`${origin}${next}`, { headers })
         }
     }
 
     // return the user to an error page with instructions
-    return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+    return NextResponse.redirect(`${origin}/auth/auth-code-error`, { headers })
 }

@@ -95,7 +95,7 @@ test('public portfolio content uses published backend content and omits unpublis
   assert.equal(result.siteContent.footer_brand_name, 'Backend Brand')
 
   assert.deepEqual(result.projects.map(project => project.title), ['Published Project'])
-  assert.deepEqual(result.projects[0].project_technologies.map(technology => technology.technology_name), ['A', 'B'])
+  assert.deepEqual(result.projects[0].project_technologies?.map(technology => technology.technology_name), ['A', 'B'])
   assert.deepEqual(result.skillCapabilities.map(capability => capability.title), ['Backend & API Design'])
   assert.deepEqual(result.skillCapabilities[0].evidence.map(evidence => evidence.label), ['Scoped routes'])
   assert.deepEqual(result.contactMethods.map(method => method.value), ['hello@example.com'])

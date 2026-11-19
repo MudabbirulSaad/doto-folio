@@ -4,7 +4,7 @@ import { createAdminSkillCapabilityApiGateway } from '@/lib/client/adapters/http
 import { createAdminContactSubmissionApiGateway } from '@/lib/client/adapters/http/admin-contact-submissions-api'
 import { createAdminContactContentApiGateway } from '@/lib/client/adapters/http/admin-contact-content-api'
 import { createNewsletterSubscriptionApiGateway } from '@/lib/client/adapters/http/subscription-api'
-import type { JsonClient } from '@/lib/client/adapters/http/json-client'
+import { createFetchJsonClient } from '@/lib/client/adapters/http/json-client'
 import type { AdminProject, AdminSkillCapability } from '@/lib/client/domain/admin-content'
 import type { AdminContactSubmission } from '@/lib/client/domain/contact-submissions'
 
@@ -42,13 +42,10 @@ const submission: AdminContactSubmission = {
   updated_at: '2026-06-09T00:00:00.000Z'
 }
 
-function jsonClient(response: unknown): JsonClient {
-  return {
-    get: vi.fn(async () => response),
-    post: vi.fn(async () => response),
-    put: vi.fn(async () => response),
-    delete: vi.fn(async () => response)
-  }
+function jsonClient(response: unknown) {
+  const client = createFetchJsonClient(async () => Response.json(response))
+  vi.spyOn(client, 'post')
+  return client
 }
 
 describe('admin HTTP adapters', () => {

@@ -1,8 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { submitContactMessage, type ContactEmailNotifier, type ContactSubmissionRepository } from '../lib/server/application/contact/contact-submission'
+import { submitContactMessage, type ContactEmailNotifier, type ContactFormData, type ContactSubmissionRepository } from '../lib/server/application/contact/contact-submission'
 
-function repository(): ContactSubmissionRepository & { saved: Array<Record<string, string>> } {
+function repository(): ContactSubmissionRepository & { saved: ContactFormData[] } {
   return {
     saved: [],
     async saveSubmission(data) {

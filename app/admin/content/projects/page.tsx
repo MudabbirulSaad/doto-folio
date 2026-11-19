@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -49,11 +49,7 @@ export default function ProjectsManagementPage() {
   const [formData, setFormData] = useState<AdminProjectFormData>(emptyProjectForm())
   const [newTechnology, setNewTechnology] = useState('')
 
-  useEffect(() => {
-    fetchProjects()
-  }, [])
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       setProjects(await createAdminProjectApiGateway().list())
     } catch (error) {
@@ -62,7 +58,11 @@ export default function ProjectsManagementPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    void fetchProjects()
+  }, [fetchProjects])
 
   const resetForm = () => {
     setFormData(emptyProjectForm())

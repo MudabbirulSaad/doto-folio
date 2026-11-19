@@ -7,7 +7,7 @@ test('POST /api/auth/logout returns shared error envelopes when logout fails', a
   console.error = () => undefined
 
   try {
-    const response = await POST(new Request('http://localhost:3000/api/auth/logout', { method: 'POST' }))
+    const response = await POST()
     const payload = await response.json()
 
     assert.equal(response.status, 500)

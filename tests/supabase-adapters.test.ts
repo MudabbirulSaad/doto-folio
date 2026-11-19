@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import type { SupabaseDataClient } from '../lib/server/adapters/supabase/types'
 import { createSupabasePublicBlogListingRepository } from '../lib/server/adapters/supabase/blog/public-blog-listing-repository'
 import { createSupabaseBlogPostWorkflowRepository } from '../lib/server/adapters/supabase/blog/blog-post-workflow-repository'
 
@@ -80,7 +81,7 @@ function supabaseRecorder() {
 
 test('public blog listing Supabase adapter queries published posts, categories, and popular tags', async () => {
   const supabase = supabaseRecorder()
-  const repository = createSupabasePublicBlogListingRepository(supabase)
+  const repository = createSupabasePublicBlogListingRepository(supabase as unknown as SupabaseDataClient)
 
   await repository.getPublishedPosts()
   await repository.getCategories()
@@ -96,7 +97,7 @@ test('public blog listing Supabase adapter queries published posts, categories, 
 
 test('blog workflow Supabase adapter replaces tags and refreshes count RPCs', async () => {
   const supabase = supabaseRecorder()
-  const repository = createSupabaseBlogPostWorkflowRepository(supabase)
+  const repository = createSupabaseBlogPostWorkflowRepository(supabase as unknown as SupabaseDataClient)
 
   await repository.replacePostTags('post-1', ['tag-1', 'tag-2'])
   await repository.refreshCategoryPostCounts(['cat-1'])

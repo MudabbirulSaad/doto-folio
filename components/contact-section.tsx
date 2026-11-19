@@ -1,4 +1,5 @@
-import { Mail, Linkedin, Github, MessageCircle, Facebook, Instagram, GraduationCap } from "lucide-react"
+import { GraduationCap, Mail, MessageCircle } from "lucide-react"
+import { FiFacebook as Facebook, FiGithub as Github, FiInstagram as Instagram, FiLinkedin as Linkedin } from "react-icons/fi"
 import { AnimatedSection, AnimatedCard } from "./animations"
 import { RevealLinkCard, RevealSocialCard, RevealInfoCard, RevealCard } from "./reveal-card"
 import { SectionNebula } from "./section-nebula"

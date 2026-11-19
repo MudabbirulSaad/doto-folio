@@ -42,7 +42,9 @@ function repository(): ContactSubmissionAdminRepository & { updated: CapturedRea
         subject: 'Project',
         message: 'Hello',
         created_at: '2026-06-08T00:00:00.000Z',
-        ...data
+        ...data,
+        read_at: data.read_at ?? null,
+        read_by: data.read_by ?? null
       }]
     }
   }

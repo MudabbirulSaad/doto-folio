@@ -1,6 +1,7 @@
 "use client"
 
-import { Facebook, Github, Instagram, Linkedin, Mail, MessageCircle } from "lucide-react"
+import { Mail, MessageCircle } from "lucide-react"
+import { FiFacebook as Facebook, FiGithub as Github, FiInstagram as Instagram, FiLinkedin as Linkedin } from "react-icons/fi"
 import type { PublicSocialLink } from "@/lib/server/application/content/public-portfolio"
 
 interface FooterSectionProps {

@@ -11,7 +11,7 @@ A full-stack portfolio and content management system for Mudabbirul Saad. The pu
 | **Status** | Live and actively maintained. |
 | **Core technologies** | Next.js, React, TypeScript, Tailwind CSS, Supabase, Vitest, and the Node test runner. |
 | **Demo** | [mudabbirulsaad.com](https://mudabbirulsaad.com) |
-| **Run locally** | `npm install && npm run dev` |
+| **Run locally** | `npm ci && npm run dev` |
 | **Test** | `npm run lint && npm test && npm run test:client && npm run build` |
 
 The public experience is deliberately recruiter-focused: it leads with software and platform engineering, presents five evidence-backed projects, and treats AI as supporting coursework and project experience rather than a degree major.
@@ -28,9 +28,10 @@ The public experience is deliberately recruiter-focused: it leads with software 
 
 ## Tech Stack
 
-- Next.js 16.2.6 with App Router and Turbopack
-- React 19.2.0
-- TypeScript 5
+- Node.js 26.13.1 LTS and npm 12.2.3
+- Next.js 16.4.6 with App Router and Turbopack
+- React 19.3.1
+- TypeScript 6.0 and ESLint 9, the versions supported by the Next.js lint plugins
 - Tailwind CSS 4
 - shadcn/ui-style primitives and Radix UI
 - Supabase for database and auth
@@ -40,7 +41,7 @@ The public experience is deliberately recruiter-focused: it leads with software 
 ## Getting Started
 
 ```bash
-npm install
+npm ci
 cp .env.example .env.local
 npm run dev
 ```

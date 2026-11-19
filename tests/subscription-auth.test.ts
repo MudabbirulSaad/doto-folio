@@ -66,5 +66,5 @@ test('auth flows verify humans before delegating to auth delivery ports', async 
   const result = await verifyOtp(verifier, auth, { email: 'ada@example.com', token: '123456', captchaToken: 'captcha', ipAddress: '127.0.0.1' })
 
   assert.deepEqual(calls, ['verify', 'otp:ada@example.com', 'verify', 'magic:ada@example.com', 'verify', 'verifyOtp'])
-  assert.equal(result.user.id, 'user')
+  assert.deepEqual(result.user, { id: 'user' })
 })

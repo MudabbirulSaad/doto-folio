@@ -13,7 +13,6 @@ import type { BlogCategory } from '../lib/types/blog'
 
 function categoryRecord(overrides: Partial<AdminBlogCategoryRecord> & Pick<AdminBlogCategoryRecord, 'id' | 'name' | 'slug'>): AdminBlogCategoryRecord {
   return {
-    description: null,
     color: '#3b82f6',
     display_order: 0,
     is_published: true,
@@ -33,7 +32,6 @@ function categoryResponse(record: AdminBlogCategoryRecord): BlogCategory {
 
 function tagRecord(overrides: Partial<AdminBlogTagRecord> & Pick<AdminBlogTagRecord, 'id' | 'name' | 'slug'>): AdminBlogTagRecord {
   return {
-    description: null,
     usage_count: 0,
     is_published: true,
     created_at: '2026-06-08T00:00:00.000Z',
@@ -45,10 +43,12 @@ function tagRecord(overrides: Partial<AdminBlogTagRecord> & Pick<AdminBlogTagRec
 interface TestAdminBlogTaxonomyRepository extends AdminBlogTaxonomyRepository {
   categories: Record<string, AdminBlogCategoryRecord>
   tags: Record<string, AdminBlogTagRecord>
+  clearedCategoryIds: string[]
 }
 
 function repository(): TestAdminBlogTaxonomyRepository {
   return {
+    clearedCategoryIds: [],
     categories: {
       existing: categoryRecord({ id: 'existing', name: 'Existing', slug: 'existing', post_count: [{ count: 2 }] })
     },
@@ -74,7 +74,7 @@ function repository(): TestAdminBlogTaxonomyRepository {
         id: 'cat2',
         name: String(data.name),
         slug: String(data.slug),
-        description: typeof data.description === 'string' ? data.description : null,
+        description: typeof data.description === 'string' ? data.description : undefined,
         color: String(data.color),
         display_order: Number(data.display_order),
         is_published: data.is_published === true
@@ -88,13 +88,13 @@ function repository(): TestAdminBlogTaxonomyRepository {
       return categoryResponse(category)
     },
     async deleteCategory(id) { delete this.categories[id] },
-    async clearCategoryFromPosts(id) { this.categories[id].cleared = true },
+    async clearCategoryFromPosts(id) { this.clearedCategoryIds.push(id) },
     async createTag(data) {
       this.tags.tag2 = tagRecord({
         id: 'tag2',
         name: String(data.name),
         slug: String(data.slug),
-        description: typeof data.description === 'string' ? data.description : null,
+        description: typeof data.description === 'string' ? data.description : undefined,
         usage_count: Number(data.usage_count),
         is_published: data.is_published === true
       })
@@ -136,14 +136,14 @@ test('createAdminBlogCategory trims values and applies published defaults', asyn
 
 test('updateAdminBlogTag validates duplicates and updates trimmed values', async () => {
   const repo = repository()
-  repo.tags.other = { id: 'other', name: 'Other', slug: 'other' }
+  repo.tags.other = tagRecord({ id: 'other', name: 'Other', slug: 'other' })
 
   await assert.rejects(
-    () => updateAdminBlogTag(repo, 'tag1', { name: 'Other', slug: 'new' }),
+    () => updateAdminBlogTag(repo, 'tag1', { id: 'tag1', name: 'Other', slug: 'new' }),
     (error: unknown) => error instanceof ApplicationError && error.details?.some(detail => detail.includes('already exists')) === true
   )
 
-  const tag = await updateAdminBlogTag(repo, 'tag1', { name: ' New ', slug: 'new', description: ' Desc ' })
+  const tag = await updateAdminBlogTag(repo, 'tag1', { id: 'tag1', name: ' New ', slug: 'new', description: ' Desc ' })
   assert.equal(tag.name, 'New')
   assert.equal(tag.description, 'Desc')
 })
@@ -155,6 +155,7 @@ test('deleteAdminBlogCategory clears posts before deleting and reports affected 
 
   assert.deepEqual(result, { message: 'Category deleted successfully', postsUpdated: 2 })
   assert.equal(repo.categories.existing, undefined)
+  assert.deepEqual(repo.clearedCategoryIds, ['existing'])
 })
 
 test('admin taxonomy missing resources throw not found application errors', async () => {
