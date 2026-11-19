@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, MessageCircle, Reply } from 'lucide-react'
@@ -19,35 +19,38 @@ import { MarkdownRenderer } from '@/components/markdown/markdown-renderer'
 interface CommentListProps {
     postId: string
     refreshTrigger: number
+    onReplyPosted: () => void
 }
 
-export function CommentList({ postId, refreshTrigger }: CommentListProps) {
-    const [comments, setComments] = useState<ClientComment[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState('')
+interface CommentListResult {
+    comments: ClientComment[]
+    refreshTrigger: number
+    failed?: boolean
+}
+
+export function CommentList({ postId, refreshTrigger, onReplyPosted }: CommentListProps) {
+    const [result, setResult] = useState<CommentListResult | null>(null)
     const [replyingTo, setReplyingTo] = useState<string | null>(null)
 
-    const fetchComments = useCallback(async () => {
-        setIsLoading(true)
-        try {
-            setComments(await loadCommentTree(createCommentApiGateway(), postId))
-        } catch {
-            setError('Failed to load comments')
-        } finally {
-            setIsLoading(false)
-        }
-    }, [postId])
-
     useEffect(() => {
-        fetchComments()
-    }, [fetchComments, refreshTrigger])
+        let active = true
+        void loadCommentTree(createCommentApiGateway(), postId).then(
+            comments => {
+                if (active) setResult({ comments, refreshTrigger })
+            },
+            () => {
+                if (active) setResult({ comments: [], refreshTrigger, failed: true })
+            }
+        )
+        return () => { active = false }
+    }, [postId, refreshTrigger])
 
-    const handleReplySuccess = async () => {
+    const handleReplySuccess = () => {
         setReplyingTo(null)
-        await fetchComments() // Refresh to show new reply
+        onReplyPosted()
     }
 
-    if (isLoading && comments.length === 0) {
+    if (!result || (result.refreshTrigger !== refreshTrigger && result.comments.length === 0)) {
         return (
             <div className="flex justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -55,14 +58,15 @@ export function CommentList({ postId, refreshTrigger }: CommentListProps) {
         )
     }
 
-    if (error) {
+    if (result.failed) {
         return (
             <div className="text-center py-8 text-red-400 text-sm">
-                {error}
+                Failed to load comments
             </div>
         )
     }
 
+    const { comments } = result
     if (comments.length === 0) {
         return (
             <div className="text-center py-12 bg-white/5 rounded-xl border border-white/5">

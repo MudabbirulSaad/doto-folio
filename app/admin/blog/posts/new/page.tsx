@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useState, useEffect, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,35 +51,26 @@ const NotionEditor = dynamic(() => import('@/components/admin/blog/notion-editor
   ssr: false,
   loading: () => <div className="min-h-[400px] flex items-center justify-center text-muted-foreground">Loading editor...</div>
 })
-import type { BlogCategory, BlogTag } from '@/lib/types/blog'
+import type { BlogTag } from '@/lib/types/blog'
+import { generateSlug } from '@/lib/blog/slug'
+import { usePostTaxonomy } from '@/components/admin/blog/use-post-taxonomy'
 import type { OutputData } from '@editorjs/editorjs'
 import { createAdminBlogPostApiGateway, createAdminBlogTaxonomyApiGateway } from '@/lib/client/adapters/http/admin-blog-api'
 import { saveNewAdminBlogPost } from '@/lib/client/application/admin/blog-posts'
 import {
-  loadAdminBlogCategories,
-  loadAdminBlogTags,
   saveAdminBlogCategory,
   saveAdminBlogTag
 } from '@/lib/client/application/admin/blog-taxonomy'
 
-function generateSlug(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-}
-
 export default function NewPostPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [categories, setCategories] = useState<BlogCategory[]>([])
-  const [tags, setTags] = useState<BlogTag[]>([])
   const [selectedTags, setSelectedTags] = useState<BlogTag[]>([])
   const [tagSearchOpen, setTagSearchOpen] = useState(false)
 
   // Form state
   const [title, setTitle] = useState('')
-  const [slug, setSlug] = useState('')
+  const slug = generateSlug(title)
   const [excerpt, setExcerpt] = useState('')
   const [categoryId, setCategoryId] = useState<string>('')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
@@ -103,37 +94,7 @@ export default function NewPostPage() {
   const postGateway = useMemo(() => createAdminBlogPostApiGateway(), [])
   const taxonomyGateway = useMemo(() => createAdminBlogTaxonomyApiGateway(), [])
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      const result = await loadAdminBlogCategories(taxonomyGateway)
-      if (result.success) {
-        setCategories(result.categories)
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-    }
-  }, [taxonomyGateway])
-
-  const fetchTags = useCallback(async () => {
-    try {
-      const result = await loadAdminBlogTags(taxonomyGateway)
-      if (result.success) {
-        setTags(result.tags)
-      }
-    } catch (error) {
-      console.error('Error fetching tags:', error)
-    }
-  }, [taxonomyGateway])
-
-  useEffect(() => {
-    fetchCategories()
-    fetchTags()
-  }, [fetchCategories, fetchTags])
-
-  // Auto-generate slug from title
-  useEffect(() => {
-    setSlug(generateSlug(title))
-  }, [title])
+  const { categories, setCategories, tags, setTags } = usePostTaxonomy(taxonomyGateway)
 
   const createNewCategory = async () => {
     if (!newCategoryName.trim()) return

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -40,6 +40,7 @@ const statusOptions: Array<{ value: AdminProject['status']; label: string; color
 
 export default function ProjectsManagementPage() {
   const [projects, setProjects] = useState<AdminProject[]>([])
+  const [revision, setRevision] = useState(0)
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingProject, setEditingProject] = useState<AdminProject | null>(null)
@@ -49,20 +50,22 @@ export default function ProjectsManagementPage() {
   const [formData, setFormData] = useState<AdminProjectFormData>(emptyProjectForm())
   const [newTechnology, setNewTechnology] = useState('')
 
-  const fetchProjects = useCallback(async () => {
-    try {
-      setProjects(await createAdminProjectApiGateway().list())
-    } catch (error) {
-      console.error('Error fetching projects:', error)
-      setMessage({ type: 'error', text: 'Failed to load projects' })
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
   useEffect(() => {
-    void fetchProjects()
-  }, [fetchProjects])
+    let active = true
+    void createAdminProjectApiGateway().list()
+      .then(data => {
+        if (active) setProjects(data)
+      })
+      .catch(error => {
+        if (!active) return
+        console.error('Error fetching projects:', error)
+        setMessage({ type: 'error', text: 'Failed to load projects' })
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => { active = false }
+  }, [revision])
 
   const resetForm = () => {
     setFormData(emptyProjectForm())
@@ -102,7 +105,7 @@ export default function ProjectsManagementPage() {
           text: editingProject ? 'Project updated successfully!' : 'Project created successfully!'
         })
         resetForm()
-        fetchProjects()
+        setRevision(current => current + 1)
       } else {
         setMessage({ type: 'error', text: result.error })
       }
@@ -122,7 +125,7 @@ export default function ProjectsManagementPage() {
     try {
       await createAdminProjectApiGateway().delete(project.id)
       setMessage({ type: 'success', text: 'Project deleted successfully!' })
-      fetchProjects()
+      setRevision(current => current + 1)
     } catch (error) {
       console.error('Error deleting project:', error)
       setMessage({ type: 'error', text: 'Failed to delete project' })

@@ -38,6 +38,7 @@ import {
   MoreHorizontal
 } from 'lucide-react'
 import { createAdminBlogTaxonomyApiGateway } from '@/lib/client/adapters/http/admin-blog-api'
+import { generateSlug } from '@/lib/blog/slug'
 import {
   deleteAdminBlogCategory,
   loadAdminBlogCategories,
@@ -60,35 +61,25 @@ export default function CategoriesPage() {
   const [color, setColor] = useState('#3b82f6')
   const [displayOrder, setDisplayOrder] = useState(0)
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      const result = await loadAdminBlogCategories(gateway)
+  const fetchCategories = useCallback(() => {
+    return loadAdminBlogCategories(gateway).then(result => {
       if (result.success) {
         setCategories(result.categories)
       } else {
         alert(result.error)
       }
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-    } finally {
       setLoading(false)
-    }
+    })
   }, [gateway])
 
   useEffect(() => {
-    fetchCategories()
+    void fetchCategories()
   }, [fetchCategories])
 
-  // Auto-generate slug from name
-  useEffect(() => {
-    if (name && !editingCategory) {
-      const generatedSlug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-      setSlug(generatedSlug)
-    }
-  }, [name, editingCategory])
+  function handleNameChange(value: string) {
+    setName(value)
+    if (value && !editingCategory) setSlug(generateSlug(value))
+  }
 
   const resetForm = () => {
     setName('')
@@ -209,7 +200,7 @@ export default function CategoriesPage() {
                   id="name"
                   placeholder="Category name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
                 />
               </div>
               <div className="space-y-2">

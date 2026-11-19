@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import { gsap } from 'gsap'
 import { Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -109,12 +110,11 @@ export function SubscribeForm() {
             Thank you for subscribing. You&apos;ll receive notifications whenever I publish new articles.
           </p>
         </div>
-        <Button 
-          onClick={() => window.location.href = '/blog'}
-          className="gap-2"
-        >
-          <Mail className="w-4 h-4" />
-          Browse Articles
+        <Button asChild className="gap-2">
+          <Link href="/blog">
+            <Mail className="w-4 h-4" />
+            Browse Articles
+          </Link>
         </Button>
       </div>
     )

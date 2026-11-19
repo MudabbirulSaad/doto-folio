@@ -41,6 +41,7 @@ import {
 } from 'lucide-react'
 import type { BlogTag } from '@/lib/types/blog'
 import { createAdminBlogTaxonomyApiGateway } from '@/lib/client/adapters/http/admin-blog-api'
+import { generateSlug } from '@/lib/blog/slug'
 import {
   deleteAdminBlogTag,
   loadAdminBlogTags,
@@ -60,35 +61,25 @@ export default function TagsPage() {
   const [slug, setSlug] = useState('')
   const [description, setDescription] = useState('')
 
-  const fetchTags = useCallback(async () => {
-    try {
-      const result = await loadAdminBlogTags(gateway)
+  const fetchTags = useCallback(() => {
+    return loadAdminBlogTags(gateway).then(result => {
       if (result.success) {
         setTags(result.tags)
       } else {
         alert(result.error)
       }
-    } catch (error) {
-      console.error('Error fetching tags:', error)
-    } finally {
       setLoading(false)
-    }
+    })
   }, [gateway])
 
   useEffect(() => {
-    fetchTags()
+    void fetchTags()
   }, [fetchTags])
 
-  // Auto-generate slug from name
-  useEffect(() => {
-    if (name && !editingTag) {
-      const generatedSlug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-      setSlug(generatedSlug)
-    }
-  }, [name, editingTag])
+  function handleNameChange(value: string) {
+    setName(value)
+    if (value && !editingTag) setSlug(generateSlug(value))
+  }
 
   const resetForm = () => {
     setName('')
@@ -207,7 +198,7 @@ export default function TagsPage() {
                   id="name"
                   placeholder="Tag name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
                 />
               </div>
               <div className="space-y-2">

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -59,17 +59,14 @@ import {
   deleteAdminBlogPost,
   updateAdminBlogPost
 } from '@/lib/client/application/admin/blog-posts'
-import {
-  loadAdminBlogCategories,
-  loadAdminBlogTags
-} from '@/lib/client/application/admin/blog-taxonomy'
+import { usePostTaxonomy } from '@/components/admin/blog/use-post-taxonomy'
 
 const NotionEditor = dynamic(() => import('@/components/admin/blog/notion-editor'), {
   ssr: false,
   loading: () => <div className="min-h-[400px] flex items-center justify-center text-muted-foreground">Loading editor...</div>
 })
 import type { AdminBlogPostWithRelations } from '@/lib/client/domain/admin-blog'
-import type { BlogCategory, BlogTag } from '@/lib/types/blog'
+import type { BlogTag } from '@/lib/types/blog'
 import type { OutputData } from '@editorjs/editorjs'
 
 type ConversionReview = { draft: OutputData } | { message: string }
@@ -95,8 +92,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const [reviewOpen, setReviewOpen] = useState(false)
   const [review, setReview] = useState<ConversionReview | null>(null)
   const [post, setPost] = useState<AdminBlogPostWithRelations | null>(null)
-  const [categories, setCategories] = useState<BlogCategory[]>([])
-  const [tags, setTags] = useState<BlogTag[]>([])
   const [selectedTags, setSelectedTags] = useState<BlogTag[]>([])
   const [tagSearchOpen, setTagSearchOpen] = useState(false)
 
@@ -119,10 +114,13 @@ export default function EditPostPage({ params }: EditPostPageProps) {
 
   const postGateway = useMemo(() => createAdminBlogPostApiGateway(), [])
   const taxonomyGateway = useMemo(() => createAdminBlogTaxonomyApiGateway(), [])
+  const { categories, tags } = usePostTaxonomy(taxonomyGateway)
 
-  const fetchPost = useCallback(async () => {
-    try {
-      const postData = await postGateway.getPost(resolvedParams.id)
+  useEffect(() => {
+    let active = true
+    void postGateway.getPost(resolvedParams.id)
+      .then(postData => {
+        if (!active) return
         setPost(postData)
 
         // Populate form fields
@@ -151,44 +149,17 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         }
 
         // Set selected tags
-        if (postData.tags) {
-          setSelectedTags(postData.tags.map((tagRel) => tagRel.tag))
-        }
-    } catch (error) {
-      console.error('Error fetching post:', error)
-      router.push('/admin/blog/posts')
-    } finally {
-      setLoading(false)
-    }
+        setSelectedTags((postData.tags ?? []).map(tagRel => tagRel.tag))
+        setLoading(false)
+      })
+      .catch(error => {
+        if (!active) return
+        console.error('Error fetching post:', error)
+        setLoading(false)
+        router.push('/admin/blog/posts')
+      })
+    return () => { active = false }
   }, [postGateway, resolvedParams.id, router])
-
-  const fetchCategories = useCallback(async () => {
-    try {
-      const result = await loadAdminBlogCategories(taxonomyGateway)
-      if (result.success) {
-        setCategories(result.categories)
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error)
-    }
-  }, [taxonomyGateway])
-
-  const fetchTags = useCallback(async () => {
-    try {
-      const result = await loadAdminBlogTags(taxonomyGateway)
-      if (result.success) {
-        setTags(result.tags)
-      }
-    } catch (error) {
-      console.error('Error fetching tags:', error)
-    }
-  }, [taxonomyGateway])
-
-  useEffect(() => {
-    fetchPost()
-    fetchCategories()
-    fetchTags()
-  }, [fetchPost, fetchCategories, fetchTags])
 
   useEffect(() => {
     if (!reviewOpen) return

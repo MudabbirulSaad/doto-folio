@@ -15,6 +15,8 @@ export function CommentSection({ postId, allowComments }: CommentSectionProps) {
 
     if (!allowComments) return null
 
+    const refreshComments = () => setRefreshTrigger(current => current + 1)
+
     return (
         <GoogleReCaptchaProvider
             reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
@@ -36,12 +38,14 @@ export function CommentSection({ postId, allowComments }: CommentSectionProps) {
 
                     <CommentForm
                         postId={postId}
-                        onCommentPosted={() => setRefreshTrigger(prev => prev + 1)}
+                        onCommentPosted={refreshComments}
                     />
 
                     <CommentList
+                        key={postId}
                         postId={postId}
                         refreshTrigger={refreshTrigger}
+                        onReplyPosted={refreshComments}
                     />
                 </div>
             </section>

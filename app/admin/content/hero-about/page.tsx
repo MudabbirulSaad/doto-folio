@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 // import { useRouter } from 'next/navigation' // Removed unused import
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,26 +27,19 @@ export default function HeroAboutContentPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const gateway = useMemo(() => createAdminSiteContentApiGateway(), [])
 
-  const fetchContent = useCallback(async () => {
-    try {
-      const result = await loadAdminSiteContent(gateway)
+  useEffect(() => {
+    let active = true
+    void loadAdminSiteContent(gateway).then(result => {
+      if (!active) return
       if (result.success) {
         setContent(result.content)
       } else {
         setMessage({ type: 'error', text: result.error })
       }
-    } catch (error) {
-      console.error('Error fetching content:', error)
-      setMessage({ type: 'error', text: 'Failed to load content' })
-    } finally {
       setLoading(false)
-    }
+    })
+    return () => { active = false }
   }, [gateway])
-
-  // Fetch current content
-  useEffect(() => {
-    fetchContent()
-  }, [fetchContent])
 
   const handleSave = async () => {
     if (!content) return
