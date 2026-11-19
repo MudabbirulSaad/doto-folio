@@ -82,7 +82,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const resolvedParams = React.use(params)
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'save' | 'publish' | 'unpublish' | 'delete' | null>(null)
+  const saving = pendingAction !== null
+  const [withdrawError, setWithdrawError] = useState('')
   const [editorVersion, setEditorVersion] = useState(0)
   const blockEditor = React.useRef<NotionEditorHandle>(null)
   const [reviewOpen, setReviewOpen] = useState(false)
@@ -98,7 +100,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const [slug, setSlug] = useState('')
   const [excerpt, setExcerpt] = useState('')
   const [categoryId, setCategoryId] = useState<string>('')
-  const [status, setStatus] = useState<'draft' | 'published' | 'archived'>('draft')
   const [isFeatured, setIsFeatured] = useState(false)
   const [metaTitle, setMetaTitle] = useState('')
   const [metaDescription, setMetaDescription] = useState('')
@@ -124,7 +125,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         setSlug(postData.slug)
         setExcerpt(postData.excerpt || '')
         setCategoryId(postData.category_id || '')
-        setStatus(postData.status)
         setIsFeatured(postData.featured)
         setMetaTitle(postData.meta_title || '')
         setMetaDescription(postData.meta_description || '')
@@ -223,7 +223,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       return
     }
 
-    setSaving(true)
+    setPendingAction(publishNow ? 'publish' : 'save')
 
     try {
       let content = markdownSource
@@ -234,22 +234,18 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         content = JSON.stringify(draft)
       }
       if (!content.trim()) throw new Error('Please add some content')
-      const postData = {
+      const result = await updateAdminBlogPost(postGateway, resolvedParams.id, {
+        id: resolvedParams.id,
         title: title.trim(),
         slug: slug.trim(),
         excerpt: excerpt === (post?.excerpt ?? '') ? undefined : excerpt.trim(),
         content: content === post?.content ? undefined : content,
         category_id: categoryId || undefined,
         tag_ids: selectedTags.map(tag => tag.id),
-        status: publishNow ? 'published' : status,
+        status: publishNow ? 'published' : undefined,
         featured: isFeatured,
         meta_title: metaTitle.trim() || undefined,
         meta_description: metaDescription.trim() || undefined,
-      }
-
-      const result = await updateAdminBlogPost(postGateway, resolvedParams.id, {
-        id: resolvedParams.id,
-        ...postData
       })
 
       if (result.success) {
@@ -261,7 +257,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       console.error('Error updating post:', error)
       alert(error instanceof Error ? error.message : 'Failed to update post')
     } finally {
-      setSaving(false)
+      setPendingAction(null)
     }
   }
 
@@ -300,12 +296,27 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     )
   }
 
+  const handleMoveToDraft = async () => {
+    setPendingAction('unpublish')
+    setWithdrawError('')
+    try {
+      const result = await updateAdminBlogPost(postGateway, post.id, { id: post.id, status: 'draft' })
+      if (result.success) {
+        setPost({ ...post, status: 'draft' })
+      } else {
+        setWithdrawError(result.error)
+      }
+    } finally {
+      setPendingAction(null)
+    }
+  }
+
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
       return
     }
 
-    setSaving(true)
+    setPendingAction('delete')
     try {
       const result = await deleteAdminBlogPost(postGateway, resolvedParams.id)
 
@@ -318,7 +329,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       console.error('Error deleting post:', error)
       alert('Failed to delete post')
     } finally {
-      setSaving(false)
+      setPendingAction(null)
     }
   }
 
@@ -367,7 +378,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                 disabled={saving}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
-                {saving ? (
+                {pendingAction === 'delete' ? (
                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                 ) : (
                   <Trash2 className="h-4 w-4 mr-1" />
@@ -381,7 +392,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                 disabled={saving}
                 className="text-muted-foreground hover:text-foreground"
               >
-                {saving ? (
+                {pendingAction === 'save' ? (
                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                 ) : (
                   <Save className="h-4 w-4 mr-1" />
@@ -389,13 +400,13 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                 Save Changes
               </Button>
               <PostPreview title={title} excerpt={excerpt} editor={blockEditor} markdownSource={markdownSource} disabled={saving} />
-              {status !== 'published' && (
+              {post.status !== 'published' && (
                 <Button
                   onClick={() => handleSave(true)}
                   disabled={saving}
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
-                  {saving ? (
+                  {pendingAction === 'publish' ? (
                     <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                   ) : (
                     <Send className="h-4 w-4 mr-1" />
@@ -504,10 +515,16 @@ export default function EditPostPage({ params }: EditPostPageProps) {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Current Status</span>
-                  <Badge variant={status === 'published' ? 'default' : 'secondary'}>
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  <Badge role="status" variant={post.status === 'published' ? 'default' : 'secondary'}>
+                    {post.status.charAt(0).toUpperCase() + post.status.slice(1)}
                   </Badge>
                 </div>
+                {post.status === 'published' && (
+                  <Button type="button" variant="outline" size="sm" disabled={saving} onClick={handleMoveToDraft}>
+                    {pendingAction === 'unpublish' ? 'Moving to draft…' : 'Move to draft'}
+                  </Button>
+                )}
+                {withdrawError && <p role="alert" className="text-sm text-destructive">{withdrawError}</p>}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Featured</span>
                   <Switch
