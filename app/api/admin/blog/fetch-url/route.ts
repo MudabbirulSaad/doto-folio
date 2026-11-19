@@ -1,5 +1,6 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { withScopedAuth } from '@/lib/api/middleware'
+import { getSecurityHeaders } from '@/lib/api/rate-limit'
 import { createSuccessResponse, createErrorResponse } from '@/lib/api/response'
 import { createApplicationOrInternalErrorResponse } from '@/lib/server/adapters/http/errors'
 import { fetchEditorLinkMetadata } from '@/lib/server/application/blog/editor-tools'
@@ -24,6 +25,9 @@ async function fetchUrlHandler({ request }: { request: NextRequest }) {
       signal: AbortSignal.timeout(10000),
     }))
 
+    if (searchParams.get('format') === 'editorjs') {
+      return NextResponse.json(metadata, { headers: getSecurityHeaders() })
+    }
     return createSuccessResponse(metadata)
 
   } catch (error) {

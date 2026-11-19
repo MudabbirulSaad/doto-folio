@@ -171,7 +171,7 @@ export default function NotionEditor({
         linkTool: {
           class: LinkTool,
           config: {
-            endpoint: '/api/admin/blog/fetch-url', // You'll need to create this endpoint
+            endpoint: '/api/admin/blog/fetch-url?format=editorjs',
           }
         },
         embed: {

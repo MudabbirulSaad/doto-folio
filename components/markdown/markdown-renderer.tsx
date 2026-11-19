@@ -10,6 +10,7 @@ import rehypeRaw from 'rehype-raw'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import type { Options as RehypeSanitizeOptions } from 'rehype-sanitize'
 import { cn } from '@/lib/utils'
+import { EditorEmbed, EditorLinkCard, EditorList, EditorTable, type EditorRichBlock } from './editor-rich-block'
 
 export type MarkdownSecurityPolicy = 'trustedBlog' | 'userComment'
 export type MarkdownVisualMode = 'blog' | 'comment' | 'inline'
@@ -26,15 +27,11 @@ interface InlineMarkdownRendererProps extends MarkdownRendererProps {
   className?: string
 }
 
-type EditorListItem = string | { content?: string; items?: EditorListItem[] }
-
-interface EditorJSBlock {
-  type: string
+type EditorJSBlock = EditorRichBlock | {
+  type: 'paragraph' | 'header' | 'quote' | 'code' | 'image' | 'delimiter'
   data: {
     text?: string
     level?: number
-    style?: 'ordered' | 'unordered'
-    items?: EditorListItem[]
     code?: string
     language?: string
     caption?: string
@@ -260,17 +257,8 @@ function parseEditorJSContent(content: string): EditorJSBlock[] | null {
   }
 }
 
-function renderEditorListItem(item: EditorListItem, index: number) {
-  const content = typeof item === 'string' ? item : item.content || ''
-  return (
-    <li key={index} className="leading-relaxed">
-      <InlineMarkdownRenderer source={content} policy="trustedBlog" />
-    </li>
-  )
-}
-
 export function RichContentRenderer({ content, policy, mode = 'blog', renderCodeBlock }: RichContentRendererProps) {
-  const editorBlocks = parseEditorJSContent(content)
+  const editorBlocks = policy === 'trustedBlog' ? parseEditorJSContent(content) : null
 
   if (!editorBlocks) {
     return <MarkdownRenderer source={content} policy={policy} mode={mode} />
@@ -279,7 +267,12 @@ export function RichContentRenderer({ content, policy, mode = 'blog', renderCode
   return (
     <div className="space-y-4 min-w-0">
       {editorBlocks.map((block, index) => {
+        if (!block?.data) return null
         const key = `${block.type}-${index}`
+        if (block.type === 'table') return <EditorTable key={key} {...block.data} />
+        if (block.type === 'embed') return <EditorEmbed key={key} {...block.data} />
+        if (block.type === 'linkTool') return <EditorLinkCard key={key} {...block.data} />
+        if (block.type === 'list') return <EditorList key={key} {...block.data} />
         const text = block.data.text || ''
 
         if (block.type === 'paragraph') {
@@ -298,15 +291,6 @@ export function RichContentRenderer({ content, policy, mode = 'blog', renderCode
             level >= 5 && 'text-base'
           )
           return <InlineMarkdownRenderer key={key} source={text} policy={policy} as={Tag} className={headerClassName} />
-        }
-
-        if (block.type === 'list') {
-          const ListTag = block.data.style === 'ordered' ? 'ol' : 'ul'
-          return (
-            <ListTag key={key} className={cn('mb-4 list-inside space-y-2', block.data.style === 'ordered' ? 'list-decimal' : 'list-disc')}>
-              {(block.data.items || []).map(renderEditorListItem)}
-            </ListTag>
-          )
         }
 
         if (block.type === 'quote') {

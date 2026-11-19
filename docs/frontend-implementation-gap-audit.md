@@ -20,6 +20,8 @@ Each row names the affected route, the user-visible consequence, the evidence, a
 
 **PUB-03 fixed and verified on 20 November 2026.** Convert Markdown checks the live draft before offering Apply. An unsupported block stops conversion and the dialog identifies it. In Edge, edited paragraph, list, and code blocks retained their content and order after conversion and save. Cancel and Escape preserved unsaved Markdown. Cancelling an unsupported inline image and immediately saving also retained the latest text. These checks used local fixtures.
 
+**PUB-04 fixed and verified on 20 November 2026.** In Edge, a local fixture article was saved and reopened in the editor, then loaded in a signed-out browser. Both views showed the same table headers, bold text and empty cell, the captioned YouTube embed, the newly added link card with its thumbnail and description, and all three levels of the ordered list. The public list preserved its Roman numerals and starting number. All four blocks fit at 320, 390 and 1440 pixels. At 320 pixels, the wide table scrolled to its last column. The live YouTube player loaded. Playback was outside this check. Regression tests also cover Coub and CodePen player URLs, unsupported embeds, cards without metadata, checklists and older lists stored as strings.
+
 | ID · priority | Route and finding | Evidence | Acceptance check |
 |---|---|---|---|
 | PUB-01 · High | `/admin/blog/posts/new` — Selecting **Published** in the sidebar and clicking **Save Draft** sends the selected status. An author can release an unfinished post. | Source · `app/admin/blog/posts/new/page.tsx:219` and `:275` | Select Published, save a draft, and reload. The saved post is a draft and its public URL does not expose the article. |
