@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useImperativeHandle, useRef, type Ref } from 'react'
 
 // Global registry to track active editors and prevent duplicates
 const editorRegistry = new Map<string, boolean>()
@@ -16,10 +16,15 @@ import LinkTool from '@editorjs/link'
 import Embed from '@editorjs/embed'
 
 interface NotionEditorProps {
+  ref?: Ref<NotionEditorHandle>
   data?: OutputData
   onChange?: (data: OutputData) => void
   placeholder?: string
   readOnly?: boolean
+}
+
+export interface NotionEditorHandle {
+  readDraft(): Promise<OutputData>
 }
 
 declare global {
@@ -32,6 +37,7 @@ declare global {
 }
 
 export default function NotionEditor({
+  ref,
   data,
   onChange,
   placeholder = "Tell your story...",
@@ -43,9 +49,32 @@ export default function NotionEditor({
   const editorIdRef = useRef(`editor-${Math.random().toString(36).substr(2, 9)}`)
   const mountedRef = useRef(false)
   const initialDataRef = useRef(data)
+  const initialBlocks = useRef<Promise<string | null> | null>(null)
   const initialPlaceholderRef = useRef(placeholder)
   const initialReadOnlyRef = useRef(readOnly)
   const onChangeRef = useRef(onChange)
+
+  useImperativeHandle(ref, () => ({
+    async readDraft() {
+      const editor = editorRef.current
+      if (!editor) throw new Error('The editor is still loading. Try again in a moment.')
+      await editor.isReady
+      const draft = await editor.save()
+      // Editor.js can omit blocks that fail tool validation (for example, an unfinished link card).
+      const ids = new Set(draft.blocks.map(block => block.id))
+      for (let i = 0; i < editor.blocks.getBlocksCount(); i++) {
+        const block = editor.blocks.getBlockByIndex(i)
+        if (block?.name === 'paragraph' && block.isEmpty) continue
+        if (!block || !ids.has(block.id) || block.name === 'stub') {
+          throw new Error(`The editor cannot read block ${i + 1} (${block?.name ?? 'unknown'}). Check this block and try again.`)
+        }
+      }
+      if (initialDataRef.current && JSON.stringify(draft.blocks) === await initialBlocks.current) {
+        return initialDataRef.current
+      }
+      return draft
+    }
+  }), [])
 
   useEffect(() => {
     onChangeRef.current = onChange
@@ -166,8 +195,9 @@ export default function NotionEditor({
       onChange: async () => {
         if (onChangeRef.current && editorRef.current) {
           try {
-            const outputData = await editorRef.current.save()
-            onChangeRef.current(outputData)
+            const instance = editorRef.current
+            const outputData = await instance.save()
+            if (instance === editorRef.current) onChangeRef.current?.(outputData)
           } catch (error) {
             console.error('Error saving editor data:', error)
           }
@@ -175,6 +205,10 @@ export default function NotionEditor({
       },
       onReady: () => {
         console.log('Editor.js is ready to work!')
+        if (initialDataRef.current) {
+          // Tools normalize their input on mount. Keep the original document for metadata-only saves.
+          initialBlocks.current = editor.save().then(output => JSON.stringify(output.blocks), () => null)
+        }
 
         // Attach markdown shortcuts listener
         holder.addEventListener('keyup', handleMarkdownShortcuts)

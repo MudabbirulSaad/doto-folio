@@ -50,7 +50,9 @@ import {
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { MarkdownRenderer } from '@/components/markdown/markdown-renderer'
-import { markdownToBlocks } from '@/lib/markdown-converter'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import type { NotionEditorHandle } from '@/components/admin/blog/notion-editor'
+import { convertDraftMarkdown, markdownToBlocks } from '@/lib/markdown-converter'
 import { createAdminBlogPostApiGateway, createAdminBlogTaxonomyApiGateway } from '@/lib/client/adapters/http/admin-blog-api'
 import {
   deleteAdminBlogPost,
@@ -69,12 +71,7 @@ import type { AdminBlogPostWithRelations } from '@/lib/client/domain/admin-blog'
 import type { BlogCategory, BlogTag } from '@/lib/types/blog'
 import type { OutputData } from '@editorjs/editorjs'
 
-type MarkdownBlocksData = Awaited<ReturnType<typeof markdownToBlocks>>
-type EditorTextBlock = {
-  data?: {
-    text?: string
-  }
-}
+type ConversionReview = { draft: OutputData } | { message: string }
 
 interface EditPostPageProps {
   params: Promise<{ id: string }>
@@ -86,6 +83,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [editorVersion, setEditorVersion] = useState(0)
+  const blockEditor = React.useRef<NotionEditorHandle>(null)
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [review, setReview] = useState<ConversionReview | null>(null)
   const [post, setPost] = useState<AdminBlogPostWithRelations | null>(null)
   const [categories, setCategories] = useState<BlogCategory[]>([])
   const [tags, setTags] = useState<BlogTag[]>([])
@@ -135,34 +135,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
 
           // Check if it's a valid EditorJS object (has blocks array)
           if (contentData && Array.isArray(contentData.blocks)) {
-            // Check if it's "fake" JSON (just one paragraph with markdown)
-            // This happens when we save raw markdown into a single paragraph block
-            const isRawMarkdown = contentData.blocks.length === 1 &&
-              contentData.blocks[0].type === 'paragraph' &&
-              (contentData.blocks[0].data.text.includes('#') ||
-                contentData.blocks[0].data.text.includes('```') ||
-                contentData.blocks[0].data.text.includes('* ') ||
-                contentData.blocks[0].data.text.includes('- ') ||
-                contentData.blocks[0].data.text.includes('1. ') ||
-                contentData.blocks[0].data.text.includes('> ') ||
-                contentData.blocks[0].data.text.includes('**') ||
-                contentData.blocks[0].data.text.includes('__') ||
-                contentData.blocks[0].data.text.includes('[') ||
-                contentData.blocks[0].data.text.includes('![') ||
-                contentData.blocks[0].data.text.length > 200); // heuristic
-
-            if (isRawMarkdown) {
-              console.log('Detected raw markdown in JSON, converting...')
-              const markdownContent = contentData.blocks[0].data.text
-              markdownToBlocks(markdownContent).then((blocksData: MarkdownBlocksData) => {
-                setEditorData(blocksData)
-              }).catch((err: unknown) => {
-                console.error('Error converting markdown:', err)
-                setEditorData(contentData)
-              })
-            } else {
-              setEditorData(contentData)
-            }
+            setEditorData(contentData)
           } else {
             throw new Error('Invalid EditorJS data')
           }
@@ -211,6 +184,27 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     fetchTags()
   }, [fetchPost, fetchCategories, fetchTags])
 
+  useEffect(() => {
+    if (!reviewOpen) return
+    let active = true
+    async function prepareReview(): Promise<ConversionReview> {
+      if (markdownSource !== null) return { draft: markdownToBlocks(markdownSource) }
+      if (!blockEditor.current) throw new Error('The editor is still loading. Try again in a moment.')
+      const snapshot = await blockEditor.current.readDraft()
+      const draft = convertDraftMarkdown(snapshot)
+      if (JSON.stringify(snapshot.blocks) === JSON.stringify(draft.blocks)) {
+        return { message: 'There are no plain Markdown paragraphs to convert.' }
+      }
+      return { draft }
+    }
+    prepareReview().then(result => {
+      if (active) setReview(result)
+    }).catch((error: unknown) => {
+      if (active) setReview({ message: error instanceof Error ? error.message : 'Could not read the current draft.' })
+    })
+    return () => { active = false }
+  }, [reviewOpen, markdownSource])
+
   const handleTagSelect = (tag: BlogTag) => {
     if (!selectedTags.find(t => t.id === tag.id)) {
       setSelectedTags([...selectedTags, tag])
@@ -228,15 +222,17 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       return
     }
 
-    if (markdownSource === null ? !editorData?.blocks.length : !markdownSource.trim()) {
-      alert('Please add some content')
-      return
-    }
-
     setSaving(true)
 
     try {
-      const content = markdownSource ?? JSON.stringify(editorData)
+      let content = markdownSource
+      if (content === null) {
+        if (!blockEditor.current) throw new Error('The editor is still loading. Try again in a moment.')
+        const draft = await blockEditor.current.readDraft()
+        if (!draft.blocks.length) throw new Error('Please add some content')
+        content = JSON.stringify(draft)
+      }
+      if (!content.trim()) throw new Error('Please add some content')
       const postData = {
         title: title.trim(),
         slug: slug.trim(),
@@ -262,7 +258,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       }
     } catch (error) {
       console.error('Error updating post:', error)
-      alert('Failed to update post')
+      alert(error instanceof Error ? error.message : 'Failed to update post')
     } finally {
       setSaving(false)
     }
@@ -443,44 +439,40 @@ export default function EditPostPage({ params }: EditPostPageProps) {
 
             {/* Content Editor */}
             <div className="flex justify-end mb-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (confirm('This will attempt to convert the current content from Markdown to Editor blocks. Continue?')) {
-                    // Get current content - if it's in the editor, we might need to save it first or just use the raw post content
-                    // For now, let's use the post.content if it exists, or try to grab from editor
-                    if (post?.content) {
-                      let contentToConvert = markdownSource ?? post.content;
-                      try {
-                        const json = JSON.parse(contentToConvert);
-                        if (json.blocks && json.blocks.length > 0) {
-                          // Extract text from the first block if it's a paragraph
-                          contentToConvert = (json.blocks as EditorTextBlock[]).map((block) => block.data?.text ?? '').join('\n\n');
-                        }
-                      } catch {
-                        // It's raw text, use as is
-                      }
-
-                      markdownToBlocks(contentToConvert)
-                        .then((blocksData: MarkdownBlocksData) => {
-                          if (blocksData.blocks) {
-                            setEditorData(blocksData)
-                            setMarkdownSource(null)
-                            setEditorVersion(v => v + 1)
-                            console.log('Converted markdown to blocks:', blocksData)
-                          } else {
-                            console.error('Conversion failed:', blocksData)
-                          }
-                        })
-                        .catch(err => console.error('Error converting markdown:', err))
-                    }
-                  }
-                }}
-              >
-                <FolderOpen className="w-4 h-4 mr-2" />
-                Convert Markdown
-              </Button>
+              <Dialog open={reviewOpen} onOpenChange={open => {
+                setReview(null)
+                setReviewOpen(open)
+              }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={saving}>
+                    <FolderOpen className="w-4 h-4 mr-2" />
+                    Convert Markdown
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Convert Markdown</DialogTitle>
+                    <DialogDescription aria-live="polite">
+                      {review === null ? 'Checking the current draft…' : 'message' in review
+                        ? review.message
+                        : 'Apply the conversion to your current draft? Choose Save Changes when you are ready to save it.'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                    {review && 'draft' in review && (
+                      <Button onClick={() => {
+                        setEditorData(review.draft)
+                        setMarkdownSource(null)
+                        setEditorVersion(version => version + 1)
+                        setReviewOpen(false)
+                      }}>
+                        Apply conversion
+                      </Button>
+                    )}
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
             <div className="min-h-[600px]">
               {markdownSource !== null ? (
@@ -499,9 +491,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                 </div>
               ) : (
                 <NotionEditor
+                  ref={blockEditor}
                   key={`editor-${resolvedParams.id}-${editorVersion}`}
                   data={editorData || undefined}
-                  onChange={setEditorData}
                   placeholder="Press '/' for commands, or start writing..."
                 />
               )}

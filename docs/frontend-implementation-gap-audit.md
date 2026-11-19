@@ -18,6 +18,8 @@ Each row names the affected route, the user-visible consequence, the evidence, a
 
 **PUB-02 fixed and verified on 20 November 2026.** Opening a legacy Markdown post renders its original body in the editor. A title-only save omits the body from the update. In Edge, a local fixture retained its exact Markdown, including a trailing newline. The reopened editor and signed-out public page showed the new title and the same table headers, escaped pipe, bold percentage, and empty cell.
 
+**PUB-03 fixed and verified on 20 November 2026.** Convert Markdown checks the live draft before offering Apply. An unsupported block stops conversion and the dialog identifies it. In Edge, edited paragraph, list, and code blocks retained their content and order after conversion and save. Cancel and Escape preserved unsaved Markdown. Cancelling an unsupported inline image and immediately saving also retained the latest text. These checks used local fixtures.
+
 | ID · priority | Route and finding | Evidence | Acceptance check |
 |---|---|---|---|
 | PUB-01 · High | `/admin/blog/posts/new` — Selecting **Published** in the sidebar and clicking **Save Draft** sends the selected status. An author can release an unfinished post. | Source · `app/admin/blog/posts/new/page.tsx:219` and `:275` | Select Published, save a draft, and reload. The saved post is a draft and its public URL does not expose the article. |
