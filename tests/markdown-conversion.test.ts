@@ -32,5 +32,14 @@ test('reports unsupported Markdown anywhere in the draft before replacing blocks
   assert.throws(() => convertDraftMarkdown(draft), /Paragraph 2.*table on line 1/)
   assert.deepEqual(draft, original)
   assert.throws(() => markdownToBlocks('- Before\n  - Nested'), /nested or multi-block list item/)
-  assert.throws(() => markdownToBlocks('Text ![Diagram](/diagram.png)'), /image on line 1/)
+  assert.throws(() => markdownToBlocks('Text ![Diagram](about:blank)'), /image URL on line 1/)
+  assert.throws(() => markdownToBlocks('- ![Diagram](/diagram.png)'), /inline image in this block/)
+})
+
+test('converts all four paragraph features in place with escaped image metadata', () => {
+  const markdown = 'Before **bold**, *italic*, ~~old~~, ![A & "B"](images/map.png "Plan & scope") after.'
+  const text = 'Before <b>bold</b>, <i>italic</i>, <s>old</s>, <img src="/blog/images/map.png" alt="A &amp; &quot;B&quot;" title="Plan &amp; scope"> after.'
+  assert.deepEqual(markdownToBlocks(markdown).blocks, [{ type: 'paragraph', data: { text } }])
+  const draft = { blocks: [{ id: 'edited', type: 'paragraph', data: { text: markdown } }] }
+  assert.deepEqual(convertDraftMarkdown(draft).blocks, [{ id: 'edited', type: 'paragraph', data: { text } }])
 })

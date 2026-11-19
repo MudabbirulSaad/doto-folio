@@ -3,6 +3,7 @@ import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
 import type { OutputBlockData, OutputData } from '@editorjs/editorjs'
 import type { BlockContent, DefinitionContent, PhrasingContent, Root } from 'mdast'
+import { escapeInlineHtml, inlineImageHtml } from './blog/inline-image'
 
 const parser = unified().use(remarkParse).use(remarkGfm)
 
@@ -11,22 +12,24 @@ function unsupported(type: string, line?: number): never {
   throw new Error(`The editor cannot convert ${type}${location} without losing content.`)
 }
 
-function escapeHtml(value: string) {
-  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
-}
-
-function inline(nodes: PhrasingContent[]): string {
+function inline(nodes: PhrasingContent[], paragraph = false): string {
   return nodes.map(node => {
     switch (node.type) {
-      case 'text': return escapeHtml(node.value).replaceAll('\n', '<br>')
+      case 'text': return escapeInlineHtml(node.value).replaceAll('\n', '<br>')
       case 'break': return '<br>'
-      case 'strong': return `<b>${inline(node.children)}</b>`
-      case 'emphasis': return `<i>${inline(node.children)}</i>`
+      case 'strong': return `<b>${inline(node.children, paragraph)}</b>`
+      case 'emphasis': return `<i>${inline(node.children, paragraph)}</i>`
+      case 'delete':
+        if (!paragraph) return unsupported('strikethrough in this block', node.position?.start.line)
+        return `<s>${inline(node.children, paragraph)}</s>`
+      case 'image':
+        if (!paragraph) return unsupported('an inline image in this block', node.position?.start.line)
+        return inlineImageHtml(node.url, node.alt, node.title) ?? unsupported('this image URL', node.position?.start.line)
       case 'link':
         if (node.title || !/^(https?:\/\/|mailto:)/i.test(node.url)) {
           return unsupported('this link', node.position?.start.line)
         }
-        return `<a href="${escapeHtml(node.url)}">${inline(node.children)}</a>`
+        return `<a href="${escapeInlineHtml(node.url)}">${inline(node.children, paragraph)}</a>`
       default: return unsupported(node.type, node.position?.start.line)
     }
   }).join('')
@@ -35,7 +38,7 @@ function inline(nodes: PhrasingContent[]): string {
 function convertBlock(node: Root['children'][number]): OutputBlockData {
   switch (node.type) {
     case 'heading': return { type: 'header', data: { level: node.depth, text: inline(node.children) } }
-    case 'paragraph': return { type: 'paragraph', data: { text: inline(node.children) } }
+    case 'paragraph': return { type: 'paragraph', data: { text: inline(node.children, true) } }
     case 'thematicBreak': return { type: 'delimiter', data: {} }
     case 'code':
       if (node.lang || node.meta) return unsupported('code fence annotations', node.position?.start.line)

@@ -46,7 +46,7 @@ it('keeps the entire edited Markdown source when conversion is blocked or cancel
 })
 
 it('reads live blocks again when saving immediately after cancelling a blocked conversion', async () => {
-  const liveDraft = { blocks: [{ type: 'paragraph', data: { text: 'Unsaved ![diagram](/image.png)' } }] }
+  const liveDraft = { blocks: [{ type: 'paragraph', data: { text: 'Unsaved ![diagram](about:blank)' } }] }
   readDraft.mockResolvedValue(liveDraft)
   const post = { id: 'rich', title: 'Notes', slug: 'notes', status: 'draft', tags: [],
     content: JSON.stringify({ blocks: [{ type: 'paragraph', data: { text: 'Previously saved' } }] }) }
@@ -57,7 +57,7 @@ it('reads live blocks again when saving immediately after cancelling a blocked c
   })
   await act(async () => render(<Suspense><EditPostPage params={Promise.resolve({ id: post.id })} /></Suspense>))
   fireEvent.click(screen.getByRole('button', { name: 'Convert Markdown' }))
-  expect(await screen.findByText(/cannot convert image/)).toBeVisible()
+  expect(await screen.findByText(/cannot convert this image URL/)).toBeVisible()
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
   expect(updates).toHaveLength(0)
   fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }))

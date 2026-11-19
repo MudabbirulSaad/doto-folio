@@ -71,6 +71,21 @@ describe('blog post content images', () => {
 })
 
 describe('blog post markdown security', () => {
+  it('keeps legacy paragraph formatting and inline images while stripping unapproved markup', () => {
+    const text = 'Before <b>Bold</b> <i>italic</i> <s>old</s> <img src="/logo.png" alt="Logo" title="Release" style="opacity:0"> after. <img src="about:blank" alt="Invalid"><iframe></iframe>'
+    const { container } = render(<BlogPostContent post={post(JSON.stringify({ blocks: [{ type: 'paragraph', data: { text } }] }))} />)
+    const image = screen.getByRole('img', { name: 'Logo' })
+    expect(image.closest('p')).toHaveTextContent('Before Bold italic old after.')
+    expect(image).toHaveAttribute('src', '/logo.png')
+    expect(image).toHaveAttribute('title', 'Release')
+    expect(image).not.toHaveAttribute('style')
+    expect(screen.getByText('Bold').tagName).toBe('B')
+    expect(screen.getByText('italic').tagName).toBe('I')
+    expect(screen.getByText('old').tagName).toBe('S')
+    expect(screen.queryByAltText('Invalid')).toBeNull()
+    expect(container.querySelector('iframe')).toBeNull()
+  })
+
   it('renders Editor.js inline code markup as inline code instead of raw text', () => {
     render(<BlogPostContent post={post(JSON.stringify({
       time: Date.now(),

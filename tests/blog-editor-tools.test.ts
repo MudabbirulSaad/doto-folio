@@ -45,6 +45,11 @@ test('convertMarkdownToEditorBlocks converts headings, inline formatting, lists,
   ])
 })
 
+test('the conversion API retains inline marks and encodes image labels in paragraph HTML', async () => {
+  const result = await convertMarkdownToEditorBlocks('**Bold** *italic* ~~old~~ ![A & "B"](/logo.png "Release") after')
+  assert.equal(result.blocks[0].data.text, '<b>Bold</b> <i>italic</i> <s>old</s> <img src="/logo.png" alt="A &amp; &quot;B&quot;" title="Release"> after')
+})
+
 test('fetchEditorLinkMetadata validates URLs and extracts editor link metadata', async () => {
   const fetcher: UrlMetadataFetcher = async url => {
     assert.equal(url, 'https://example.com/post')

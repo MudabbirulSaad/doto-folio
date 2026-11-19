@@ -10,6 +10,7 @@ import rehypeRaw from 'rehype-raw'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
 import type { Options as RehypeSanitizeOptions } from 'rehype-sanitize'
 import { cn } from '@/lib/utils'
+import { articleImageSrc } from '@/lib/blog/inline-image'
 import { EditorEmbed, EditorLinkCard, EditorList, EditorTable, type EditorRichBlock } from './editor-rich-block'
 
 export type MarkdownSecurityPolicy = 'trustedBlog' | 'userComment'
@@ -234,18 +235,29 @@ export function MarkdownRenderer({ source, policy, mode = 'blog' }: MarkdownRend
 
 export function InlineMarkdownRenderer({ source, policy, mode = 'inline', as: Tag = 'span', className }: InlineMarkdownRendererProps) {
   const options = markdownOptions(policy, mode)
+  const allowed = ['a', 'strong', 'b', 'em', 'i', 'del', 's', 'strike', 'code', 'span', 'br', 'kbd', 'mark']
 
   return (
     <Tag className={className}>
       <ReactMarkdown
         {...options}
-        allowedElements={['a', 'strong', 'em', 'del', 'code', 'span', 'br', 'kbd', 'mark']}
+        disallowedElements={undefined}
+        allowedElements={policy === 'trustedBlog' ? [...allowed, 'img'] : allowed}
+        components={{ ...options.components, img: InlineArticleImage }}
         unwrapDisallowed
       >
         {source}
       </ReactMarkdown>
     </Tag>
   )
+}
+
+function InlineArticleImage({ src, alt = '', title }: MarkdownImageProps) {
+  const imageSrc = articleImageSrc(src)
+  if (!imageSrc) return null
+  return createElement('img', {
+    src: imageSrc, alt, title, loading: 'lazy', className: 'inline-block h-auto max-w-full align-middle'
+  })
 }
 
 function parseEditorJSContent(content: string): EditorJSBlock[] | null {

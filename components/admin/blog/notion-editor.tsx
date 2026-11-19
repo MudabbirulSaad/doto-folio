@@ -7,7 +7,7 @@ const editorRegistry = new Map<string, boolean>()
 import EditorJS, { OutputData, type EditorConfig, type ToolConstructable } from '@editorjs/editorjs'
 import Header from '@editorjs/header'
 import List from '@editorjs/list'
-import Paragraph from '@editorjs/paragraph'
+import { ArticleParagraph } from './article-paragraph'
 import Quote from '@editorjs/quote'
 import Code from '@editorjs/code'
 import Delimiter from '@editorjs/delimiter'
@@ -125,7 +125,7 @@ export default function NotionEditor({
           shortcut: 'CMD+SHIFT+H'
         },
         paragraph: {
-          class: Paragraph as unknown as ToolConstructable,
+          class: ArticleParagraph as unknown as ToolConstructable,
           inlineToolbar: true,
           config: {
             placeholder: 'Start writing or press "/" for commands...'
@@ -361,6 +361,13 @@ export default function NotionEditor({
           color: hsl(var(--foreground)) !important;
           margin: 0 !important;
           padding: 8px 0 !important;
+        }
+
+        .notion-editor .ce-paragraph img {
+          display: inline-block;
+          max-width: 100%;
+          height: auto;
+          vertical-align: middle;
         }
         
         .notion-editor .ce-header {

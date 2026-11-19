@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm'
 import { lookup } from 'node:dns/promises'
 import { isIP } from 'node:net'
 import { ApplicationError } from '@/lib/server/domain/errors'
+import { escapeInlineHtml, inlineImageHtml } from '@/lib/blog/inline-image'
 
 export interface EditorBlock {
   type: string
@@ -51,6 +52,7 @@ type MarkdownNode = {
   value?: string
   url?: string
   alt?: string
+  title?: string
   depth?: number
   ordered?: boolean
   lang?: string
@@ -344,12 +346,16 @@ function createImageBlock(node: MarkdownNode): EditorBlock {
 }
 
 function extractText(node: MarkdownNode): string {
-  if (node.type === 'text') return node.value || ''
-  if (node.type === 'inlineCode') return `<code>${node.value || ''}</code>`
+  if (node.type === 'text') return escapeInlineHtml(node.value || '')
+  if (node.type === 'inlineCode') return `<code>${escapeInlineHtml(node.value || '')}</code>`
   if (node.type === 'strong') return `<b>${node.children?.map(extractText).join('') || ''}</b>`
   if (node.type === 'emphasis') return `<i>${node.children?.map(extractText).join('') || ''}</i>`
   if (node.type === 'delete') return `<s>${node.children?.map(extractText).join('') || ''}</s>`
-  if (node.type === 'link') return `<a href="${node.url}">${node.children?.map(extractText).join('') || ''}</a>`
-  if (node.type === 'image') return `<img src="${node.url}" alt="${node.alt || ''}" />`
+  if (node.type === 'link') return `<a href="${escapeInlineHtml(node.url || '')}">${node.children?.map(extractText).join('') || ''}</a>`
+  if (node.type === 'image') {
+    const image = inlineImageHtml(node.url || '', node.alt, node.title)
+    if (!image) throw new ApplicationError('VALIDATION_ERROR', 'Unsupported inline image URL')
+    return image
+  }
   return node.children?.map(extractText).join('') || ''
 }
