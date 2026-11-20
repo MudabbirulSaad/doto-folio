@@ -31,7 +31,7 @@ The public experience is deliberately recruiter-focused: it leads with software 
 - Node.js 26.13.1 LTS and npm 12.2.3
 - Next.js 16.4.6 with App Router and Turbopack
 - React 19.3.1
-- TypeScript 6.0 and ESLint 9, the versions supported by the Next.js lint plugins
+- TypeScript 6.0 and ESLint 10 with the Next.js Core Web Vitals and TypeScript rules
 - Tailwind CSS 4
 - shadcn/ui-style primitives and Radix UI
 - Supabase for database and auth
